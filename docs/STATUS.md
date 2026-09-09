@@ -1,6 +1,6 @@
 # Implementation and verification status
 
-Updated September 9, 2026. Phase 1 booking is open at [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Core live acceptance is complete. Delivery hardening is being rolled out; Inbox placement remains recipient-controlled.
+Updated September 9, 2026. Phase 1 booking is open at [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Phase 1 and its delivery hardening are deployed and verified for the owner. Inbox placement remains recipient-controlled.
 
 ## Implemented and configured
 
@@ -42,3 +42,12 @@ All tests used the owner's explicitly authorized Google account as the guest; no
 ## Phase 2
 
 Profiles such as Dust Wave/Volver, Stripe pay-what-you-can including free, and direct Proton integration remain phase 2. Proton currently contributes conflicts through the selected Google subscription. Public multi-owner onboarding/provider verification is separate from this personal phase 1 deployment.
+
+## Final email rollout
+
+- Source commit `752243c` passed [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34399237652), including all 65 Workers tests, build/types, browser acceptance and Wrangler dry run.
+- Cloudflare Worker version `5b78c1e5-1b62-44bb-af13-b4bc6ad69f0d` deployed the shared reply headers and bounded retry handling.
+- A single additional owner-authorized delivery check used the same source transport and shared helper from the local checkout against Resend. It deliberately created no new calendar booking; it was a transport/header check, not another production outbox lifecycle test.
+- The received Gmail original passed SPF/DKIM/DMARC, used TLS 1.3, contained both plain text and HTML, and included the configured owner Reply-To plus `Auto-Submitted: auto-generated`. Gmail's existing forwarding/delete-copy behavior ran, and the matching 14:20 message was observed in HEY. This latest test did not remain in Spam. No mailbox rule or DNS enforcement policy was changed to obtain the result.
+
+This verifies the owner’s current delivery path. It does not promise universal Inbox placement or establish reputation for every recipient/provider. The earlier complete booking lifecycle, reminder and clean-up evidence remains the phase 1 functional acceptance.

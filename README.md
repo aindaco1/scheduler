@@ -12,6 +12,7 @@ Alonso's booking page is **https://scheduler.dustwave.xyz/alonso**.
 - [Design and shared-code reuse](docs/research/design-reuse-notes.md)
 - [Phase 2 Proton research](docs/research/proton-integration-notes.md)
 - [Development and deployment](docs/OPERATIONS.md)
+- [Cross-project email delivery audit](docs/research/email-deliverability-audit.md)
 
 Phase 2 adds profiles, pay-what-you-can including free, and direct Proton integration if its feasibility checks pass. Phase 1 uses a Proton calendar subscribed through Google for conflicts.
 
