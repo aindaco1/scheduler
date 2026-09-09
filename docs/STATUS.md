@@ -95,3 +95,11 @@ Local verification passed: all 92 Workers tests, TypeScript, template checks, pr
 Deployment: source commit `bf51781` is live in Worker version `901dbb4b-2363-487c-a81d-4bb28939b98b`. The public admin asset matched the verified build byte for byte. English/Spanish booking and admin pages and health returned HTTP 200; unauthenticated private settings remained HTTP 401. The live configuration reported ready, and read-only availability checks for each of the three currently offered meeting types returned HTTP 200 with slots. No live settings were written during verification, so the owner's pending form can retry Save changes without a reload.
 
 [GitHub CI for `bf51781`](https://github.com/aindaco1/scheduler/actions/runs/34413242131) passed the complete check workflow.
+
+## Inclusive whole-day date ranges
+
+Whole days now has From date and Through date controls, with both dates included. Single days prefill the same end date; reversed or missing dates cannot add a blackout. A multi-day trip becomes one ordinary blackout with either scope. Dates and period edits use the configured schedule time zone; existing saved instants remain unchanged. The implementation reuses the installed Temporal library for calendar-day arithmetic and the existing blackout storage/availability rules.
+
+Regression coverage adds first/middle/final day enforcement, dates outside the range, all/video/in-person modes, single-day compatibility, invalid input, both scopes, ten-day inclusive bounds, a 73-hour daylight-saving range, and saving/editing while the browser is in Tokyo and the schedule is in Denver. Desktop light and mobile Spanish dark controls were visually reviewed. Verification uses isolated fixtures and does not create the user's example trip in live settings. Final check, CI and deployment evidence follows below.
+
+Local verification passed: all 94 Workers tests, TypeScript, template checks, production build, bilingual browser/accessibility checks and Wrangler dry run. Both desktop themes and the mobile range controls were reviewed visually.

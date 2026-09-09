@@ -13,6 +13,7 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 - Owners can include an optional message when cancelling or rescheduling from the dashboard. It is sent in the guest’s corresponding email after the calendar change succeeds, and is not repeated in reminders.
 - Small private web dashboard. English/Spanish. Pool/Store warmth with system light/dark.
 - Blackouts, hours and other local settings can be saved during calendar outages. Opening bookings or changing calendar dependencies requires live verification; availability, booking and rescheduling always require successful conflict checks.
+- Whole-day blackouts accept an inclusive From/Through date range, stored as one period from midnight on the first date through midnight after the final date. Use the same date for one day. Blackout dates and edits use the schedule time zone, including while the owner travels.
 - Turnstile spam protection without email verification for bookers.
 - Jekyll, Cloudflare, Resend, GitHub; pinned Dust Wave shared packages.
 - Weekly availability: Monday–Friday 09:00–16:00 and 20:30–22:00, America/Denver. Video gap: 15 minutes. In-person gap: 30 minutes.

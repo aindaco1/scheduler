@@ -108,7 +108,7 @@ await context.route("https://challenges.cloudflare.com/**", (route) =>
     body: 'window.turnstile={render(el,o){queueMicrotask(()=>o.callback("fixture-turnstile"));return "widget"},reset(){},remove(){}}',
   }),
 );
-await context.route("**/api/**", async (route) => {
+async function apiFixture(route) {
   const url = new URL(route.request().url());
   const path = url.pathname;
   const method = route.request().method();
@@ -255,7 +255,8 @@ await context.route("**/api/**", async (route) => {
     contentType: "application/json",
     body: JSON.stringify(payload),
   });
-});
+}
+await context.route("**/api/**", apiFixture);
 async function axe(name) {
   await page.addScriptTag({
     path: resolve("node_modules/axe-core/axe.min.js"),
@@ -529,7 +530,12 @@ try {
     .locator(".blackout-actions")
     .screenshot({ path: "work/frontend/blackout-actions-desktop-dark.png" });
   await page.emulateMedia({ colorScheme: "light" });
+  await page.locator("[data-whole-date]").fill("2026-10-31");
   await page.locator("[data-whole-date]").fill("2026-11-01");
+  assert.equal(
+    await page.locator("[data-whole-end]").inputValue(),
+    "2026-11-01",
+  );
   await page.locator("[data-whole-scope]").selectOption("in-person");
   await page.locator("[data-add-day]").click();
   assert.equal(
@@ -550,6 +556,31 @@ try {
   await page
     .locator('[data-setting="blackouts.1.scope"]')
     .selectOption("in-person");
+  await page.locator("[data-whole-date]").fill("2026-09-16");
+  await page.locator("[data-whole-end]").fill("2026-09-15");
+  await page.locator("[data-add-day]").click();
+  assert.equal(await page.locator(".blackout-row").count(), 2);
+  assert.match(
+    await page
+      .locator("[data-whole-end]")
+      .evaluate((el) => el.validationMessage),
+    /on or after/,
+  );
+  await page.locator("[data-whole-end]").fill("");
+  await page.locator("[data-add-day]").click();
+  assert.equal(await page.locator(".blackout-row").count(), 2);
+  await page.locator("[data-whole-end]").fill("2026-09-25");
+  await page.locator("[data-whole-scope]").selectOption("in-person");
+  await page.locator("[data-add-day]").click();
+  assert.equal(await page.locator(".blackout-row").count(), 3);
+  assert.equal(
+    await page.locator('[data-setting="blackouts.2.start"]').inputValue(),
+    "2026-09-16T00:00",
+  );
+  assert.equal(
+    await page.locator('[data-setting="blackouts.2.end"]').inputValue(),
+    "2026-09-26T00:00",
+  );
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
   settingsUnavailable = true;
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
@@ -581,6 +612,15 @@ try {
     25 * 3600_000,
   );
   assert.equal(saved.settings.blackouts[1].scope, "in-person");
+  assert.equal(saved.settings.blackouts[2].scope, "in-person");
+  assert.equal(
+    Date.parse(saved.settings.blackouts[2].start),
+    Date.parse("2026-09-16T06:00:00Z"),
+  );
+  assert.equal(
+    Date.parse(saved.settings.blackouts[2].end),
+    Date.parse("2026-09-26T06:00:00Z"),
+  );
   assert.equal(
     await page.locator('[data-setting="blackouts.1.scope"]').inputValue(),
     "in-person",
@@ -730,6 +770,64 @@ try {
     path: "work/frontend/privacy-es-mobile-dark.png",
     fullPage: true,
   });
+  // Whole days stay anchored to the schedule while the owner is travelling.
+  const travelContext = await browser.newContext({ timezoneId: "Asia/Tokyo" });
+  await travelContext.route("**/api/**", apiFixture);
+  const travelPage = await travelContext.newPage();
+  travelPage.on("pageerror", (error) => errors.push(error.message));
+  await travelPage.goto(base + "/admin/");
+  await travelPage
+    .getByRole("tab", { name: "Availability", exact: true })
+    .click();
+  const rangeIndex = settings.blackouts.length;
+  await travelPage.locator("[data-whole-date]").fill("2026-10-31");
+  await travelPage.locator("[data-whole-end]").fill("2026-11-02");
+  await travelPage.locator("[data-add-day]").click();
+  await travelPage
+    .getByRole("button", { name: "Save changes", exact: true })
+    .click();
+  await travelPage
+    .getByRole("button", { name: "All changes saved", exact: true })
+    .waitFor();
+  const travelRange = saved.settings.blackouts[rangeIndex];
+  assert.equal(travelRange.scope, "all");
+  assert.equal(
+    Date.parse(travelRange.start),
+    Date.parse("2026-10-31T06:00:00Z"),
+  );
+  assert.equal(Date.parse(travelRange.end), Date.parse("2026-11-03T07:00:00Z"));
+  assert.equal(
+    Date.parse(travelRange.end) - Date.parse(travelRange.start),
+    73 * 3600000,
+  );
+  const travelEnd = travelPage.locator(
+    `[data-setting="blackouts.${rangeIndex}.end"]`,
+  );
+  assert.equal(await travelEnd.inputValue(), "2026-11-03T00:00");
+  await travelPage
+    .locator('[data-setting="timezone"]')
+    .selectOption("Asia/Tokyo");
+  assert.equal(await travelEnd.inputValue(), "2026-11-03T16:00");
+  await travelPage
+    .locator('[data-setting="timezone"]')
+    .selectOption("America/Denver");
+  await travelEnd.fill("2026-11-04T00:00");
+  await travelPage
+    .getByRole("button", { name: "Save changes", exact: true })
+    .click();
+  await travelPage
+    .getByRole("button", { name: "All changes saved", exact: true })
+    .waitFor();
+  assert.equal(
+    Date.parse(saved.settings.blackouts[rangeIndex].end),
+    Date.parse("2026-11-04T07:00:00Z"),
+  );
+  await travelEnd.fill("2027-03-14T02:30");
+  assert.match(
+    await travelEnd.evaluate((el) => el.validationMessage),
+    /does not exist/,
+  );
+  await travelContext.close();
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

@@ -4,6 +4,62 @@ import { canBook, availableSlots } from "../src/availability";
 
 const iso = (v: string) => Date.parse(v);
 describe("availability rules", () => {
+  it.each(["all", "in-person"] as const)(
+    "blocks the first through last whole day of a %s range and reopens afterward",
+    (scope) => {
+      const s = defaultSettings();
+      s.hours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
+        day,
+        start: "00:00",
+        end: "24:00",
+      }));
+      s.types.forEach((t) => {
+        t.enabled = true;
+        t.locationIds = t.mode === "in-person" ? ["studio"] : [];
+      });
+      s.locations = [
+        {
+          id: "studio",
+          name: { en: "Studio", es: "Estudio" },
+          address: { en: "Address", es: "Dirección" },
+          enabled: true,
+          hours: s.hours,
+        },
+      ];
+      s.blackouts = [
+        {
+          id: "trip",
+          label: "Trip",
+          scope,
+          start: "2026-09-16T06:00:00Z",
+          end: "2026-09-26T06:00:00Z",
+        },
+      ];
+      const now = iso("2026-09-09T06:00:00Z");
+      for (const day of [15, 16, 21, 25, 26]) {
+        const start = iso(`2026-09-${day}T22:00:00-06:00`);
+        for (const type of s.types) {
+          const allowed =
+            day < 16 ||
+            day > 25 ||
+            (scope === "in-person" && type.mode !== "in-person");
+          const location = type.mode === "in-person" ? "studio" : "";
+          expect(canBook(s, type, location, start, [], now)).toBe(allowed);
+          expect(
+            availableSlots(
+              s,
+              type.id,
+              location,
+              start,
+              start + 3600000,
+              [],
+              now,
+            ).length > 0,
+          ).toBe(allowed);
+        }
+      }
+    },
+  );
   it.each([undefined, "all", "in-person"] as const)(
     "applies %s blackout scope consistently to slots and meeting modes",
     (scope) => {

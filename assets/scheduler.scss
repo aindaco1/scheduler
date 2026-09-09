@@ -716,9 +716,15 @@ select.field-control {
   gap: 1.25rem;
 }
 .blackout-day-actions {
-  align-items: end;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
+}
+.blackout-day-actions h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.blackout-day-actions .cluster {
+  align-items: end;
 }
 .blackout-actions .button,
 .blackout-actions input,
