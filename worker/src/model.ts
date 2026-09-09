@@ -150,6 +150,8 @@ export interface Booking {
   revision: number;
   targetStart?: number;
   targetEnd?: number;
+  // Optional owner note for this booking revision only.
+  changeMessage?: string;
 }
 export type PublicBooking = Pick<
   Booking,
@@ -170,6 +172,7 @@ export type PublicBooking = Pick<
   | "topic"
   | "error"
 > & { cancelUntil: number };
+export const changeMessageInput = z.string().trim().max(2000).default("");
 export const bookingInput = z
   .object({
     requestId: z.string().uuid(),

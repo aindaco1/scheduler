@@ -101,6 +101,9 @@ function localInput(instant: string | number) {
 }
 function dirty() {
   const changed = JSON.stringify(settings) !== baseline;
+  const saveBar = $(".save-bar", app);
+  saveBar.hidden = selectedTab === "bookings" && !changed;
+  saveBar.classList.toggle("save-bar-inline", selectedTab === "bookings");
   setDirtyButtonState(
     $("[data-save]", app),
     changed,
@@ -150,6 +153,7 @@ function render() {
     },
     onSelect: (name: string) => {
       selectedTab = name;
+      dirty();
     },
   });
   app.oninput = onSetting;
@@ -510,6 +514,9 @@ function bookingActions(booking: PublicBooking) {
   if (!["confirmed", "pending", "failed"].includes(booking.status)) return "";
   return `<div class="cluster">${booking.status === "confirmed" ? `<button class="button" type="button" data-admin-reschedule="${esc(booking.id)}">${t("Reschedule", "Cambiar horario")}</button>` : ""}<button class="button danger" type="button" data-admin-cancel="${esc(booking.id)}">${t("Cancel", "Cancelar")}</button></div>`;
 }
+function bookingMessageField() {
+  return `<label class="field">${t("Message to guest (optional)", "Mensaje para el invitado (opcional)")}<textarea name="message" rows="4" maxlength="2000"></textarea><small>${t("Included in the guest’s email once the calendar change is confirmed. Up to 2,000 characters.", "Se incluye en el correo al invitado cuando se confirma el cambio en el calendario. Hasta 2.000 caracteres.")}</small></label>`;
+}
 function renderBookings() {
   $("#panel-bookings", app).innerHTML =
     `<section class="panel"><div class="between"><h2>${t("Upcoming and recent meetings", "Reuniones próximas y recientes")}</h2><button class="button" type="button" data-refresh-bookings>${t("Refresh", "Actualizar")}</button></div><div data-booking-error></div>${bookings.length ? bookings.map((b) => `<article class="booking-row"><div class="between"><h3>${esc(b.name)} · ${esc(b.typeName)}</h3><span class="status-pill ${b.status === "confirmed" ? "good" : b.status === "failed" ? "bad" : ""}">${esc(statusLabel(b.status))}</span></div><p>${esc(dateLabel(b.start, settings.timezone))} · ${esc(settings.timezone)}<br>${esc(b.location || b.mode)} · <a href="mailto:${esc(b.email)}">${esc(b.email)}</a></p>${b.error ? `<div class="notice error"><p>${esc(bookingIssue(b))}</p><small>${t("Diagnostic code", "Código de diagnóstico")}: ${esc(b.error)}</small></div>` : ""}${b.topic ? `<p class="topic">${esc(b.topic)}</p>` : ""}${bookingActions(b)}<div data-booking-action="${esc(b.id)}"></div></article>`).join("") : `<div class="empty-state"><h3>${t("Your next conversation starts here.", "Tu próxima conversación empieza aquí.")}</h3><p>${t("Bookings will appear here as people reserve your time.", "Las reservas aparecerán aquí cuando alguien elija un horario.")}</p></div>`}</section>`;
@@ -527,23 +534,45 @@ function renderBookings() {
     button.addEventListener("click", () => {
       const b = bookings.find((b) => b.id === button.dataset.adminReschedule)!;
       const target = $(`[data-booking-action="${b.id}"]`, app);
-      target.innerHTML = `<form class="stack" data-move-form><label class="field">${t("New start time", "Nuevo horario de inicio")} · ${esc(currentZone())}<input type="datetime-local" name="start" value="${localInput(b.start)}" required></label><p class="help-text">${t("Calendar conflicts and notice are checked before the change is accepted. You can override the guest change deadline.", "Se comprueban los conflictos y la antelación antes de aceptar el cambio. Puedes modificar la reserva después del plazo del invitado.")}</p><button class="button" type="submit">${t("Confirm new time", "Confirmar nuevo horario")}</button><div data-move-error></div></form>`;
+      if (target.querySelector("[data-move-form]")) {
+        $<HTMLInputElement>("[name=start]", target).focus();
+        return;
+      }
+      let pending = false;
+      let operation: { body: string; requestId: string } | undefined;
+      target.innerHTML = `<form class="stack" data-move-form><label class="field">${t("New start time", "Nuevo horario de inicio")} · ${esc(currentZone())}<input type="datetime-local" name="start" value="${localInput(b.start)}" required></label><p class="help-text">${t("Calendar conflicts and notice are checked before the change is accepted. You can override the guest change deadline.", "Se comprueban los conflictos y la antelación antes de aceptar el cambio. Puedes modificar la reserva después del plazo del invitado.")}</p>${bookingMessageField()}<button class="button" type="submit">${t("Confirm new time", "Confirmar nuevo horario")}</button><div data-move-error></div></form>`;
       $<HTMLFormElement>("[data-move-form]", target).addEventListener(
         "submit",
         async (event) => {
           event.preventDefault();
+          if (pending) return;
           const form = event.currentTarget as HTMLFormElement;
-          const start = new Date(
-            String(new FormData(form).get("start")),
-          ).toISOString();
+          const data = new FormData(form);
+          const start = new Date(String(data.get("start"))).toISOString();
+          const message = String(data.get("message") || "").trim();
+          const body = JSON.stringify({ start, message });
+          if (operation?.body !== body)
+            operation = { body, requestId: crypto.randomUUID() };
+          pending = true;
+          const controls = $$<
+            HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement
+          >("button, input, textarea", form);
+          controls.forEach((control) => (control.disabled = true));
+          form.setAttribute("aria-busy", "true");
+          $("[data-move-error]", target).hidden = true;
           try {
             await api.request(`/admin/bookings/${b.id}/reschedule`, {
               method: "POST",
-              body: { start, requestId: crypto.randomUUID() },
+              body: { start, message, requestId: operation.requestId },
             });
             await refreshBookings();
           } catch (e) {
+            $("[data-move-error]", target).hidden = false;
             showError($("[data-move-error]", target), e);
+          } finally {
+            pending = false;
+            controls.forEach((control) => (control.disabled = false));
+            form.removeAttribute("aria-busy");
           }
         },
       );
@@ -562,27 +591,30 @@ async function refreshBookings() {
   }
 }
 async function cancelBooking(id: string) {
-  if (
-    !(await confirmAction(
-      t("Cancel this booking?", "¿Cancelar esta reserva?"),
-      t(
-        "A cancellation will be requested. Any existing calendar invitation is updated when the providers confirm. This may take time if a provider’s last result is uncertain.",
-        "Se solicitará la cancelación. Las invitaciones existentes se actualizarán cuando los proveedores confirmen. Esto puede tardar si se desconoce el resultado de la última operación.",
-      ),
-      t("Cancel booking", "Cancelar reserva"),
-    ))
-  )
-    return;
-  try {
-    await api.request(`/admin/bookings/${id}/cancel`, {
-      method: "POST",
-      body: {},
-    });
-    await refreshBookings();
-  } catch (e) {
-    showError($("[data-booking-error]", app), e);
-  }
+  const content = document.createElement("div");
+  content.innerHTML = bookingMessageField();
+  const message = $<HTMLTextAreaElement>("[name=message]", content);
+  const confirmed = await confirmAction(
+    t("Cancel this booking?", "¿Cancelar esta reserva?"),
+    t(
+      "A cancellation will be requested. Any existing calendar invitation is updated when the providers confirm. This may take time if a provider’s last result is uncertain.",
+      "Se solicitará la cancelación. Las invitaciones existentes se actualizarán cuando los proveedores confirmen. Esto puede tardar si se desconoce el resultado de la última operación.",
+    ),
+    t("Cancel booking", "Cancelar reserva"),
+    {
+      content,
+      onConfirm: () =>
+        api
+          .request(`/admin/bookings/${id}/cancel`, {
+            method: "POST",
+            body: { message: message.value.trim() },
+          })
+          .then(() => undefined),
+    },
+  );
+  if (confirmed) await refreshBookings();
 }
+
 async function save() {
   if (saving) return;
   const invalid = $$<

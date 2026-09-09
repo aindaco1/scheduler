@@ -741,6 +741,12 @@ select.field-control {
   font-size: 0.84rem;
   color: var(--muted);
 }
+.save-bar-inline {
+  position: static;
+}
+.booking-row [data-move-form] {
+  margin-top: 1rem;
+}
 .connection-card {
   padding: 1rem 0;
   border-top: 1px solid var(--border);

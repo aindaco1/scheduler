@@ -321,11 +321,44 @@ export function confirmAction(
   title: string,
   message: string,
   button: string,
+  options?: { content: HTMLElement; onConfirm: () => Promise<void> },
 ): Promise<boolean> {
   const dialog = document.createElement("dialog");
   dialog.className = "modal";
   dialog.setAttribute("aria-labelledby", "confirm-title");
-  dialog.innerHTML = `<form method="dialog"><h2 id="confirm-title">${esc(title)}</h2><p>${esc(message)}</p><div class="cluster"><button class="button" value="cancel">${t("Go back", "Volver")}</button><button class="button danger" value="confirm">${esc(button)}</button></div></form>`;
+  dialog.innerHTML = `<form method="dialog"><h2 id="confirm-title">${esc(title)}</h2><p>${esc(message)}</p><div data-confirm-error></div><div class="cluster"><button class="button" value="cancel" formnovalidate>${t("Go back", "Volver")}</button><button class="button danger" value="confirm">${esc(button)}</button></div></form>`;
+  if (options) {
+    const form = $<HTMLFormElement>("form", dialog);
+    const error = $("[data-confirm-error]", dialog);
+    error.before(options.content);
+    let pending = false;
+    dialog.addEventListener("cancel", (event) => {
+      if (pending) event.preventDefault();
+    });
+    form.addEventListener("submit", async (event) => {
+      if ((event.submitter as HTMLButtonElement)?.value !== "confirm") return;
+      event.preventDefault();
+      if (pending) return;
+      pending = true;
+      error.hidden = true;
+      const controls = $$<
+        HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement
+      >("button, input, textarea", form);
+      controls.forEach((control) => (control.disabled = true));
+      form.setAttribute("aria-busy", "true");
+      try {
+        await options.onConfirm();
+        dialog.close("confirm");
+      } catch (e) {
+        error.hidden = false;
+        showError(error, e);
+      } finally {
+        pending = false;
+        controls.forEach((control) => (control.disabled = false));
+        form.removeAttribute("aria-busy");
+      }
+    });
+  }
   document.body.append(dialog);
   dialog.showModal();
   return new Promise((resolve) =>

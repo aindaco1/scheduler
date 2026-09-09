@@ -10,6 +10,7 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 - New events go to the main Google calendar automatically, with attendee invitations. No host approval queue.
 - Weekly hours, recurring blackouts, temporary full/partial-day blackouts, minimum notice (24 elapsed hours), 30-day horizon, and separate gaps for video/in-person.
 - Booker cancellation/rescheduling until 24 elapsed hours before the start; server enforcement.
+- Owners can include an optional message when cancelling or rescheduling from the dashboard. It is sent in the guest’s corresponding email after the calendar change succeeds, and is not repeated in reminders.
 - Small private web dashboard. English/Spanish. Pool/Store warmth with system light/dark.
 - Turnstile spam protection without email verification for bookers.
 - Jekyll, Cloudflare, Resend, GitHub; pinned Dust Wave shared packages.

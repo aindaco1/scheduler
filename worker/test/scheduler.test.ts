@@ -241,6 +241,76 @@ describe("Durable booking coordinator", () => {
   });
 });
 describe("HTTP authentication and error boundary", () => {
+  it("accepts bounded owner messages only through authenticated admin actions", async () => {
+    mockReads();
+    const stub = await setup("alonso");
+    const session = "fixture-owner-message-session";
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec(
+        "INSERT INTO tokens(hash,purpose,expires,value) VALUES(?,?,?,?)",
+        await sha256Hex(session),
+        "session",
+        Date.now() + 60_000,
+        "",
+      );
+    });
+    for (const [index, action] of ["cancel", "reschedule"].entries()) {
+      const start = startTime() + (index + 5) * 2 * 3_600_000;
+      const created = await stub.createBooking(input(start));
+      await runInDurableObject(stub, (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one();
+        const b = JSON.parse(row.data);
+        b.status = "confirmed";
+        state.storage.sql.exec(
+          "UPDATE bookings SET data=?,status='confirmed' WHERE id=?",
+          JSON.stringify(b),
+          b.id,
+        );
+      });
+      const path =
+        origin + `/api/admin/bookings/${created.booking.id}/${action}`;
+      const body = {
+        message: "  An owner note.\nThanks!  ",
+        start: new Date(start + 3_600_000).toISOString(),
+        requestId: crypto.randomUUID(),
+      };
+      const send = (payload: object, signedIn: boolean) =>
+        SELF.fetch(path, {
+          method: "POST",
+          headers: {
+            Origin: origin,
+            "Content-Type": "application/json",
+            ...(signedIn ? { Cookie: `scheduler_session=${session}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+      expect((await send(body, false)).status).toBe(401);
+      expect(
+        (await send({ ...body, message: "x".repeat(2001) }, true)).status,
+      ).toBe(400);
+      expect(
+        (await send({ ...body, message: { html: "no" } }, true)).status,
+      ).toBe(400);
+      expect((await send(body, true)).status).toBe(200);
+      await runInDurableObject(stub, (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one();
+        expect(JSON.parse(row.data).changeMessage).toBe(
+          "An owner note.\nThanks!",
+        );
+      });
+    }
+  });
+
   it("returns a structured 403 for cross-origin mutations", async () => {
     const response = await SELF.fetch(origin + "/api/admin/login", {
       method: "POST",

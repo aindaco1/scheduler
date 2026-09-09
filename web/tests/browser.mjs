@@ -76,6 +76,10 @@ let revision = 1,
   settingsConflict = false,
   bookingWrites = 0,
   credentialWrites = 0;
+const ownerRescheduleBodies = [],
+  ownerCancellationBodies = [];
+const ownerNote =
+  "A scheduling change <not HTML>.\nThank you for understanding!";
 const start = Date.now() + 3 * 86400000;
 let booking = {
   id: "fixture-booking",
@@ -173,11 +177,37 @@ await context.route("**/api/**", async (route) => {
   } else if (path === "/api/admin/bookings") payload = { bookings: [booking] };
   else if (path === "/api/admin/bookings/fixture-booking/cancel") {
     assert.equal(method, "POST");
-    assert.deepEqual(route.request().postDataJSON(), {});
-    assert.equal(booking.status, "pending");
-    booking.status = "cancelling";
-    booking.error = "zoom_write_uncertain";
-    payload = { booking };
+    const data = route.request().postDataJSON();
+    if (data.message) {
+      assert.equal(data.message, ownerNote);
+      ownerCancellationBodies.push(data);
+      if (ownerCancellationBodies.length === 1) {
+        status = 503;
+        payload = { error: "service_unavailable" };
+      } else {
+        booking.status = "cancelling";
+        payload = { booking };
+      }
+    } else {
+      assert.deepEqual(data, { message: "" });
+      assert.equal(booking.status, "pending");
+      booking.status = "cancelling";
+      booking.error = "zoom_write_uncertain";
+      payload = { booking };
+    }
+  } else if (path === "/api/admin/bookings/fixture-booking/reschedule") {
+    assert.equal(method, "POST");
+    const data = route.request().postDataJSON();
+    assert.equal(data.message, ownerNote);
+    ownerRescheduleBodies.push(data);
+    if (ownerRescheduleBodies.length === 1) {
+      status = 503;
+      payload = { error: "service_unavailable" };
+    } else {
+      booking.start = Date.parse(data.start);
+      booking.end = booking.start + 1800000;
+      payload = { booking };
+    }
   } else if (
     path === "/api/admin/connections" ||
     path === "/api/admin/verify" ||
@@ -338,6 +368,74 @@ try {
   await page.goto(base + "/admin/");
   await page.getByRole("heading", { name: "Your schedule" }).waitFor();
   await axe("admin bookings");
+  await page.getByRole("button", { name: "Reschedule", exact: true }).click();
+  const ownerMoveForm = page.locator("[data-move-form]");
+  await ownerMoveForm
+    .locator("[name=start]")
+    .fill(new Date(start + 2 * 3600000).toISOString().slice(0, 16));
+  await ownerMoveForm.getByLabel("Message to guest (optional)").fill(ownerNote);
+  await axe("owner reschedule message");
+  await page.screenshot({
+    path: "work/frontend/admin-reschedule-message-desktop.png",
+    fullPage: true,
+  });
+  await ownerMoveForm
+    .getByRole("button", { name: "Confirm new time", exact: true })
+    .click();
+  await ownerMoveForm.getByRole("alert").waitFor();
+  assert.equal(
+    await ownerMoveForm.getByLabel("Message to guest (optional)").inputValue(),
+    ownerNote,
+  );
+  await ownerMoveForm
+    .getByRole("button", { name: "Confirm new time", exact: true })
+    .click();
+  await ownerMoveForm.waitFor({ state: "detached" });
+  assert.equal(ownerRescheduleBodies.length, 2);
+  assert.deepEqual(ownerRescheduleBodies[0], ownerRescheduleBodies[1]);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Message to guest (optional)")
+    .fill("Do not send this draft");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Go back", exact: true })
+    .click();
+  assert.equal(ownerCancellationBodies.length, 0);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  const ownerCancelDialog = page.getByRole("dialog");
+  await ownerCancelDialog
+    .getByLabel("Message to guest (optional)")
+    .fill(ownerNote);
+  assert.equal(
+    await ownerCancelDialog.locator("textarea").getAttribute("maxlength"),
+    "2000",
+  );
+  await axe("owner cancellation message");
+  await page.screenshot({
+    path: "work/frontend/admin-cancel-message-desktop.png",
+  });
+  await ownerCancelDialog
+    .getByRole("button", { name: "Cancel booking", exact: true })
+    .click();
+  await ownerCancelDialog.getByRole("alert").waitFor();
+  assert.equal(
+    await ownerCancelDialog
+      .getByLabel("Message to guest (optional)")
+      .inputValue(),
+    ownerNote,
+  );
+  await ownerCancelDialog
+    .getByRole("button", { name: "Cancel booking", exact: true })
+    .click();
+  await ownerCancelDialog.waitFor({ state: "detached" });
+  assert.deepEqual(ownerCancellationBodies, [
+    { message: ownerNote },
+    { message: ownerNote },
+  ]);
+  booking.start = start;
+  booking.end = start + 1800000;
   booking.status = "pending";
   booking.error = "google_reconnect_required";
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
@@ -431,7 +529,37 @@ try {
     false,
   );
   await axe("admin mobile");
-  await page.getByRole("link", { name: "Privacy", exact: true }).click();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto(base + "/es/admin/");
+  await page
+    .getByRole("button", { name: "Cambiar horario", exact: true })
+    .click();
+  await page
+    .getByLabel("Mensaje para el invitado (opcional)")
+    .fill("Gracias por tu comprensión.\nNos vemos pronto.");
+  await axe("Spanish owner reschedule message mobile");
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await page.screenshot({
+    path: "work/frontend/admin-reschedule-message-es-mobile-dark.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Mensaje para el invitado (opcional)")
+    .fill("Disculpa el cambio.\nGracias por tu comprensión.");
+  await axe("Spanish owner cancellation message mobile");
+  await page.screenshot({
+    path: "work/frontend/admin-cancel-message-es-mobile-dark.png",
+  });
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+  await page.goto(base + "/privacy/");
   await page
     .getByRole("heading", { name: "A meeting, with privacy in mind." })
     .waitFor();

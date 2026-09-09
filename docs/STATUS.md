@@ -61,3 +61,9 @@ Local verification: all 65 Workers tests and TypeScript checks passed. The final
 Deployment: source commit `bc1aa2e` is live in Cloudflare Worker version `33ecb1cf-4330-480f-b74a-5acc357f5b3d`. Public fetches of the deployed CSS and admin script matched the locally verified build byte for byte; the English/Spanish booking pages and admin shell returned HTTP 200.
 
 [GitHub CI for `bc1aa2e`](https://github.com/aindaco1/scheduler/actions/runs/34410001899) passed the full check workflow.
+
+## Owner messages for booking changes
+
+Optional owner messages are implemented in the cancellation dialog and reschedule form, with English/Spanish labels, a 2,000-character limit and draft retention on request failure. The note appears in both plain-text and HTML versions of the corresponding guest notification after provider confirmation. Markup is escaped, line breaks are preserved, blank messages retain existing email content, and notes are excluded from reminders and later changes. The settings save bar no longer covers booking forms.
+
+Local verification covers authenticated HTTP requests, oversized/invalid notes, guest-authoring rejection, idempotency, provider and email retries, failed reschedules, and safe bilingual email rendering. The Workers suite now contains 75 tests. Browser acceptance adds owner message submission/retry/dismissal checks plus English desktop and Spanish dark mobile screenshots and axe scans. These are isolated fixtures; no live meeting was changed and no live guest email was sent for this feature. `npm run check` passed, including all 75 tests, TypeScript, the production build, browser acceptance and Wrangler dry run. CI and deployment evidence follow below.

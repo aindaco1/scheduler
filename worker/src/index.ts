@@ -13,7 +13,7 @@ import {
 } from "@dustwave/worker-core/crypto";
 import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
 import { Scheduler } from "./scheduler";
-import { AppError, bookingInput } from "./model";
+import { AppError, bookingInput, changeMessageInput } from "./model";
 import {
   boundedJson,
   checkTurnstile,
@@ -371,13 +371,19 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
       const input = await body();
       return json(
         actionMatch[2] === "cancel"
-          ? await stub.cancel(actionMatch[1], "", true)
+          ? await stub.cancel(
+              actionMatch[1],
+              "",
+              true,
+              changeMessageInput.parse(input.message),
+            )
           : await stub.reschedule(
               actionMatch[1],
               "",
               z.iso.datetime({ offset: true }).parse(input.start),
               z.string().uuid().parse(input.requestId),
               true,
+              changeMessageInput.parse(input.message),
             ),
       );
     }

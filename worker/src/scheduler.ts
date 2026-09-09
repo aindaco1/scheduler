@@ -6,6 +6,7 @@ import { outboxRetryDelayMs } from "@dustwave/worker-core/outbox";
 import {
   AppError,
   bookingInput,
+  changeMessageInput,
   defaultSettings,
   settingsSchema,
   type Booking,
@@ -659,14 +660,19 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         .map((r) => this.present(JSON.parse(r.data))),
     };
   }
-  async cancel(id: string, token: string, admin = false) {
+  async cancel(id: string, token: string, admin = false, message = "") {
     const initial = await this.authorizedBooking(id, token, admin),
       s = this.getSettings().settings;
+    message = changeMessageInput.parse(message);
+    if (message && !admin) throw new AppError("invalid_request", 403);
     if (!admin && Date.now() > initial.start - s.cancelHours * 3_600_000)
       throw new AppError("management_closed", 403);
     const b = this.booking(id);
-    if (b.status === "cancelled" || b.status === "cancelling")
+    if (b.status === "cancelled" || b.status === "cancelling") {
+      if (admin && message !== (b.changeMessage || ""))
+        throw new AppError("request_changed", 409);
       return { booking: this.present(b) };
+    }
     if (
       b.status !== "confirmed" &&
       b.status !== "failed" &&
@@ -674,6 +680,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     )
       throw new AppError("booking_busy", 409);
     b.status = "cancelling";
+    b.changeMessage = message || undefined;
     b.revision++;
     b.error = undefined;
     this.ctx.storage.transactionSync(() => {
@@ -689,20 +696,32 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     startValue: string,
     requestId: string,
     admin = false,
+    message = "",
   ) {
     const initial = await this.authorizedBooking(id, token, admin),
       config = this.getSettings(),
       s = config.settings;
+    message = changeMessageInput.parse(message);
+    if (message && !admin) throw new AppError("invalid_request", 403);
+    const messageHash = await sha256Hex(message);
     if (
       !/^[0-9a-f-]{36}$/.test(requestId) ||
       !Number.isFinite(Date.parse(startValue))
     )
       throw new AppError("invalid_request");
     const key = "reschedule:" + requestId,
-      prior = this.read<{ id: string; start: number }>(key),
+      prior = this.read<{ id: string; start: number; messageHash?: string }>(
+        key,
+      ),
       start = Date.parse(startValue);
     if (prior) {
-      if (prior.id !== id || prior.start !== start)
+      if (
+        prior.id !== id ||
+        prior.start !== start ||
+        (prior.messageHash
+          ? prior.messageHash !== messageHash
+          : Boolean(message))
+      )
         throw new AppError("request_changed", 409);
       return { booking: this.present(initial) };
     }
@@ -741,13 +760,14 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     )
       throw new AppError("slot_unavailable", 409);
     b.status = "rescheduling";
+    b.changeMessage = message || undefined;
     b.targetStart = start;
     b.targetEnd = end;
     b.revision++;
     b.error = undefined;
     this.ctx.storage.transactionSync(() => {
       this.save(b);
-      this.write(key, { id, start });
+      this.write(key, { id, start, messageHash });
       this.queueBooking(b);
     });
     await this.arm();
@@ -980,6 +1000,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
           b.targetStart = undefined;
           b.targetEnd = undefined;
           b.error = "slot_unavailable";
+          b.changeMessage = undefined;
           this.ctx.storage.transactionSync(() => {
             this.save(b);
             this.queueReminder(b);

@@ -141,7 +141,7 @@ async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
       .exec<{ data: string }>("SELECT data FROM jobs")
       .toArray()
       .map((row) => JSON.parse(row.data) as StoredJob);
-    const job = all.find((job) => job.mailKind === kind);
+    const job = all.find((job) => job.mailKind === kind || job.kind === kind);
     if (!job) throw new Error("Expected queued " + kind + " mail");
     state.storage.sql.exec("DELETE FROM jobs WHERE id!=?", job.id);
     job.due = Date.now() - 1;
@@ -159,6 +159,121 @@ async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
 }
 
 describe("Coordinator recovery after overlapping actions and partial provider results", () => {
+  it.each(["cancelled", "rescheduled"] as const)(
+    "keeps an owner message with its %s operation through provider and email retries",
+    async (kind) => {
+      const { stub, created, start } = await confirmAndQueueMail();
+      await runInDurableObject(stub, (_instance, state) =>
+        state.storage.sql.exec("DELETE FROM jobs"),
+      );
+      const message =
+        "A scheduling change <not HTML>.\nThank you for understanding!";
+      const requestId = crypto.randomUUID();
+      const target = new Date(start + 3 * 3_600_000).toISOString();
+      const change = (note: string) =>
+        kind === "cancelled"
+          ? stub.cancel(created.booking.id, "", true, note)
+          : stub.reschedule(
+              created.booking.id,
+              "",
+              target,
+              requestId,
+              true,
+              note,
+            );
+      await change(message);
+      await change(message);
+      await expect(
+        Promise.resolve(change("A different note")),
+      ).rejects.toMatchObject({ code: "request_changed" });
+      const path =
+        eventPath(created.booking.id) +
+        (kind === "cancelled"
+          ? "?sendUpdates=all"
+          : "?sendUpdates=all&conferenceDataVersion=1");
+      const method = kind === "cancelled" ? "DELETE" : "PATCH";
+      fetchMock
+        .get(googleOrigin)
+        .intercept({ path, method })
+        .reply(503, { error: "Fixture outage" });
+      await runDurableObjectAlarm(stub);
+      expect((await jobs(stub)).filter((job) => job.kind === "email")).toEqual(
+        [],
+      );
+      await retainAndRunNow(stub, "booking");
+      fetchMock.get(googleOrigin).intercept({ path, method }).reply(200, {});
+      await runDurableObjectAlarm(stub);
+      const result = (await stub.getBooking(created.booking.id, created.token))
+        .booking;
+      expect(result.status).toBe(
+        kind === "cancelled" ? "cancelled" : "confirmed",
+      );
+      expect(result).not.toHaveProperty("changeMessage");
+      const bodies: string[] = [];
+      for (const statusCode of [503, 200]) {
+        await retainAndRunNow(stub, kind);
+        fetchMock
+          .get("https://api.resend.com")
+          .intercept({ path: "/emails", method: "POST" })
+          .reply(({ body }) => {
+            bodies.push(body);
+            return { statusCode, data: { id: "fixture-message" } };
+          });
+        await runDurableObjectAlarm(stub);
+      }
+      expect(bodies).toHaveLength(2);
+      expect(bodies[1]).toBe(bodies[0]);
+      const email = JSON.parse(bodies[0]);
+      expect(email.to).toEqual(["guest@example.test"]);
+      expect(email.text).toContain(message);
+      expect(email.html).toContain("&lt;not HTML&gt;.<br>Thank you");
+      expect(email.html).not.toContain("<not HTML>");
+      expect(email.reply_to).toBe(env.ADMIN_EMAIL);
+      expect(email.headers).toEqual({ "Auto-Submitted": "auto-generated" });
+      expect(await jobs(stub)).toEqual([]);
+      if (kind === "rescheduled") {
+        await stub.cancel(created.booking.id, created.token);
+        await runInDurableObject(stub, (_instance, state) => {
+          const row = state.storage.sql
+            .exec<{ data: string }>(
+              "SELECT data FROM bookings WHERE id=?",
+              created.booking.id,
+            )
+            .one();
+          expect(JSON.parse(row.data).changeMessage).toBeUndefined();
+        });
+      }
+    },
+  );
+
+  it("rejects guest-authored owner messages and oversized notes without changing the booking", async () => {
+    const { stub, created, start } = await confirmAndQueueMail();
+    for (const message of ["Guest-authored note", "x".repeat(2001)]) {
+      const admin = message.length > 2000;
+      await expect(
+        Promise.resolve(
+          stub.cancel(created.booking.id, created.token, admin, message),
+        ),
+      ).rejects.toThrow();
+      await expect(
+        Promise.resolve(
+          stub.reschedule(
+            created.booking.id,
+            created.token,
+            new Date(start + 3_600_000).toISOString(),
+            crypto.randomUUID(),
+            admin,
+            message,
+          ),
+        ),
+      ).rejects.toThrow();
+      expect(
+        (await stub.getBooking(created.booking.id, created.token)).booking
+          .status,
+      ).toBe("confirmed");
+    }
+  });
+
   it("preserves cancellation submitted while the pending job awaits its external conflict read", async () => {
     const { stub, created, start, busy } = await setup();
     busy.events = [
@@ -258,6 +373,8 @@ describe("Coordinator recovery after overlapping actions and partial provider re
           created.token,
           new Date(target).toISOString(),
           crypto.randomUUID(),
+          true,
+          "This change must not be announced if it fails.",
         )
       ).booking.status,
     ).toBe("rescheduling");
@@ -281,6 +398,18 @@ describe("Coordinator recovery after overlapping actions and partial provider re
       start,
       error: "slot_unavailable",
     });
+    await runInDurableObject(stub, (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM bookings WHERE id=?",
+          created.booking.id,
+        )
+        .one();
+      expect(JSON.parse(row.data).changeMessage).toBeUndefined();
+    });
+    expect(
+      (await jobs(stub)).some((job) => job.mailKind === "rescheduled"),
+    ).toBe(false);
     expect(calls.mock.calls.some(([, init]) => init?.method === "PATCH")).toBe(
       false,
     );
@@ -375,7 +504,9 @@ describe("Coordinator recovery after overlapping actions and partial provider re
       );
     const before = Date.now();
     await runDurableObjectAlarm(stub);
-    expect((await jobs(stub))[0].due).toBeGreaterThanOrEqual(before + 7_200_000);
+    expect((await jobs(stub))[0].due).toBeGreaterThanOrEqual(
+      before + 7_200_000,
+    );
     expect((await jobs(stub))[0].terminal).toBe(false);
   });
 
