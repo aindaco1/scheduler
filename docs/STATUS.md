@@ -51,3 +51,9 @@ Profiles such as Dust Wave/Volver, Stripe pay-what-you-can including free, and d
 - The received Gmail original passed SPF/DKIM/DMARC, used TLS 1.3, contained both plain text and HTML, and included the configured owner Reply-To plus `Auto-Submitted: auto-generated`. Gmail's existing forwarding/delete-copy behavior ran, and the matching 14:20 message was observed in HEY. This latest test did not remain in Spam. No mailbox rule or DNS enforcement policy was changed to obtain the result.
 
 This verifies the owner’s current delivery path. It does not promise universal Inbox placement or establish reputation for every recipient/provider. The earlier complete booking lifecycle, reminder and clean-up evidence remains the phase 1 functional acceptance.
+
+## Temporary blackout control layout
+
+The owner-reported desktop misalignment is fixed with a layout scoped to the blackout actions: the buttons and date field share a 48-pixel minimum height and align along their bottom edge. The whole-day field and action wrap together on narrow screens. Labels and booking behavior are unchanged.
+
+Local verification: all 65 Workers tests and TypeScript checks passed. The final build passed the existing browser acceptance and Wrangler dry run. An isolated rendered check covered 24 combinations of English/Spanish, light/dark and 320–1280-pixel viewports, with aligned desktop controls and no horizontal overflow. Desktop and mobile panel screenshots were visually reviewed. These checks used fixture data and made no live calendar, settings or email writes.
