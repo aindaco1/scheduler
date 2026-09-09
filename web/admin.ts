@@ -2,6 +2,7 @@ import { mountAccessibleTabs } from "@dustwave/admin-shell/tabs";
 import { setDirtyButtonState } from "@dustwave/admin-shell/dirty-controls";
 import { mountUnsavedChangesGuard } from "@dustwave/admin-shell/unsaved-changes";
 import type { Settings, Weekly, CalendarChoice } from "../worker/src/model";
+import { mergeSettings } from "./settings-merge";
 import {
   api,
   app,
@@ -159,9 +160,7 @@ function render() {
 }
 function onSetting(event: Event) {
   const el = event.target as
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | HTMLSelectElement;
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
   if (!el.dataset.setting) return;
   let value: unknown =
     el instanceof HTMLInputElement && el.type === "checkbox"
@@ -599,10 +598,30 @@ async function save() {
   dirty();
   $("[data-global-error]", app).textContent = "";
   try {
-    const result = (await api.request("/admin/settings", {
-      method: "PUT",
-      body: { settings, revision },
-    })) as { settings: Settings; revision: number };
+    const write = (value: Settings, expected: number) =>
+      api.request("/admin/settings", {
+        method: "PUT",
+        body: { settings: value, revision: expected },
+      }) as Promise<{ settings: Settings; revision: number }>;
+    let result: { settings: Settings; revision: number };
+    try {
+      result = await write(settings, revision);
+    } catch (e) {
+      if ((e as { status?: number }).status !== 409) throw e;
+      const current = (await api.request("/admin/settings")) as {
+        settings: Settings;
+        revision: number;
+      };
+      const merged = mergeSettings(
+        JSON.parse(baseline),
+        settings,
+        current.settings,
+      );
+      if (!merged) throw e;
+      // Retry once with the current revision. Another concurrent write still
+      // produces a conflict; never bypass the server's revision check.
+      result = await write(merged, current.revision);
+    }
     settings = result.settings;
     revision = result.revision;
     baseline = JSON.stringify(settings);

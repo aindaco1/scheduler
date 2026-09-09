@@ -12,14 +12,16 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 - Small private web dashboard. English/Spanish. Pool/Store warmth with system light/dark.
 - Turnstile spam protection without email verification for bookers.
 - Jekyll, Cloudflare, Resend, GitHub; pinned Dust Wave shared packages.
+- Weekly availability: Monday–Friday 09:00–16:00 and 20:30–22:00, America/Denver. Video gap: 15 minutes. In-person gap: 30 minutes.
+- In-person locations: Dust Wave Studio (709 Haines Ave NW, Albuquerque, NM 87102), Slow Burn Coffee (Wells Park), and Bow & Arrow (Albuquerque beerhall). Intersect the owner's hours with each location's hours; see [location sources](../research/location-hours.md).
 
 ## Editable initial defaults
 
-No response was received for exact gaps: start at 15 minutes for video and 30 minutes for in-person. Use the larger applicable gap between adjacent scheduler bookings; do not add two ordinary gaps. Existing external events receive the candidate meeting's gap.
+Use the larger applicable gap between adjacent scheduler bookings; do not add two ordinary gaps. Existing external events receive the candidate meeting's gap.
 
-Initial types: 30-minute Google Meet, 30-minute Zoom, 60-minute in-person. Proposed weekly hours: weekdays 09:00–17:00 America/Denver. One email reminder 24 hours before the meeting. No daily cap. In-person types remain unavailable until a real location is configured. All booking remains paused until required connections and working hours are reviewed in the dashboard.
+Initial types: 30-minute Google Meet, 30-minute Zoom, 60-minute in-person. One email reminder 24 hours before the meeting. No daily cap. All booking remains paused until required connections and the confirmed hours and locations are configured in the dashboard.
 
-These defaults are assumptions, not confirmed personal availability. They are editable without a Jekyll rebuild.
+Meeting durations, reminder timing, and the absence of a daily cap remain editable initial assumptions. Hours, locations, and gaps above were explicitly confirmed. All settings are editable without a Jekyll rebuild.
 
 ## Phase 2 boundary
 

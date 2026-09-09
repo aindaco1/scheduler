@@ -73,6 +73,7 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 let revision = 1,
   saved,
+  settingsConflict = false,
   bookingWrites = 0,
   credentialWrites = 0;
 const start = Date.now() + 3 * 86400000;
@@ -153,6 +154,17 @@ await context.route("**/api/**", async (route) => {
   else if (path === "/api/admin/settings") {
     if (method === "PUT") {
       saved = route.request().postDataJSON();
+      if (settingsConflict) {
+        settingsConflict = false;
+        settings.googleCalendars.push("fixture-work");
+        revision++;
+        await route.fulfill({
+          status: 409,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "settings_changed" }),
+        });
+        return;
+      }
       assert.equal(saved.revision, revision);
       Object.assign(settings, saved.settings);
       revision++;
@@ -380,11 +392,13 @@ try {
   booking.error = undefined;
   await page.getByRole("tab", { name: "Availability", exact: true }).click();
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
+  settingsConflict = true;
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page
     .getByRole("button", { name: "All changes saved", exact: true })
     .waitFor();
   assert.equal(saved.settings.noticeHours, 48);
+  assert.ok(saved.settings.googleCalendars.includes("fixture-work"));
   await axe("admin availability");
   await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
   await axe("admin meeting types");
