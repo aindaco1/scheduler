@@ -6,6 +6,7 @@ import {
   type Settings,
   type Weekly,
 } from "./model";
+import { isUsFederalHoliday } from "./holidays";
 
 const minute = 60_000;
 // Seven local calendar days can exceed 168 hours across an offset change.
@@ -82,6 +83,7 @@ export function canBook(
   ).toZonedDateTimeISO(settings.timezone);
   if (local.second || local.millisecond || local.minute % 15) return false;
   const day = local.toPlainDate();
+  if (settings.blockUsFederalHolidays && isUsFederalHoliday(day)) return false;
   const candidate = { start, end };
   const fits = (rules: Weekly[]) =>
     windows(day, rules, settings.timezone).some(

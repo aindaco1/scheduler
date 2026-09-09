@@ -3,6 +3,20 @@ import { defaultSettings } from "../src/model";
 import { mergeSettings } from "../../web/settings-merge";
 
 describe("concurrent dashboard settings", () => {
+  it("retains an unrelated holiday preference when merging an hours edit", () => {
+    const baseline = defaultSettings();
+    const local = structuredClone(baseline);
+    local.hours[0].end = "16:00";
+    const remote = { ...baseline, blockUsFederalHolidays: true };
+    expect(mergeSettings(baseline, local, remote)).toMatchObject({
+      blockUsFederalHolidays: true,
+      hours: local.hours,
+    });
+    expect(mergeSettings(baseline, remote, local)).toMatchObject({
+      blockUsFederalHolidays: true,
+      hours: local.hours,
+    });
+  });
   it("preserves new calendar selections while saving unrelated location edits", () => {
     const baseline = defaultSettings();
     const local = structuredClone(baseline);

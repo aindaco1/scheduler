@@ -60,6 +60,7 @@ export const settingsSchema = z
     reminderHours: z.number().int().min(0).max(168),
     hours: z.array(weekly).max(40),
     recurringBlackouts: z.array(weekly).max(100),
+    blockUsFederalHolidays: z.boolean().optional(),
     blackouts: z
       .array(
         z
@@ -234,6 +235,7 @@ export function defaultSettings(): Settings {
       end: "17:00",
     })),
     recurringBlackouts: [],
+    blockUsFederalHolidays: false,
     blackouts: [],
     types: [
       {

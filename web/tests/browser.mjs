@@ -654,6 +654,22 @@ try {
   assert.equal(saved.settings.locations[0].hours[0].end, "22:00");
   await axe("admin meeting types");
   await page.getByRole("tab", { name: "Settings", exact: true }).click();
+  const holidaySetting = page.getByRole("checkbox", {
+    name: "Block U.S. federal holidays",
+    exact: true,
+  });
+  assert.equal(await holidaySetting.isChecked(), false);
+  await holidaySetting.focus();
+  await page.keyboard.press("Space");
+  assert.equal(await holidaySetting.isChecked(), true);
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page
+    .getByRole("button", { name: "All changes saved", exact: true })
+    .waitFor();
+  assert.equal(saved.settings.blockUsFederalHolidays, true);
+  await page
+    .locator("[data-holiday-settings]")
+    .screenshot({ path: "work/frontend/federal-holidays-desktop.png" });
   await page.getByLabel("Apple Account email").fill("owner@example.test");
   await page
     .getByLabel("App-specific password", { exact: true })
@@ -700,6 +716,26 @@ try {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto(base + "/es/admin/");
+  await page
+    .getByLabel("Sección del panel", { exact: true })
+    .selectOption("settings");
+  const spanishHolidaySetting = page.getByRole("checkbox", {
+    name: "Bloquear los feriados federales de EE. UU.",
+    exact: true,
+  });
+  assert.equal(await spanishHolidaySetting.isChecked(), true);
+  await axe("Spanish federal holiday setting mobile");
+  await page
+    .locator("[data-holiday-settings]")
+    .screenshot({ path: "work/frontend/federal-holidays-es-mobile-dark.png" });
+  await spanishHolidaySetting.uncheck();
+  await page
+    .getByRole("button", { name: "Guardar cambios", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Cambios guardados", exact: true })
+    .waitFor();
+  assert.equal(saved.settings.blockUsFederalHolidays, false);
   await page
     .getByLabel("Sección del panel", { exact: true })
     .selectOption("availability");

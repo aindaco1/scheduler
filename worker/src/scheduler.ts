@@ -100,7 +100,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     );
   }
   getSettings(): StoredConfig {
-    return this.read<StoredConfig>("settings")!;
+    const current = this.read<StoredConfig>("settings")!;
+    current.settings.blockUsFederalHolidays ??= false;
+    return current;
   }
   private booking(id: string): Booking {
     const row = this.ctx.storage.sql
@@ -412,6 +414,8 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     let current = this.getSettings();
     if (current.revision !== revision)
       throw new AppError("settings_changed", 409);
+    // Older dashboards may omit the new preference; omission must not turn it off.
+    settings.blockUsFederalHolidays ??= current.settings.blockUsFederalHolidays;
     // Local availability edits must remain saveable during provider outages.
     // Validate live connections only when opening bookings or changing their
     // dependencies; listing, booking and rescheduling still check every time.
