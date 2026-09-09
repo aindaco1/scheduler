@@ -83,3 +83,11 @@ Local gates passed: all 83 Workers tests, TypeScript, template checks, productio
 Deployment: source commit `aedc679` is live in Worker version `6cde3782-522d-4e3a-9cf9-76a06b1e98af`. The live admin script and stylesheet matched the verified build byte for byte. English/Spanish booking and admin routes returned HTTP 200, and unauthenticated private settings remained HTTP 401. No live blackout or calendar setting was created during verification.
 
 [GitHub CI for `aedc679`](https://github.com/aindaco1/scheduler/actions/runs/34412034499) passed the complete check workflow.
+
+## Saving blackouts during calendar outages
+
+The reported blackout-save error came from coupling every enabled settings save to live calendar and Zoom checks. Routine local edits now save without provider calls. Opening bookings and changing calendar dependencies retain live verification; availability, booking and rescheduling still reject requests when conflict checks fail. Settings-save failures now explicitly say that edits were not saved and remain available for retry, in both languages.
+
+The current live connection verification passed during investigation. This does not identify which provider caused the earlier failure. The owner's open form and unsaved blackout draft were left untouched. Regression coverage checks full-day and in-person-only saves with providers offline, pausing, dependency validation, stale revisions during verification, reservation/reschedule failures and browser draft retention. Final local, CI and deployment evidence follows below.
+
+Local verification passed: all 92 Workers tests, TypeScript, template checks, production build, bilingual browser/accessibility acceptance and Wrangler dry run. Test data and providers are isolated fixtures; no live booking or email was created.

@@ -75,6 +75,7 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 let revision = 1,
   saved,
+  settingsUnavailable = false,
   settingsConflict = false,
   bookingWrites = 0,
   credentialWrites = 0;
@@ -160,6 +161,15 @@ await context.route("**/api/**", async (route) => {
   else if (path === "/api/admin/settings") {
     if (method === "PUT") {
       saved = route.request().postDataJSON();
+      if (settingsUnavailable) {
+        settingsUnavailable = false;
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "google_unavailable" }),
+        });
+        return;
+      }
       if (settingsConflict) {
         settingsConflict = false;
         settings.googleCalendars.push("fixture-work");
@@ -541,6 +551,21 @@ try {
     .locator('[data-setting="blackouts.1.scope"]')
     .selectOption("in-person");
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
+  settingsUnavailable = true;
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Your changes weren’t saved" })
+    .waitFor();
+  assert.equal(settings.blackouts.length, 0);
+  assert.equal(
+    await page.locator('[data-setting="blackouts.0.scope"]').inputValue(),
+    "in-person",
+  );
+  assert.equal(
+    await page.locator('[data-setting="blackouts.1.start"]').inputValue(),
+    "2026-09-18T09:00",
+  );
   settingsConflict = true;
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page

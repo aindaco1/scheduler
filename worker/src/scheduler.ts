@@ -407,7 +407,19 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     let current = this.getSettings();
     if (current.revision !== revision)
       throw new AppError("settings_changed", 409);
-    if (settings.enabled) {
+    // Local availability edits must remain saveable during provider outages.
+    // Validate live connections only when opening bookings or changing their
+    // dependencies; listing, booking and rescheduling still check every time.
+    const connectionsChanged =
+      (["googleCalendars", "icloudCalendars"] as const).some(
+        (key) =>
+          JSON.stringify([...settings[key]].sort()) !==
+          JSON.stringify([...current.settings[key]].sort()),
+      ) ||
+      settings.requireIcloud !== current.settings.requireIcloud ||
+      settings.types.some((t) => t.enabled && t.mode === "zoom") !==
+        current.settings.types.some((t) => t.enabled && t.mode === "zoom");
+    if (settings.enabled && (!current.settings.enabled || connectionsChanged)) {
       await this.externalBusy(
         settings,
         Date.now() - 86_400_000,

@@ -1,5 +1,5 @@
 import { fetchMock } from "./fetch-fixtures";
-import { beforeEach, afterEach, describe, it, expect } from "vitest";
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import {
   env,
   SELF,
@@ -73,6 +73,137 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it.each(["all", "in-person"] as const)(
+    "saves a whole-day %s blackout without provider calls, but still rejects bookings during an outage",
+    async (scope) => {
+      const stub = await setup();
+      const calls = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async () =>
+          Response.json({ error: "Fixture outage" }, { status: 503 }),
+        );
+      const config = await stub.getSettings();
+      const start = startTime();
+      const midnight = new Date(start + 86400_000).setUTCHours(0, 0, 0, 0);
+      config.settings.blackouts = [
+        {
+          id: "offline-day",
+          label: "Unavailable",
+          scope,
+          start: new Date(midnight).toISOString(),
+          end: new Date(midnight + 86400_000).toISOString(),
+        },
+      ];
+      const saved = await stub.updateSettings(config.settings, config.revision);
+      expect(saved.revision).toBe(config.revision + 1);
+      expect(saved.settings.blackouts).toEqual(config.settings.blackouts);
+      expect(calls).not.toHaveBeenCalled();
+
+      // This interval is outside the blackout: provider failure, rather than
+      // the new local rule, must prevent displaying or reserving free time.
+      await expectRpc(
+        stub.availability("conversation", "", start, start + 3600_000),
+      ).rejects.toMatchObject({ status: 503 });
+      await expectRpc(stub.createBooking(input(start))).rejects.toMatchObject({
+        status: 503,
+      });
+      expect((await stub.listBookings()).bookings).toHaveLength(0);
+      expect(await stub.getSettings()).toEqual(saved);
+    },
+  );
+
+  it("saves hours and can pause bookings without calling providers", async () => {
+    const stub = await setup();
+    const calls = vi.spyOn(globalThis, "fetch");
+    let config = await stub.getSettings();
+    config.settings.hours[0].end = "16:00";
+    config = await stub.updateSettings(config.settings, config.revision);
+    expect(config.settings.hours[0].end).toBe("16:00");
+    config.settings.enabled = false;
+    config = await stub.updateSettings(config.settings, config.revision);
+    expect(config.settings.enabled).toBe(false);
+    expect(calls).not.toHaveBeenCalled();
+  });
+
+  it.each(["opening", "google", "icloud", "requireIcloud", "zoom"])(
+    "still verifies %s connection changes and preserves settings on failure",
+    async (change) => {
+      const stub = await setup();
+      vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+        Response.json({ error: "Fixture outage" }, { status: 503 }),
+      );
+      let config = await stub.getSettings();
+      if (change === "opening")
+        config = await stub.updateSettings(
+          { ...config.settings, enabled: false },
+          config.revision,
+        );
+      const next = structuredClone(config.settings);
+      if (change === "opening") next.enabled = true;
+      if (change === "google") next.googleCalendars.push("work");
+      if (change === "icloud")
+        next.icloudCalendars.push("https://caldav.icloud.com/fixture/family/");
+      if (change === "requireIcloud") next.requireIcloud = true;
+      if (change === "zoom")
+        next.types.find((t) => t.mode === "zoom")!.enabled = true;
+      await expectRpc(
+        stub.updateSettings(next, config.revision),
+      ).rejects.toMatchObject({ status: 503 });
+      expect(await stub.getSettings()).toEqual(config);
+    },
+  );
+
+  it("does not overwrite a newer settings save while opening bookings verifies providers", async () => {
+    const stub = await setup();
+    await runInDurableObject(stub, async (instance) => {
+      let config = instance.getSettings();
+      config = await instance.updateSettings(
+        { ...config.settings, enabled: false },
+        config.revision,
+      );
+      let release!: () => void, started!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const fetching = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          if (url.includes("/token")) {
+            started();
+            await gate;
+            return Response.json({ access_token: "fixture" });
+          }
+          return Response.json({ items: [], timeZone: "UTC" });
+        }),
+      );
+      const opening = Promise.resolve(
+        instance.updateSettings(
+          { ...config.settings, enabled: true },
+          config.revision,
+        ),
+      ).catch((error) => error);
+      await fetching;
+      let saved;
+      try {
+        saved = await instance.updateSettings(
+          { ...config.settings, name: "Updated while paused" },
+          config.revision,
+        );
+      } finally {
+        release();
+      }
+      expect(await opening).toMatchObject({
+        code: "settings_changed",
+        status: 409,
+      });
+      expect(instance.getSettings()).toEqual(saved);
+      expect(saved!.settings.enabled).toBe(false);
+    });
+  });
+
   it.each(["meet", "zoom", "in-person"] as const)(
     "enforces an in-person-only day across %s availability, booking and rescheduling",
     async (mode) => {
@@ -308,7 +439,7 @@ describe("Durable booking coordinator", () => {
       (await stub.getBooking(created.booking.id, created.token)).booking.status,
     ).toBe("cancelled");
   });
-  it("reschedule reserves original and target intervals and rechecks before writing", async () => {
+  it("reschedule fails closed during an outage, then reserves both intervals after recovery", async () => {
     mockReads();
     const stub = await setup(),
       created = await stub.createBooking(input());
@@ -330,6 +461,32 @@ describe("Durable booking coordinator", () => {
       state.storage.sql.exec("DELETE FROM jobs");
     });
     const next = startTime() + 3 * 3600_000;
+    const unavailable = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () =>
+        Response.json({ error: "Fixture outage" }, { status: 503 }),
+      );
+    const config = await stub.getSettings();
+    await stub.updateSettings(
+      { ...config.settings, noticeHours: 30 },
+      config.revision,
+    );
+    expect(unavailable).not.toHaveBeenCalled();
+    await expectRpc(
+      stub.reschedule(
+        created.booking.id,
+        created.token,
+        new Date(next).toISOString(),
+        crypto.randomUUID(),
+      ),
+    ).rejects.toThrow();
+    expect(
+      (await stub.getBooking(created.booking.id, created.token)).booking,
+    ).toMatchObject({
+      status: "confirmed",
+      start: startTime(),
+    });
+    unavailable.mockRestore();
     expect(
       (
         await stub.reschedule(

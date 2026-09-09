@@ -682,6 +682,11 @@ async function save() {
   } catch (e) {
     const target = $("[data-global-error]", app);
     showError(target, e);
+    if ((e as { status?: number }).status === 503)
+      target.textContent = t(
+        "Your changes weren’t saved because a calendar connection could not be verified. Your edits are still here. Retry, or use Verify connections in Settings for details.",
+        "No se guardaron tus cambios porque no se pudo verificar una conexión de calendario. Tus cambios siguen aquí. Inténtalo de nuevo o usa Verificar conexiones en Configuración para ver los detalles.",
+      );
     if ((e as { status?: number }).status === 409) {
       target.innerHTML += `<p>${t("Your edits are still on this page. Reload the latest settings to discard them, then apply your changes again.", "Tus cambios siguen en esta página. Recarga la configuración más reciente para descartarlos y luego vuelve a aplicarlos.")}</p><button class="button" data-reload-settings type="button">${t("Reload saved settings", "Recargar configuración guardada")}</button>`;
       $("[data-reload-settings]", target).addEventListener("click", () => {
