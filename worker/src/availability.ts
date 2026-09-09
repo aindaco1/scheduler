@@ -8,6 +8,8 @@ import {
 } from "./model";
 
 const minute = 60_000;
+// Seven local calendar days can exceed 168 hours across an offset change.
+export const MAX_AVAILABILITY_RANGE_MS = 8 * 86_400_000;
 export function localDate(ms: number, zone: string) {
   return Temporal.Instant.fromEpochMilliseconds(ms)
     .toZonedDateTimeISO(zone)
@@ -139,7 +141,7 @@ export function availableSlots(
     !Number.isFinite(from) ||
     !Number.isFinite(to) ||
     to <= from ||
-    to - from > 7 * 86_400_000
+    to - from > MAX_AVAILABILITY_RANGE_MS
   )
     throw new AppError("invalid_date_range");
   const { type } = resolveType(settings, typeId, locationId);

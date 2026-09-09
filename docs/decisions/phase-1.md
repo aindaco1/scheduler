@@ -4,6 +4,7 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 
 - Single owner; canonical URL https://scheduler.dustwave.xyz/alonso.
 - Short introduction, then meeting-type choices. Owner sets Meet or Zoom per video type.
+- Booking and guest rescheduling browse calendar weeks starting on Monday in the visitor's selected time zone. Labels show Monday-to-Monday boundaries (for example, Sep 7–Sep 14); the following Monday belongs to the next page. Past times, minimum notice and the booking horizon still restrict selectable slots.
 - In-person guests choose owner-defined locations; locations have their own available days/hours.
 - Owner chooses blocking Google and directly connected iCloud calendars. Proton via Google is accepted for phase 1, including subscription delay.
 - Respect each selected calendar event's Busy/Free setting, including all-day Family events. Free/transparent events do not block bookings.

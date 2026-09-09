@@ -10,6 +10,7 @@ import {
   errorText,
   currentZone,
 } from "./common";
+import { bookingWeek } from "./booking-week";
 
 export interface SlotPickerOptions {
   type: string;
@@ -40,44 +41,54 @@ export class SlotPicker {
     this.generation++;
   }
   private render() {
-    this.root.innerHTML = `<label class="field">${t("Your time zone", "Tu zona horaria")}<select data-zone>${timezoneOptions(this.timezone)}</select></label><div class="week-nav"><button class="button" type="button" data-prev aria-label="${t("Previous seven days", "Siete días anteriores")}" ${this.offset === 0 ? "disabled" : ""}>←</button><span class="week-label" data-week></span><button class="button" type="button" data-next aria-label="${t("Next seven days", "Siguientes siete días")}" ${this.offset + 7 >= this.options.horizon ? "disabled" : ""}>→</button></div><div data-slot-status role="status" aria-live="polite"></div><div class="slot-days" data-slots></div>`;
+    const week = this.week();
+    this.offset = week.offset;
+    this.root.innerHTML = `<label class="field">${t("Your time zone", "Tu zona horaria")}<select data-zone>${timezoneOptions(this.timezone)}</select></label><div class="week-nav"><button class="button" type="button" data-prev aria-label="${t("Previous week", "Semana anterior")}" ${this.offset === 0 ? "disabled" : ""}>←</button><span class="week-label" data-week></span><button class="button" type="button" data-next aria-label="${t("Next week", "Semana siguiente")}" ${week.hasNext ? "" : "disabled"}>→</button></div><div data-slot-status role="status" aria-live="polite"></div><div class="slot-days" data-slots></div>`;
     $<HTMLSelectElement>("[data-zone]", this.root).addEventListener(
       "change",
       (e) => {
         this.timezone = (e.target as HTMLSelectElement).value;
-        this.renderSlots();
-        this.updateWeek();
+        this.render();
+        $<HTMLSelectElement>("[data-zone]", this.root).focus();
+        void this.load();
       },
     );
     $("[data-prev]", this.root).addEventListener("click", () => {
-      this.offset = Math.max(0, this.offset - 7);
+      this.offset = Math.max(0, this.offset - 1);
       this.render();
       void this.load();
     });
     $("[data-next]", this.root).addEventListener("click", () => {
-      this.offset += 7;
+      this.offset += 1;
       this.render();
       void this.load();
     });
     this.updateWeek();
   }
+  private week() {
+    return bookingWeek(
+      this.start,
+      this.timezone,
+      this.offset,
+      this.options.horizon,
+    );
+  }
   private updateWeek() {
-    const a = this.start + this.offset * 86400000,
-      b =
-        this.start + Math.min(this.offset + 7, this.options.horizon) * 86400000;
+    const { from, next } = this.week();
     $("[data-week]", this.root).textContent =
-      `${dateLabel(a, this.timezone, { month: "short", day: "numeric" })} – ${dateLabel(b - 1, this.timezone, { month: "short", day: "numeric" })}`;
+      `${dateLabel(from, this.timezone, { month: "short", day: "numeric" })} – ${dateLabel(next, this.timezone, { month: "short", day: "numeric" })}`;
   }
   private async load() {
     const generation = ++this.generation;
     const status = $("[data-slot-status]", this.root);
+    this.slots = [];
+    $("[data-slots]", this.root).replaceChildren();
     status.innerHTML = `<p class="help-text">${t("Checking your calendars…", "Consultando los calendarios…")}</p>`;
+    const { from, to } = this.week();
     const query = new URLSearchParams({
       type: this.options.type,
-      from: new Date(this.start + this.offset * 86400000).toISOString(),
-      to: new Date(
-        this.start + Math.min(this.offset + 7, this.options.horizon) * 86400000,
-      ).toISOString(),
+      from: new Date(from).toISOString(),
+      to: new Date(to).toISOString(),
     });
     if (this.options.location) query.set("location", this.options.location);
     if (this.options.booking) query.set("booking", this.options.booking);
@@ -115,7 +126,7 @@ export class SlotPicker {
       groups.set(label, group);
     }
     if (!groups.size) {
-      target.innerHTML = `<div class="empty-state"><h3>${t("No openings in these seven days", "No hay horarios en estos siete días")}</h3><p>${t("Try the next dates, or choose another meeting type.", "Consulta las siguientes fechas o elige otro tipo de reunión.")}</p></div>`;
+      target.innerHTML = `<div class="empty-state"><h3>${t("No openings this week", "No hay horarios esta semana")}</h3><p>${t("Try the next dates, or choose another meeting type.", "Consulta las siguientes fechas o elige otro tipo de reunión.")}</p></div>`;
       return;
     }
     target.innerHTML = Array.from(

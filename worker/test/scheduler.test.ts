@@ -73,6 +73,28 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("accepts a 169-hour calendar week without losing its last hour", async () => {
+    const clock = vi
+      .spyOn(Date, "now")
+      .mockReturnValue(Date.parse("2026-10-20T12:00:00Z"));
+    try {
+      mockReads();
+      const stub = await setup();
+      const config = await stub.getSettings();
+      config.settings.timezone = "America/Denver";
+      await stub.updateSettings(config.settings, config.revision);
+      const from = Date.parse("2026-10-26T06:00:00Z"),
+        to = Date.parse("2026-11-02T07:00:00Z");
+      const { slots } = await stub.availability("conversation", "", from, to);
+      expect(slots).toContain("2026-11-02T06:30:00.000Z");
+      expect(slots).not.toContain("2026-11-02T07:00:00.000Z");
+      await expectRpc(
+        stub.availability("conversation", "", from, from + 8 * 86400000 + 1),
+      ).rejects.toMatchObject({ code: "invalid_date_range" });
+    } finally {
+      clock.mockRestore();
+    }
+  });
   it.each(["all", "in-person"] as const)(
     "saves a whole-day %s blackout without provider calls, but still rejects bookings during an outage",
     async (scope) => {

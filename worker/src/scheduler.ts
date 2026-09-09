@@ -19,7 +19,12 @@ import {
   type PublicBooking,
   type CalendarChoice,
 } from "./model";
-import { availableSlots, canBook, resolveType } from "./availability";
+import {
+  availableSlots,
+  canBook,
+  resolveType,
+  MAX_AVAILABILITY_RANGE_MS,
+} from "./availability";
 import {
   seal,
   unseal,
@@ -458,7 +463,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       !Number.isFinite(from) ||
       !Number.isFinite(to) ||
       to <= from ||
-      to - from > 7 * 86_400_000
+      to - from > MAX_AVAILABILITY_RANGE_MS
     )
       throw new AppError("invalid_date_range");
     const busy = await this.externalBusy(

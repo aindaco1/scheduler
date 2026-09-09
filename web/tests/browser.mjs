@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import { readFile, stat, mkdir } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
+import { checkBookingWeeks } from "./booking-weeks.mjs";
 const root = resolve(".");
 const model = await build({
   entryPoints: ["worker/src/model.ts"],
@@ -118,6 +119,13 @@ async function apiFixture(route) {
     payload = { settings, turnstileSiteKey: "fixture-key", ready: true };
   else if (path === "/api/availability") {
     if (url.searchParams.has("booking")) {
+      assert.equal(
+        new Intl.DateTimeFormat("en", {
+          timeZone: "America/Denver",
+          weekday: "long",
+        }).format(new Date(url.searchParams.get("from"))),
+        "Monday",
+      );
       assert.equal(url.searchParams.has("token"), false);
       assert.equal(
         route.request().headers().authorization,
@@ -828,6 +836,7 @@ try {
     /does not exist/,
   );
   await travelContext.close();
+  await checkBookingWeeks(browser, base, apiFixture);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",
