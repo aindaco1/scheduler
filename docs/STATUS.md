@@ -79,3 +79,7 @@ All weekly Until controls (working hours, recurring blackouts and location hours
 Verification adds coverage for scope validation, exact interval boundaries, all three meeting services, slot listing, booking and rescheduling, and midnight ranges. Browser checks cover saved scopes, working/recurring/location end-time edits, a 25-hour daylight-saving day, the separate desktop row, bilingual themes and narrow screens. These checks use isolated fixtures and do not modify live availability or calendar events.
 
 Local gates passed: all 83 Workers tests, TypeScript, template checks, production build, browser acceptance and Wrangler dry run. Final desktop and mobile screenshots were reviewed, including unclipped AM/PM controls at 320 pixels. CI and live deployment evidence follow below.
+
+Deployment: source commit `aedc679` is live in Worker version `6cde3782-522d-4e3a-9cf9-76a06b1e98af`. The live admin script and stylesheet matched the verified build byte for byte. English/Spanish booking and admin routes returned HTTP 200, and unauthenticated private settings remained HTTP 401. No live blackout or calendar setting was created during verification.
+
+[GitHub CI for `aedc679`](https://github.com/aindaco1/scheduler/actions/runs/34412034499) passed the complete check workflow.
