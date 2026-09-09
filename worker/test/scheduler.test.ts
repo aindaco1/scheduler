@@ -73,6 +73,114 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it.each(["meet", "zoom", "in-person"] as const)(
+    "enforces an in-person-only day across %s availability, booking and rescheduling",
+    async (mode) => {
+      mockReads();
+      const stub = await setup();
+      await stub.putConnection("zoom", {
+        accountId: "fixture",
+        refreshToken: "fixture",
+        accessToken: "fixture",
+        expires: Date.now() + 3600_000,
+      });
+      let config = await stub.getSettings();
+      config.settings.enabled = true;
+      const type = config.settings.types.find((t) => t.mode === mode)!;
+      config.settings.types.forEach((t) => {
+        t.enabled = t.mode === mode;
+        t.locationIds = t.mode === "in-person" ? ["studio"] : [];
+      });
+      config.settings.locations = [
+        {
+          id: "studio",
+          name: { en: "Studio", es: "Estudio" },
+          address: { en: "Address", es: "Dirección" },
+          enabled: true,
+          hours: config.settings.hours,
+        },
+      ];
+      config = await stub.updateSettings(config.settings, config.revision);
+      const locationId = mode === "in-person" ? "studio" : "";
+      const original = startTime(),
+        target = original + 86400_000;
+      const created = await stub.createBooking({
+        ...input(original),
+        typeId: type.id,
+        locationId,
+      });
+      await runInDurableObject(stub, (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one();
+        const b = JSON.parse(row.data);
+        b.status = "confirmed";
+        state.storage.sql.exec(
+          "UPDATE bookings SET data=?,status='confirmed' WHERE id=?",
+          JSON.stringify(b),
+          b.id,
+        );
+        state.storage.sql.exec("DELETE FROM jobs");
+      });
+      const day = new Date(target).toISOString().slice(0, 10);
+      config.settings.blackouts = [
+        {
+          id: "travel",
+          label: "Travel",
+          scope: "in-person",
+          start: day + "T00:00:00Z",
+          end: new Date(
+            Date.parse(day + "T00:00:00Z") + 86400_000,
+          ).toISOString(),
+        },
+      ];
+      await stub.updateSettings(config.settings, config.revision);
+      expect((await stub.getSettings()).settings.blackouts[0].scope).toBe(
+        "in-person",
+      );
+      const allowed = mode !== "in-person";
+      const slots = (
+        await stub.availability(type.id, locationId, target, target + 3600_000)
+      ).slots;
+      expect(slots.includes(new Date(target).toISOString())).toBe(allowed);
+      const moveSlots = (
+        await stub.availability(
+          type.id,
+          locationId,
+          target,
+          target + 3600_000,
+          created.booking.id,
+          created.token,
+        )
+      ).slots;
+      expect(moveSlots).toEqual(slots);
+      const move = stub.reschedule(
+        created.booking.id,
+        created.token,
+        new Date(target).toISOString(),
+        crypto.randomUUID(),
+      );
+      if (allowed) expect((await move).booking.status).toBe("rescheduling");
+      else
+        await expectRpc(move).rejects.toMatchObject({
+          code: "slot_unavailable",
+        });
+      const reserve = stub.createBooking({
+        ...input(target + 3 * 3600_000),
+        typeId: type.id,
+        locationId,
+      });
+      if (allowed) expect((await reserve).booking.status).toBe("pending");
+      else
+        await expectRpc(reserve).rejects.toMatchObject({
+          code: "slot_unavailable",
+        });
+    },
+  );
+
   it("atomically reserves once for simultaneous overlapping requests", async () => {
     mockReads();
     const stub = await setup();

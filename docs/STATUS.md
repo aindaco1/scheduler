@@ -71,3 +71,11 @@ Local verification covers authenticated HTTP requests, oversized/invalid notes, 
 Deployment: source commit `f9c0427` is live in Worker version `ed7a3f3a-2b58-4464-8a30-d1709a75b258`. All five changed frontend assets matched the verified local build byte for byte. English/Spanish booking and admin shells returned HTTP 200, and unauthenticated private settings remained HTTP 401. Existing bookings require no data migration.
 
 [GitHub CI for `f9c0427`](https://github.com/aindaco1/scheduler/actions/runs/34410953142) passed the complete check workflow.
+
+## Time pickers and travel blackouts
+
+All weekly Until controls (working hours, recurring blackouts and location hours) now use the same time picker as From. Midnight end values round-trip as the end of the selected day. Whole-day blackout creation is on a separate row, and both whole-day and dated-period blackouts offer All meetings or In-person only. Old blackouts retain their all-meeting behavior.
+
+Verification adds coverage for scope validation, exact interval boundaries, all three meeting services, slot listing, booking and rescheduling, and midnight ranges. Browser checks cover saved scopes, working/recurring/location end-time edits, a 25-hour daylight-saving day, the separate desktop row, bilingual themes and narrow screens. These checks use isolated fixtures and do not modify live availability or calendar events.
+
+Local gates passed: all 83 Workers tests, TypeScript, template checks, production build, browser acceptance and Wrangler dry run. Final desktop and mobile screenshots were reviewed, including unclipped AM/PM controls at 320 pixels. CI and live deployment evidence follow below.

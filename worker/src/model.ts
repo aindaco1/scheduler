@@ -68,6 +68,7 @@ export const settingsSchema = z
             start: z.iso.datetime({ offset: true }),
             end: z.iso.datetime({ offset: true }),
             label: z.string().max(100),
+            scope: z.enum(["all", "in-person"]).optional(),
           })
           .strict()
           .refine((v) => Date.parse(v.end) > Date.parse(v.start)),

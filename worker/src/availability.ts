@@ -23,11 +23,9 @@ function windows(
   return rules
     .filter((w) => w.day === day.dayOfWeek % 7)
     .map((w) => {
-      const start = day
-        .toPlainDateTime(w.start)
-        .toZonedDateTime(zone, {
-          disambiguation: "compatible",
-        }).epochMilliseconds;
+      const start = day.toPlainDateTime(w.start).toZonedDateTime(zone, {
+        disambiguation: "compatible",
+      }).epochMilliseconds;
       const endDay = w.end === "24:00" ? day.add({ days: 1 }) : day;
       const end = endDay
         .toPlainDateTime(w.end === "24:00" ? "00:00" : w.end)
@@ -97,10 +95,12 @@ export function canBook(
   }
   const exclusions = [
     ...windows(day, settings.recurringBlackouts, settings.timezone),
-    ...settings.blackouts.map((b) => ({
-      start: Date.parse(b.start),
-      end: Date.parse(b.end),
-    })),
+    ...settings.blackouts
+      .filter((b) => b.scope !== "in-person" || type.mode === "in-person")
+      .map((b) => ({
+        start: Date.parse(b.start),
+        end: Date.parse(b.end),
+      })),
   ];
   if (exclusions.some((b) => overlaps(candidate, b))) return false;
   const conflicts = busy.filter((b) => !ignoreId || b.bookingId !== ignoreId);

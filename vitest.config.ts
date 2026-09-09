@@ -18,6 +18,8 @@ export default defineConfig({
           TURNSTILE_SECRET_KEY: "test-secret",
           GOOGLE_CLIENT_ID: "test-client",
           GOOGLE_CLIENT_SECRET: "test-client-secret",
+          ZOOM_CLIENT_ID: "test-zoom-client",
+          ZOOM_CLIENT_SECRET: "test-zoom-client-secret",
         },
       },
     }),

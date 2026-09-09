@@ -1,9 +1,123 @@
 import { describe, it, expect } from "vitest";
-import { defaultSettings } from "../src/model";
+import { defaultSettings, settingsSchema } from "../src/model";
 import { canBook, availableSlots } from "../src/availability";
 
 const iso = (v: string) => Date.parse(v);
 describe("availability rules", () => {
+  it.each([undefined, "all", "in-person"] as const)(
+    "applies %s blackout scope consistently to slots and meeting modes",
+    (scope) => {
+      const s = defaultSettings();
+      s.types.forEach((type) => {
+        type.enabled = true;
+        type.locationIds = type.mode === "in-person" ? ["studio"] : [];
+      });
+      s.locations = [
+        {
+          id: "studio",
+          name: { en: "Studio", es: "Estudio" },
+          address: { en: "Address", es: "Dirección" },
+          enabled: true,
+          hours: s.hours,
+        },
+      ];
+      s.blackouts = [
+        {
+          id: "travel",
+          label: "Away",
+          start: "2026-09-10T06:00:00Z",
+          end: "2026-09-11T06:00:00Z",
+          ...(scope ? { scope } : {}),
+        },
+      ];
+      expect(settingsSchema.safeParse(s).success).toBe(true);
+      const start = iso("2026-09-10T16:00:00Z"),
+        now = start - 2 * 86400_000;
+      for (const type of s.types) {
+        const location = type.mode === "in-person" ? "studio" : "";
+        const allowed = scope === "in-person" && type.mode !== "in-person";
+        expect(canBook(s, type, location, start, [], now)).toBe(allowed);
+        const slots = availableSlots(
+          s,
+          type.id,
+          location,
+          start,
+          start + 3600_000,
+          [],
+          now,
+        );
+        expect(slots.includes(new Date(start).toISOString())).toBe(allowed);
+        if (allowed) {
+          expect(
+            canBook(
+              s,
+              type,
+              location,
+              start,
+              [{ start, end: start + 3600_000 }],
+              now,
+            ),
+          ).toBe(false);
+        }
+      }
+    },
+  );
+  it("limits scoped periods to their actual interval and rejects unknown scopes", () => {
+    const s = defaultSettings();
+    const type = {
+      ...s.types[2],
+      duration: 30,
+      enabled: true,
+      locationIds: ["studio"],
+    };
+    s.locations = [
+      {
+        id: "studio",
+        name: { en: "Studio", es: "Estudio" },
+        address: { en: "Address", es: "Dirección" },
+        enabled: true,
+        hours: s.hours,
+      },
+    ];
+    s.blackouts = [
+      {
+        id: "travel",
+        label: "Travel",
+        start: "2026-09-10T16:00:00Z",
+        end: "2026-09-10T17:00:00Z",
+        scope: "in-person",
+      },
+    ];
+    const now = iso("2026-09-08T16:00:00Z");
+    expect(
+      canBook(s, type, "studio", iso("2026-09-10T15:30:00Z"), [], now),
+    ).toBe(true);
+    expect(
+      canBook(s, type, "studio", iso("2026-09-10T16:45:00Z"), [], now),
+    ).toBe(false);
+    expect(
+      canBook(s, type, "studio", iso("2026-09-10T17:00:00Z"), [], now),
+    ).toBe(true);
+    expect(
+      settingsSchema.safeParse({
+        ...s,
+        blackouts: [{ ...s.blackouts[0], scope: "unknown" }],
+      }).success,
+    ).toBe(false);
+  });
+  it("retains midnight end times for weekly ranges", () => {
+    const s = defaultSettings();
+    s.hours = [{ day: 4, start: "20:30", end: "24:00" }];
+    const now = iso("2026-09-08T16:00:00Z");
+    expect(settingsSchema.safeParse(s).success).toBe(true);
+    expect(
+      canBook(s, s.types[0], "", iso("2026-09-11T05:30:00Z"), [], now),
+    ).toBe(true);
+    expect(
+      canBook(s, s.types[0], "", iso("2026-09-11T05:45:00Z"), [], now),
+    ).toBe(false);
+  });
+
   it("enforces exact 24 elapsed hours and the horizon", () => {
     const s = defaultSettings(),
       type = s.types[0],

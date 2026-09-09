@@ -31,7 +31,7 @@ Google OAuth applications left in external Testing can receive short-lived refre
 
 ## Booking consistency and recovery
 
-Slots use the same rules for listing, booking, and rescheduling. Weekly hours use the owner's IANA timezone; minimum notice and cancellation cutoff use elapsed hours. Overnight periods can be represented as two periods meeting at midnight. The end time `24:00` is supported. Adjacent scheduler bookings require the greater of their two gaps; an external event receives the candidate meeting's gap. Calendar reads include recurring/all-day events. Busy events block time; Free/transparent events do not, including all-day Family events. An owner who needs extra time blocked can add a blackout. Incomplete or malformed provider responses fail closed.
+Slots use the same rules for listing, booking, and rescheduling. Weekly hours use the owner's IANA timezone; minimum notice and cancellation cutoff use elapsed hours. Overnight periods can be represented as two periods meeting at midnight. Both From and Until use time pickers. A midnight Until value means the end of the selected day and is stored as `24:00`, preserving full-day and late-night ranges. Adjacent scheduler bookings require the greater of their two gaps; an external event receives the candidate meeting's gap. Calendar reads include recurring/all-day events. Busy events block time; Free/transparent events do not, including all-day Family events. An owner who needs extra time blocked can add a blackout. Incomplete or malformed provider responses fail closed.
 
 The object rechecks external conflicts and claims each local interval synchronously before queuing provider writes. Google IDs derive from the booking UUID, so a lost insert response can be reconciled without creating another event. Google sends the calendar invitations; Resend sends separate branded confirmations, updates and reminders. These are intentionally different messages.
 
@@ -78,3 +78,9 @@ The production `dustwave.xyz` domain has verified SPF and DKIM, a DMARC monitori
 In **Bookings**, choose **Reschedule** or **Cancel**, then optionally enter a message (up to 2,000 characters). Confirming sends the note inside the guest’s reschedule/cancellation email once the calendar providers finish the change. Leave it blank to use the existing notification. The note is plain text, preserves line breaks, and uses the guest’s selected email language for its heading; the note itself is not translated. It is not added to the calendar description or future reminders.
 
 Failed dashboard requests keep the draft available for retry. Accepted changes retain their note through provider recovery, and the email outbox freezes the message before its first delivery attempt. A reschedule rejected by a new conflict sends no reschedule notice. These notes can only be authored through authenticated owner actions.
+
+## Travel and temporary blackouts
+
+In **Availability → Temporary blackouts**, the whole-day controls occupy a separate row below **Add period**. Choose a date and set **Block** to **All meetings** or **In-person only**, then click **Block day** and **Save changes**. The latter leaves Google Meet and Zoom available subject to the normal hours, notice, gaps and calendar conflicts. Existing bookings are not cancelled by adding a blackout.
+
+The same Block selector is available on dated periods, including a multi-day trip. Existing blackouts without an explicit scope keep blocking all meetings. Recurring blackouts continue to block all meetings. Temporary dates/times use the time zone displayed above the controls; whole days extend from local midnight to the next local midnight, including daylight-saving changes.

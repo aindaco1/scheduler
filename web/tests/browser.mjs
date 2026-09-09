@@ -20,6 +20,8 @@ const { defaultSettings } = await import(
 );
 const settings = defaultSettings();
 settings.enabled = true;
+settings.hours[0].end = "24:00";
+settings.recurringBlackouts = [{ day: 1, start: "12:00", end: "13:00" }];
 settings.types.forEach((type) => (type.enabled = true));
 settings.locations = [
   {
@@ -489,6 +491,55 @@ try {
   await axe("admin provider recovery");
   booking.error = undefined;
   await page.getByRole("tab", { name: "Availability", exact: true }).click();
+  const until = page.locator('[data-setting="hours.0.end"]');
+  assert.equal(await until.getAttribute("type"), "time");
+  assert.equal(await until.inputValue(), "00:00");
+  await page
+    .locator(".hours-row")
+    .first()
+    .screenshot({ path: "work/frontend/until-picker-desktop.png" });
+  await until.fill("23:30");
+  await until.fill("00:00");
+  const recurringUntil = page.locator(
+    '[data-setting="recurringBlackouts.0.end"]',
+  );
+  assert.equal(await recurringUntil.getAttribute("type"), "time");
+  await recurringUntil.fill("13:30");
+  const addPeriod = await page.locator("[data-add-blackout]").boundingBox();
+  const wholeDay = await page.locator(".blackout-day-actions").boundingBox();
+  assert.ok(wholeDay.y > addPeriod.y + addPeriod.height);
+  await page
+    .locator(".blackout-actions")
+    .evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await page
+    .locator(".blackout-actions")
+    .screenshot({ path: "work/frontend/blackout-actions-desktop-light.png" });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page
+    .locator(".blackout-actions")
+    .screenshot({ path: "work/frontend/blackout-actions-desktop-dark.png" });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.locator("[data-whole-date]").fill("2026-11-01");
+  await page.locator("[data-whole-scope]").selectOption("in-person");
+  await page.locator("[data-add-day]").click();
+  assert.equal(
+    await page.locator('[data-setting="blackouts.0.scope"]').inputValue(),
+    "in-person",
+  );
+  await page.locator("[data-add-blackout]").click();
+  assert.equal(
+    await page.locator('[data-setting="blackouts.1.scope"]').inputValue(),
+    "all",
+  );
+  await page
+    .locator('[data-setting="blackouts.1.start"]')
+    .fill("2026-09-18T09:00");
+  await page
+    .locator('[data-setting="blackouts.1.end"]')
+    .fill("2026-09-18T10:00");
+  await page
+    .locator('[data-setting="blackouts.1.scope"]')
+    .selectOption("in-person");
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
   settingsConflict = true;
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
@@ -496,9 +547,38 @@ try {
     .getByRole("button", { name: "All changes saved", exact: true })
     .waitFor();
   assert.equal(saved.settings.noticeHours, 48);
+  assert.equal(saved.settings.hours[0].end, "24:00");
+  assert.equal(saved.settings.recurringBlackouts[0].end, "13:30");
+  assert.equal(saved.settings.blackouts[0].scope, "in-person");
+  assert.equal(
+    Date.parse(saved.settings.blackouts[0].end) -
+      Date.parse(saved.settings.blackouts[0].start),
+    25 * 3600_000,
+  );
+  assert.equal(saved.settings.blackouts[1].scope, "in-person");
+  assert.equal(
+    await page.locator('[data-setting="blackouts.1.scope"]').inputValue(),
+    "in-person",
+  );
+  await page
+    .locator(".blackout-row")
+    .first()
+    .screenshot({ path: "work/frontend/blackout-period-desktop-light.png" });
+
   assert.ok(saved.settings.googleCalendars.includes("fixture-work"));
   await axe("admin availability");
   await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+  const locationUntil = page.locator(
+    '[data-setting="locations.0.hours.0.end"]',
+  );
+  assert.equal(await locationUntil.getAttribute("type"), "time");
+  assert.equal(await locationUntil.inputValue(), "00:00");
+  await locationUntil.fill("22:00");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page
+    .getByRole("button", { name: "All changes saved", exact: true })
+    .waitFor();
+  assert.equal(saved.settings.locations[0].hours[0].end, "22:00");
   await axe("admin meeting types");
   await page.getByRole("tab", { name: "Settings", exact: true }).click();
   await page.getByLabel("Apple Account email").fill("owner@example.test");
@@ -529,8 +609,45 @@ try {
     false,
   );
   await axe("admin mobile");
+  await page
+    .locator(".hours-row")
+    .first()
+    .screenshot({ path: "work/frontend/until-picker-mobile.png" });
+  await page.setViewportSize({ width: 320, height: 800 });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await page
+    .locator(".hours-row")
+    .first()
+    .screenshot({ path: "work/frontend/until-picker-320.png" });
+  await page.setViewportSize({ width: 360, height: 800 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto(base + "/es/admin/");
+  await page
+    .getByLabel("Sección del panel", { exact: true })
+    .selectOption("availability");
+  await page.locator("[data-whole-scope]").selectOption("in-person");
+  await axe("Spanish scoped blackouts mobile");
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await page
+    .locator(".blackout-actions")
+    .screenshot({ path: "work/frontend/blackout-actions-es-mobile-dark.png" });
+  await page
+    .locator(".blackout-row")
+    .first()
+    .screenshot({ path: "work/frontend/blackout-period-es-mobile-dark.png" });
+  await page
+    .getByLabel("Sección del panel", { exact: true })
+    .selectOption("bookings");
   await page
     .getByRole("button", { name: "Cambiar horario", exact: true })
     .click();

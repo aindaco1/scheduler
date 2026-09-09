@@ -92,7 +92,7 @@ function bilingual(path: string, label: string, long = false) {
   return `<div class="form-grid">${(["en", "es"] as const).map((lang) => `<label class="field">${esc(label)} · ${lang === "en" ? "English" : "Español"}${long ? `<textarea data-setting="${path}.${lang}" maxlength="2000">${esc(get(path + "." + lang))}</textarea>` : `<input data-setting="${path}.${lang}" maxlength="2000" value="${esc(get(path + "." + lang))}">`}</label>`).join("")}</div>`;
 }
 function hours(path: string, rows: Weekly[], label: string) {
-  return `<div class="rows" role="group" aria-label="${esc(label)}">${rows.map((row, index) => `<div class="hours-row"><label class="field">${t("Day", "Día")}<select data-setting="${path}.${index}.day" data-number>${days.map((day, i) => `<option value="${i}" ${row.day === i ? "selected" : ""}>${day}</option>`).join("")}</select></label>${field(`${path}.${index}.start`, t("From", "Desde"), { type: "time", required: true })}<label class="field">${t("Until (24-hour time)", "Hasta (formato de 24 horas)")}<input data-setting="${path}.${index}.end" value="${esc(row.end)}" pattern="([01][0-9]|2[0-3]):[0-5][0-9]|24:00" placeholder="17:00" maxlength="5" required></label><button class="button" type="button" data-remove="${path}" data-index="${index}" aria-label="${t("Remove hours", "Eliminar horario")} ${index + 1}">×</button></div>`).join("")}</div><button class="button" type="button" data-add-hours="${path}">+ ${t("Add time range", "Añadir franja horaria")}</button>`;
+  return `<div class="rows" role="group" aria-label="${esc(label)}">${rows.map((row, index) => `<div class="hours-row"><label class="field">${t("Day", "Día")}<select data-setting="${path}.${index}.day" data-number>${days.map((day, i) => `<option value="${i}" ${row.day === i ? "selected" : ""}>${day}</option>`).join("")}</select></label>${field(`${path}.${index}.start`, t("From", "Desde"), { type: "time", required: true })}<label class="field">${t("Until", "Hasta")}<input type="time" data-setting="${path}.${index}.end" data-end-of-day value="${esc(row.end === "24:00" ? "00:00" : row.end)}" required></label><button class="button" type="button" data-remove="${path}" data-index="${index}" aria-label="${t("Remove hours", "Eliminar horario")} ${index + 1}">×</button></div>`).join("")}</div><button class="button" type="button" data-add-hours="${path}">+ ${t("Add time range", "Añadir franja horaria")}</button>`;
 }
 function localInput(instant: string | number) {
   const date = new Date(instant);
@@ -189,6 +189,8 @@ function onSetting(event: Event) {
     if (!valid) return;
     value = new Date(time).toISOString();
   }
+  // A time picker represents midnight as 00:00; an end belongs to the selected day's end.
+  if (el.dataset.endOfDay !== undefined && value === "00:00") value = "24:00";
   put(el.dataset.setting, value);
   dirty();
 }
@@ -244,9 +246,15 @@ function bindCollections() {
     }),
   );
 }
+function blackoutScope(
+  scope: Settings["blackouts"][number]["scope"],
+  path?: string,
+) {
+  return `<label class="field">${t("Block", "Bloquear")}<select ${path ? `data-setting="${esc(path)}"` : "data-whole-scope"}><option value="all" ${scope !== "in-person" ? "selected" : ""}>${t("All meetings", "Todas las reuniones")}</option><option value="in-person" ${scope === "in-person" ? "selected" : ""}>${t("In-person only", "Solo presenciales")}</option></select></label>`;
+}
 function renderAvailability() {
   $("#panel-availability", app).innerHTML =
-    `<div class="admin-layout"><section class="panel"><h2>${t("Working hours", "Horario habitual")}</h2><p>${t("Meetings must fit completely within these hours. Split overnight hours across two days.", "Las reuniones deben caber por completo en estas franjas. Divide los horarios nocturnos en dos días.")}</p><label class="field">${t("Schedule time zone", "Zona horaria de la agenda")}<select data-setting="timezone">${timezoneOptions(settings.timezone)}</select></label>${hours("hours", settings.hours, t("Weekly working hours", "Horario semanal"))}</section><section class="panel"><h2>${t("Booking boundaries", "Límites de reserva")}</h2><div class="form-grid">${field("noticeHours", t("Minimum notice (hours)", "Antelación mínima (horas)"), { type: "number", min: 0, max: 720 })}${field("horizonDays", t("Booking window (days)", "Plazo de reserva (días)"), { type: "number", min: 1, max: 180 })}${field("cancelHours", t("Change deadline (hours before)", "Plazo para cambios (horas antes)"), { type: "number", min: 0, max: 720 })}${field("dailyLimit", t("Maximum meetings per day", "Máximo de reuniones al día"), { type: "number", min: 0, max: 100, help: t("0 means no daily limit.", "0 significa sin límite diario.") })}</div><p class="help-text">${t("Set the gap between meetings inside each meeting type.", "Configura el intervalo entre reuniones en cada tipo de reunión.")}</p></section><section class="panel"><h2>${t("Recurring blackouts", "Bloqueos recurrentes")}</h2><p>${t("Protect lunch, school runs, or any repeating time away. These override working hours.", "Protege la hora de comer, los trayectos al colegio o cualquier ausencia recurrente. Estos bloqueos tienen prioridad sobre el horario habitual.")}</p>${hours("recurringBlackouts", settings.recurringBlackouts, t("Recurring blackouts", "Bloqueos recurrentes"))}</section><section class="panel"><h2>${t("Temporary blackouts", "Bloqueos temporales")}</h2><p>${t("Block a whole day or an exact period. These times are shown in", "Bloquea un día completo o un periodo exacto. Estos horarios se muestran en")} <strong>${esc(currentZone())}</strong>.</p><div class="rows">${settings.blackouts.map((b, i) => `<div class="blackout-row">${field(`blackouts.${i}.label`, t("Label", "Nombre"))}<label class="field">${t("Starts", "Comienza")}<input type="datetime-local" data-setting="blackouts.${i}.start" data-datetime value="${localInput(b.start)}" required></label><label class="field">${t("Ends", "Termina")}<input type="datetime-local" data-setting="blackouts.${i}.end" data-datetime value="${localInput(b.end)}" required></label><button type="button" class="button" data-remove="blackouts" data-index="${i}" aria-label="${t("Remove blackout", "Eliminar bloqueo")} ${i + 1}">×</button></div>`).join("")}</div><div class="cluster blackout-actions"><button class="button" type="button" data-add-blackout>+ ${t("Add period", "Añadir periodo")}</button><div class="cluster blackout-day-actions"><label class="field">${t("Whole day", "Día completo")}<input type="date" data-whole-date></label><button class="button" type="button" data-add-day>+ ${t("Block day", "Bloquear día")}</button></div></div></section></div>`;
+    `<div class="admin-layout"><section class="panel"><h2>${t("Working hours", "Horario habitual")}</h2><p>${t("Meetings must fit completely within these hours. Split overnight hours across two days.", "Las reuniones deben caber por completo en estas franjas. Divide los horarios nocturnos en dos días.")}</p><label class="field">${t("Schedule time zone", "Zona horaria de la agenda")}<select data-setting="timezone">${timezoneOptions(settings.timezone)}</select></label>${hours("hours", settings.hours, t("Weekly working hours", "Horario semanal"))}</section><section class="panel"><h2>${t("Booking boundaries", "Límites de reserva")}</h2><div class="form-grid">${field("noticeHours", t("Minimum notice (hours)", "Antelación mínima (horas)"), { type: "number", min: 0, max: 720 })}${field("horizonDays", t("Booking window (days)", "Plazo de reserva (días)"), { type: "number", min: 1, max: 180 })}${field("cancelHours", t("Change deadline (hours before)", "Plazo para cambios (horas antes)"), { type: "number", min: 0, max: 720 })}${field("dailyLimit", t("Maximum meetings per day", "Máximo de reuniones al día"), { type: "number", min: 0, max: 100, help: t("0 means no daily limit.", "0 significa sin límite diario.") })}</div><p class="help-text">${t("Set the gap between meetings inside each meeting type.", "Configura el intervalo entre reuniones en cada tipo de reunión.")}</p></section><section class="panel"><h2>${t("Recurring blackouts", "Bloqueos recurrentes")}</h2><p>${t("Protect lunch, school runs, or any repeating time away. These override working hours.", "Protege la hora de comer, los trayectos al colegio o cualquier ausencia recurrente. Estos bloqueos tienen prioridad sobre el horario habitual.")}</p>${hours("recurringBlackouts", settings.recurringBlackouts, t("Recurring blackouts", "Bloqueos recurrentes"))}</section><section class="panel"><h2>${t("Temporary blackouts", "Bloqueos temporales")}</h2><p>${t("Block a whole day or an exact period. These times are shown in", "Bloquea un día completo o un periodo exacto. Estos horarios se muestran en")} <strong>${esc(currentZone())}</strong>.</p><div class="rows">${settings.blackouts.map((b, i) => `<div class="blackout-row">${field(`blackouts.${i}.label`, t("Label", "Nombre"))}${blackoutScope(b.scope, `blackouts.${i}.scope`)}<label class="field">${t("Starts", "Comienza")}<input type="datetime-local" data-setting="blackouts.${i}.start" data-datetime value="${localInput(b.start)}" required></label><label class="field">${t("Ends", "Termina")}<input type="datetime-local" data-setting="blackouts.${i}.end" data-datetime value="${localInput(b.end)}" required></label><button type="button" class="button" data-remove="blackouts" data-index="${i}" aria-label="${t("Remove blackout", "Eliminar bloqueo")} ${i + 1}">×</button></div>`).join("")}</div><div class="blackout-actions"><div class="cluster"><button class="button" type="button" data-add-blackout>+ ${t("Add period", "Añadir periodo")}</button></div><div class="cluster blackout-day-actions" role="group" aria-label="${t("Block a whole day", "Bloquear un día completo")}"><label class="field">${t("Whole day", "Día completo")}<input type="date" data-whole-date></label>${blackoutScope("all")}<button class="button" type="button" data-add-day>+ ${t("Block day", "Bloquear día")}</button></div></div></section></div>`;
   $("[data-add-blackout]", app).addEventListener("click", () => {
     const now = new Date();
     now.setMinutes(0, 0, 0);
@@ -264,12 +272,18 @@ function renderAvailability() {
       input.focus();
       return;
     }
+    const scope = $<HTMLSelectElement>("[data-whole-scope]", app).value as
+      "all" | "in-person";
     const start = new Date(input.value + "T00:00:00");
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
     settings.blackouts.push({
       id: `away-${crypto.randomUUID().slice(0, 8)}`,
-      label: t("Day off", "Día libre"),
+      label:
+        scope === "in-person"
+          ? t("In-person unavailable", "Sin reuniones presenciales")
+          : t("Day off", "Día libre"),
+      scope,
       start: start.toISOString(),
       end: end.toISOString(),
     });
