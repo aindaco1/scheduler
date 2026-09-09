@@ -57,3 +57,7 @@ This verifies the owner’s current delivery path. It does not promise universal
 The owner-reported desktop misalignment is fixed with a layout scoped to the blackout actions: the buttons and date field share a 48-pixel minimum height and align along their bottom edge. The whole-day field and action wrap together on narrow screens. Labels and booking behavior are unchanged.
 
 Local verification: all 65 Workers tests and TypeScript checks passed. The final build passed the existing browser acceptance and Wrangler dry run. An isolated rendered check covered 24 combinations of English/Spanish, light/dark and 320–1280-pixel viewports, with aligned desktop controls and no horizontal overflow. Desktop and mobile panel screenshots were visually reviewed. These checks used fixture data and made no live calendar, settings or email writes.
+
+Deployment: source commit `bc1aa2e` is live in Cloudflare Worker version `33ecb1cf-4330-480f-b74a-5acc357f5b3d`. Public fetches of the deployed CSS and admin script matched the locally verified build byte for byte; the English/Spanish booking pages and admin shell returned HTTP 200.
+
+[GitHub CI for `bc1aa2e`](https://github.com/aindaco1/scheduler/actions/runs/34410001899) passed the full check workflow.
