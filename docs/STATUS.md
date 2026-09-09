@@ -103,3 +103,7 @@ Whole days now has From date and Through date controls, with both dates included
 Regression coverage adds first/middle/final day enforcement, dates outside the range, all/video/in-person modes, single-day compatibility, invalid input, both scopes, ten-day inclusive bounds, a 73-hour daylight-saving range, and saving/editing while the browser is in Tokyo and the schedule is in Denver. Desktop light and mobile Spanish dark controls were visually reviewed. Verification uses isolated fixtures and does not create the user's example trip in live settings. Final check, CI and deployment evidence follows below.
 
 Local verification passed: all 94 Workers tests, TypeScript, template checks, production build, bilingual browser/accessibility checks and Wrangler dry run. Both desktop themes and the mobile range controls were reviewed visually.
+
+Deployment: source commit `f5ee35b` is live in Worker version `8ded1c57-2622-4bda-ba68-e7574ad881fc`. The live admin script and stylesheet matched the verified local build byte for byte. English/Spanish booking and admin pages and health returned HTTP 200; private settings still required authentication (HTTP 401). An authenticated, separate Helium tab confirmed the From date, Through date, scope and Block dates controls, with America/Denver displayed and existing saved blackouts intact. No production setting, calendar event or email was changed during verification.
+
+[GitHub CI for `f5ee35b`](https://github.com/aindaco1/scheduler/actions/runs/34414040260) passed the complete check workflow.
