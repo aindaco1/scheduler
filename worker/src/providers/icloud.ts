@@ -45,6 +45,10 @@ function safeUrl(value: string) {
     throw new AppError("invalid_icloud_host", 503);
 }
 const appleFetch: typeof fetch = async (input, init) => {
+  const method = (
+    init?.method || (input instanceof Request ? input.method : "GET")
+  ).toUpperCase();
+  const requiresMultistatus = method === "PROPFIND" || method === "REPORT";
   let url =
     typeof input === "string"
       ? input
@@ -63,6 +67,10 @@ const appleFetch: typeof fetch = async (input, init) => {
       continue;
     }
     if (!response.ok) throw new AppError("icloud_unavailable", 503, true);
+    // Empty 200/204 responses are not successful calendar snapshots, even when
+    // tsdav would normalize them to an empty event list.
+    if (requiresMultistatus && response.status !== 207)
+      throw new AppError("icloud_incomplete", 503);
     const body = await readBoundedText(
       new Request("https://bounded.internal/", {
         method: "POST",

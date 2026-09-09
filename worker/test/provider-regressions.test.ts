@@ -62,7 +62,7 @@ const credentials = {
 };
 
 /** A complete discovery fixture keeps REPORT regressions on the actual tsdav integration path. */
-function mockIcloudReport(body: string, status = 207) {
+function mockIcloudReport(body: string | undefined, status = 207) {
   const apple = fetchMock.get(appleOrigin);
   const xml = { headers: { "Content-Type": "application/xml; charset=utf-8" } };
   apple
@@ -122,6 +122,24 @@ function mockIcloudReport(body: string, status = 207) {
 }
 
 describe("iCloud response completeness", () => {
+  it.each([
+    { status: 200, body: "" },
+    {
+      status: 200,
+      body: "<html><body>temporary provider failure</body></html>",
+    },
+    { status: 200, body: multistatus() },
+    { status: 204, body: undefined },
+  ])(
+    "rejects a REPORT without multistatus HTTP status: $status $body",
+    async ({ status, body }) => {
+      mockIcloudReport(body, status);
+      await expect(
+        icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
+      ).rejects.toMatchObject({ code: "icloud_incomplete" });
+    },
+  );
+
   it.each([
     "this is not XML",
     "<html><body>temporary provider failure</body></html>",
@@ -285,14 +303,12 @@ describe("Google conflict completeness and conference recovery", () => {
 
   it("repairs a failed Meet request on the existing event and recovers without reinserting", async () => {
     const google = fetchMock.get("https://www.googleapis.com");
-    google
-      .intercept({ path: eventPath, method: "GET" })
-      .reply(200, {
-        ...event,
-        conferenceData: {
-          createRequest: { status: { statusCode: "failure" } },
-        },
-      });
+    google.intercept({ path: eventPath, method: "GET" }).reply(200, {
+      ...event,
+      conferenceData: {
+        createRequest: { status: { statusCode: "failure" } },
+      },
+    });
     google
       .intercept({
         path: eventPath + "?sendUpdates=all&conferenceDataVersion=1",
@@ -321,12 +337,10 @@ describe("Google conflict completeness and conference recovery", () => {
     await expect(provider.create(booking, "alonso")).rejects.toMatchObject({
       code: "conference_repair_pending",
     });
-    google
-      .intercept({ path: eventPath, method: "GET" })
-      .reply(200, {
-        ...event,
-        hangoutLink: "https://meet.google.com/fixture-code",
-      });
+    google.intercept({ path: eventPath, method: "GET" }).reply(200, {
+      ...event,
+      hangoutLink: "https://meet.google.com/fixture-code",
+    });
     await expect(provider.create(booking, "alonso")).resolves.toEqual({
       eventId,
       joinUrl: "https://meet.google.com/fixture-code",

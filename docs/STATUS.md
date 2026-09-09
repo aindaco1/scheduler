@@ -10,8 +10,8 @@ Updated September 9, 2026. Phase 1 application implemented; live calendar/recipi
 - Google Calendar/Meet, iCloud CalDAV conflict adapter, Zoom OAuth/meetings adapter, Resend email jobs, and Turnstile integration implemented.
 - Shared rule engine for weekly/location hours, recurring/temporary blackouts, 24-hour notice/cutoff, 30-day horizon, separate gaps, timezone/DST, and optional cap/reminders.
 - Atomic reservations, duplicate submission protection, uncertain provider-write recovery, reschedule holds, encrypted credentials, and hashed owner/guest authorization.
-- `npm run check`: 56 tests passed in the Workers runtime; production build and Wrangler dry-run passed. Chromium booking/admin/management/privacy acceptance passed, including 12 axe scans, English/Spanish, system light/dark, mobile overflow, settings saves and iCloud form handling.
-- Formal provider/recovery review found and repaired malformed/truncated CalDAV fail-open behavior, extensionless resources, pending-cancellation races, reschedule conflict recheck, lost rollback reminder, and immutable email retry behavior.
+- `npm run check`: 60 tests passed in the Workers runtime; production build and Wrangler dry-run passed. Chromium booking/admin/management/privacy acceptance passed, including 12 axe scans, English/Spanish, system light/dark, mobile overflow, settings saves and iCloud form handling.
+- Formal provider/recovery review found and repaired malformed/truncated CalDAV and non-207 response fail-open behavior, extensionless resources, pending-cancellation races, reschedule conflict recheck, lost rollback reminder, and immutable email retry behavior.
 - npm audit: no known vulnerabilities at the checked lockfile.
 
 ## Infrastructure
@@ -19,7 +19,7 @@ Updated September 9, 2026. Phase 1 application implemented; live calendar/recipi
 - A dedicated managed Turnstile widget is scoped to `scheduler.dustwave.xyz`.
 - A dedicated sending-only Resend key is restricted to the already verified `dustwave.xyz` sending domain. From: Dust Wave Scheduler, `bookings@dustwave.xyz`.
 - Bootstrap Worker secrets provisioned. Owner login is restricted to the provisioned owner email; changing `ADMIN_EMAIL` is a secret-only operation.
-- Google/Zoom client secrets and owner calendar connections are not provisioned. Google Cloud browser access reaches the account sign-in screen.
+- Google/Zoom client secrets and owner calendar connections are not provisioned. Google Cloud is accessible through the owner's Helium browser; a dedicated Scheduler project has been created.
 - GitHub CI passed for the initial commit: [Check run](https://github.com/aindaco1/scheduler/actions/runs/34386873149). Subsequent code changes run the same gates.
 
 ## Remaining live acceptance
