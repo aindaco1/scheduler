@@ -1,5 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
+import { prepareResendEmail } from "@dustwave/worker-core/email";
 import { Temporal } from "@js-temporal/polyfill";
+import { ResendApiError } from "@dustwave/worker-core/resend";
 import { outboxRetryDelayMs } from "@dustwave/worker-core/outbox";
 import {
   AppError,
@@ -45,6 +47,7 @@ interface Job {
   expires?: number;
   firstAttemptAt?: number;
   sender?: string;
+  terminal?: boolean;
 }
 interface StoredConfig {
   settings: Settings;
@@ -491,7 +494,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
   }
   private async arm() {
     const row = this.ctx.storage.sql
-      .exec<{ next: number }>("SELECT min(max(due,lease)) AS next FROM jobs")
+      .exec<{ next: number }>(
+        "SELECT min(max(due,lease)) AS next FROM jobs WHERE coalesce(json_extract(data,'$.terminal'),0)=0",
+      )
       .toArray()[0];
     if (row?.next != null)
       await this.ctx.storage.setAlarm(Math.max(Date.now() + 500, row.next));
@@ -1039,6 +1044,13 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         );
     }
     // Freeze the entire message before its first write: Resend retries require identical content.
+    if (!job.firstAttemptAt) {
+      const email = prepareResendEmail(
+        await unseal<Email>(job.payload!, this.env.ENCRYPTION_KEY),
+        { replyTo: this.env.EMAIL_REPLY_TO || this.env.ADMIN_EMAIL },
+      );
+      job.payload = await seal(email, this.env.ENCRYPTION_KEY);
+    }
     job.firstAttemptAt ??= Date.now();
     job.sender ??= this.env.EMAIL_FROM;
     this.ctx.storage.sql.exec(
@@ -1066,7 +1078,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     this.ctx.storage.sql.exec("DELETE FROM limits WHERE reset<?", now);
     const jobs = this.ctx.storage.sql
       .exec<{ data: string }>(
-        "SELECT data FROM jobs WHERE due<=? AND lease<=? ORDER BY due LIMIT 5",
+        "SELECT data FROM jobs WHERE due<=? AND lease<=? AND coalesce(json_extract(data,'$.terminal'),0)=0 ORDER BY due LIMIT 5",
         now,
         now,
       )
@@ -1086,8 +1098,13 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         this.ctx.storage.sql.exec("DELETE FROM jobs WHERE id=?", job.id);
       } catch (e) {
         job.attempts++;
-        job.error =
-          e instanceof AppError
+        job.terminal =
+          job.kind === "email" &&
+          ((e instanceof ResendApiError && !e.retryable) ||
+            (e instanceof AppError && e.code === "email_needs_attention"));
+        job.error = job.terminal
+          ? "email_needs_attention"
+          : e instanceof AppError
             ? e.code
             : job.kind === "email"
               ? "email_delivery_pending"
@@ -1097,7 +1114,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
           Date.now() +
           outboxRetryDelayMs(e, job.attempts, {
             minimumMs: 15_000,
-            maximumMs: 3_600_000,
+            maximumMs: job.kind === "email" ? 24 * 3_600_000 : 3_600_000,
           });
         this.ctx.storage.sql.exec(
           "UPDATE jobs SET due=?,lease=0,data=? WHERE id=?",

@@ -20,6 +20,7 @@ interface StoredJob {
   firstAttemptAt?: number;
   payload?: string;
   error?: string;
+  terminal?: boolean;
 }
 const day = 86_400_000;
 const googleOrigin = "https://www.googleapis.com";
@@ -307,6 +308,10 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     expect(failed.attempts).toBe(1);
     expect(failed.payload).toBeTruthy();
     expect(failed.firstAttemptAt).toBeGreaterThan(0);
+    expect(JSON.parse(bodies[0])).toMatchObject({
+      reply_to: env.ADMIN_EMAIL,
+      headers: { "Auto-Submitted": "auto-generated" },
+    });
 
     const config = await stub.getSettings();
     await stub.updateSettings(
@@ -329,6 +334,49 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     expect(
       (await stub.getBooking(created.booking.id, created.token)).booking,
     ).toMatchObject({ status: "confirmed", error: undefined });
+  });
+
+  it("holds permanent Resend rejections without repeating delivery attempts", async () => {
+    const { stub, created } = await confirmAndQueueMail();
+    await retainAndRunNow(stub, "confirmed");
+    const sent = vi.fn();
+    fetchMock
+      .get("https://api.resend.com")
+      .intercept({ path: "/emails", method: "POST" })
+      .reply(() => {
+        sent();
+        return { statusCode: 422, data: { message: "Invalid recipient" } };
+      })
+      .persist();
+    await runDurableObjectAlarm(stub);
+    expect((await jobs(stub))[0]).toMatchObject({
+      terminal: true,
+      error: "email_needs_attention",
+      attempts: 1,
+    });
+    expect(
+      (await stub.getBooking(created.booking.id, created.token)).booking.error,
+    ).toBe("email_needs_attention");
+    await retainAndRunNow(stub, "confirmed");
+    await runDurableObjectAlarm(stub);
+    expect(sent).toHaveBeenCalledTimes(1);
+  });
+
+  it("honors Resend Retry-After before another attempt", async () => {
+    const { stub } = await confirmAndQueueMail();
+    await retainAndRunNow(stub, "confirmed");
+    fetchMock
+      .get("https://api.resend.com")
+      .intercept({ path: "/emails", method: "POST" })
+      .reply(
+        429,
+        { message: "Rate limited" },
+        { headers: { "Retry-After": "7200" } },
+      );
+    const before = Date.now();
+    await runDurableObjectAlarm(stub);
+    expect((await jobs(stub))[0].due).toBeGreaterThanOrEqual(before + 7_200_000);
+    expect((await jobs(stub))[0].terminal).toBe(false);
   });
 
   it("retains a deliverable reminder for the original meeting after a reschedule is rejected", async () => {

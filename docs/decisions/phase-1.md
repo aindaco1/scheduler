@@ -6,6 +6,7 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 - Short introduction, then meeting-type choices. Owner sets Meet or Zoom per video type.
 - In-person guests choose owner-defined locations; locations have their own available days/hours.
 - Owner chooses blocking Google and directly connected iCloud calendars. Proton via Google is accepted for phase 1, including subscription delay.
+- Respect each selected calendar event's Busy/Free setting, including all-day Family events. Free/transparent events do not block bookings.
 - New events go to the main Google calendar automatically, with attendee invitations. No host approval queue.
 - Weekly hours, recurring blackouts, temporary full/partial-day blackouts, minimum notice (24 elapsed hours), 30-day horizon, and separate gaps for video/in-person.
 - Booker cancellation/rescheduling until 24 elapsed hours before the start; server enforcement.
@@ -19,7 +20,7 @@ Confirmed by Alonso on September 9, 2026. The source research is retained in ../
 
 Use the larger applicable gap between adjacent scheduler bookings; do not add two ordinary gaps. Existing external events receive the candidate meeting's gap.
 
-Initial types: 30-minute Google Meet, 30-minute Zoom, 60-minute in-person. One email reminder 24 hours before the meeting. No daily cap. All booking remains paused until required connections and the confirmed hours and locations are configured in the dashboard.
+Initial types: 30-minute Google Meet, 30-minute Zoom, 60-minute in-person. One email reminder 24 hours before the meeting. No daily cap. Launch connections, hours and locations are configured, and bookings are open; new forks start paused until setup is complete.
 
 Meeting durations, reminder timing, and the absence of a daily cap remain editable initial assumptions. Hours, locations, and gaps above were explicitly confirmed. All settings are editable without a Jekyll rebuild.
 

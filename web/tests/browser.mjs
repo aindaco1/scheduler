@@ -375,7 +375,7 @@ try {
   booking.error = "email_needs_attention";
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await page
-    .getByText(/Email delivery needs review. Automatic sending is paused/)
+    .getByText(/Email delivery needs review. Automatic sending has stopped/)
     .waitFor();
   await page.getByRole("button", { name: "Cancel", exact: true }).waitFor();
   assert.equal(

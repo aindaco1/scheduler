@@ -473,8 +473,8 @@ function bookingIssue(booking: PublicBooking) {
     );
   if (code === "email_needs_attention")
     return t(
-      "Email delivery needs review. Automatic sending is paused for this message to avoid duplicates. Check Resend’s delivery history before sending it manually.",
-      "La entrega del correo requiere revisión. El envío automático de este mensaje está en pausa para evitar duplicados. Revisa el historial de Resend antes de enviarlo manualmente.",
+      "Email delivery needs review. Automatic sending has stopped for this message. Check Resend’s delivery history and correct any rejection before sending it manually.",
+      "La entrega del correo requiere revisión. El envío automático de este mensaje se ha detenido. Revisa el historial de Resend y corrige cualquier rechazo antes de enviarlo manualmente.",
     );
   if (code === "booking_needs_attention")
     return t(

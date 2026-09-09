@@ -31,7 +31,7 @@ Google OAuth applications left in external Testing can receive short-lived refre
 
 ## Booking consistency and recovery
 
-Slots use the same rules for listing, booking, and rescheduling. Weekly hours use the owner's IANA timezone; minimum notice and cancellation cutoff use elapsed hours. Overnight periods can be represented as two periods meeting at midnight. The end time `24:00` is supported. Adjacent scheduler bookings require the greater of their two gaps; an external event receives the candidate meeting's gap. Calendar reads include recurring/all-day events; incomplete or malformed provider responses fail closed.
+Slots use the same rules for listing, booking, and rescheduling. Weekly hours use the owner's IANA timezone; minimum notice and cancellation cutoff use elapsed hours. Overnight periods can be represented as two periods meeting at midnight. The end time `24:00` is supported. Adjacent scheduler bookings require the greater of their two gaps; an external event receives the candidate meeting's gap. Calendar reads include recurring/all-day events. Busy events block time; Free/transparent events do not, including all-day Family events. An owner who needs extra time blocked can add a blackout. Incomplete or malformed provider responses fail closed.
 
 The object rechecks external conflicts and claims each local interval synchronously before queuing provider writes. Google IDs derive from the booking UUID, so a lost insert response can be reconciled without creating another event. Google sends the calendar invitations; Resend sends separate branded confirmations, updates and reminders. These are intentionally different messages.
 
@@ -49,10 +49,26 @@ Provider credentials and management tokens are encrypted; login/session token lo
 
 Pause bookings before operational repairs. Use Cloudflare's Durable Object storage recovery facilities if a data repair requires rollback, preserving the encryption key separately. Do not roll back only provider state or only local reservations without reconciling the other side. Cloudflare observability redacts request query strings, including OAuth callback values. Review redacted job error classifications instead of logging provider response bodies or full callback/management URLs.
 
-## Live acceptance still required
+## Live acceptance procedure
 
 Use an owner-designated recipient and an explicitly selected test time for a real booking. Verify one main-Google event, correct attendee invite and conference/location, Resend inbox receipt, selected Google and Family conflicts, reschedule update of the existing event, cancellation, and reminder timing. Repeat for Zoom and a real in-person location. No unattended test should invite another person without authorization. Record local, CI, deployed, provider, and recipient evidence separately in STATUS.md.
+
+For the deployed owner's account, September 9 acceptance is recorded in [STATUS.md](STATUS.md). Repeat this procedure for new credentials or forks. Self-addressed Google tests verify event/attendee writes, but do not prove a separate invitation email to an external attendee.
+
+## Email receipt and spam
+
+A Resend `delivered` event means the recipient mail server accepted the message; inspect the actual mailbox to verify placement. During launch, Gmail placed the test confirmations, updates and reminder in Spam even though its original-message view reported SPF, DKIM and DMARC all passing. The owner confirmed receipt. Gmail does not forward its spam to the owner's HEY address. Marking expected messages as not spam can help future classification, but it does not guarantee inbox placement for other guests. No broad mail filter or domain authentication policy was changed. Both open and click tracking are disabled in Resend.
+
+Before changing DNS, inspect the received message's authentication results and Resend's domain state. Gmail attributed this case to similarity with past spam, not an authentication failure. See [Gmail sender guidelines](https://support.google.com/mail/answer/81126?hl=en) and [Resend deliverability guidance](https://resend.com/docs/knowledge-base/how-do-i-avoid-gmails-spam-folder).
 
 References: [Worker custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), [Turnstile server validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [Google OAuth web server flow](https://developers.google.com/identity/protocols/oauth2/web-server), [Google token expiration](https://developers.google.com/identity/protocols/oauth2#expiration), [Apple app-specific passwords](https://support.apple.com/en-us/102654), [Zoom OAuth](https://developers.zoom.us/docs/integrations/oauth/), [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys).
 
 The dashboard preserves unrelated edits if another tab connects a calendar or changes different settings while a save is pending. It re-reads current settings, merges only whole fields changed by one side, and retries once with the current revision. Competing edits to the same field (including an hours or calendar-selection list) remain a conflict; the server revision check is never bypassed.
+
+## Email delivery and held failures
+
+Worker Core 0.13.0 supplies content-preserving delivery defaults. `EMAIL_REPLY_TO` is optional and falls back to the configured owner `ADMIN_EMAIL`. Both owner sign-in and booking emails include a monitored reply destination and `Auto-Submitted: auto-generated`. Replies do not automatically cancel or reschedule a booking; the existing management link owns those actions.
+
+The outbox freezes the message, sender, reply address and headers before the first provider call. Retries keep the same idempotency key and exact body even after settings change. Provider `Retry-After` delays take precedence over normal backoff. Permanent Resend rejections stop automatic attempts and leave an encrypted held job; the booking shows `email_needs_attention`. Uncertain delivery also stops before Resend's 24-hour deduplication window expires. Inspect Resend history before any manual resend. A held message does not invalidate a confirmed calendar event.
+
+The production `dustwave.xyz` domain has verified SPF and DKIM, a DMARC monitoring record, and disabled open/click tracking. Initial test messages passed Gmail SPF/DKIM/DMARC and TLS but landed in Spam. Authentication is necessary and does not guarantee Inbox placement. Keep this distinction in recipient acceptance evidence. See the [shared delivery guide](https://github.com/aindaco1/dust-wave-platform/blob/main/docs/email-deliverability.md) for the cross-project policy.
