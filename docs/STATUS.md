@@ -91,3 +91,7 @@ The reported blackout-save error came from coupling every enabled settings save 
 The current live connection verification passed during investigation. This does not identify which provider caused the earlier failure. The owner's open form and unsaved blackout draft were left untouched. Regression coverage checks full-day and in-person-only saves with providers offline, pausing, dependency validation, stale revisions during verification, reservation/reschedule failures and browser draft retention. Final local, CI and deployment evidence follows below.
 
 Local verification passed: all 92 Workers tests, TypeScript, template checks, production build, bilingual browser/accessibility acceptance and Wrangler dry run. Test data and providers are isolated fixtures; no live booking or email was created.
+
+Deployment: source commit `bf51781` is live in Worker version `901dbb4b-2363-487c-a81d-4bb28939b98b`. The public admin asset matched the verified build byte for byte. English/Spanish booking and admin pages and health returned HTTP 200; unauthenticated private settings remained HTTP 401. The live configuration reported ready, and read-only availability checks for each of the three currently offered meeting types returned HTTP 200 with slots. No live settings were written during verification, so the owner's pending form can retry Save changes without a reload.
+
+[GitHub CI for `bf51781`](https://github.com/aindaco1/scheduler/actions/runs/34413242131) passed the complete check workflow.
