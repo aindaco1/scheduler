@@ -18,9 +18,9 @@ Updated September 9, 2026. Phase 1 application implemented; live calendar/recipi
 
 - A dedicated managed Turnstile widget is scoped to `scheduler.dustwave.xyz`.
 - A dedicated sending-only Resend key is restricted to the already verified `dustwave.xyz` sending domain. From: Dust Wave Scheduler, `bookings@dustwave.xyz`.
-- Bootstrap Worker secrets provisioned. Owner login is provisionally restricted to the existing account email `alonso@hey.com`; changing `ADMIN_EMAIL` is a secret-only operation.
+- Bootstrap Worker secrets provisioned. Owner login is restricted to the provisioned owner email; changing `ADMIN_EMAIL` is a secret-only operation.
 - Google/Zoom client secrets and owner calendar connections are not provisioned. Google Cloud browser access reaches the account sign-in screen.
-- GitHub CI and public deployment results are recorded below after verification.
+- GitHub CI passed for the initial commit: [Check run](https://github.com/aindaco1/scheduler/actions/runs/34386873149). Subsequent code changes run the same gates.
 
 ## Remaining live acceptance
 
@@ -34,5 +34,9 @@ Phase 1 is not operationally complete while these account authorizations and rea
 
 ## Deployed evidence
 
-- Cloudflare deployed Worker version `2c2e1e03-2883-4c53-bb00-aedd4738162f` to `scheduler.dustwave.xyz` on September 9, 2026.
+- Initial Cloudflare deployment used Worker version `2c2e1e03-2883-4c53-bb00-aedd4738162f` to `scheduler.dustwave.xyz` on September 9, 2026.
 - Google and Zoom remain unconnected; deployment intentionally supports the paused setup state without dummy provider credentials.
+
+- Live HTTP verification: English/Spanish booking, admin and privacy pages returned 200, health returned 200, private settings returned 401 without a session, and public configuration exposed no blocking-calendar data and confirmed bookings paused.
+- Live browser verification: booking and owner login pages rendered without console errors. A real Turnstile-protected login submission using a reserved non-owner test address returned the generic success response; the owner allowlist prevented email dispatch.
+- Admin recovery controls now permit pending/failed cancellation and explain provider recovery states; the browser fixture verifies cancellation remains pending until the provider confirms it.

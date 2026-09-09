@@ -2,7 +2,7 @@
 
 A small, open-source meeting scheduler built with Jekyll, Cloudflare Workers, Google Calendar, iCloud, Google Meet, Zoom, and Resend. English and Spanish; system light/dark; no per-booking host approval.
 
-Alonso's planned booking page is **https://scheduler.dustwave.xyz/alonso**.
+Alonso's booking page is **https://scheduler.dustwave.xyz/alonso**.
 
 ## Project documentation
 

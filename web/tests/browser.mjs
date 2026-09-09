@@ -159,7 +159,14 @@ await context.route("**/api/**", async (route) => {
     }
     payload = { settings, revision };
   } else if (path === "/api/admin/bookings") payload = { bookings: [booking] };
-  else if (
+  else if (path === "/api/admin/bookings/fixture-booking/cancel") {
+    assert.equal(method, "POST");
+    assert.deepEqual(route.request().postDataJSON(), {});
+    assert.equal(booking.status, "pending");
+    booking.status = "cancelling";
+    booking.error = "zoom_write_uncertain";
+    payload = { booking };
+  } else if (
     path === "/api/admin/connections" ||
     path === "/api/admin/verify" ||
     path === "/api/admin/connections/icloud"
@@ -319,6 +326,58 @@ try {
   await page.goto(base + "/admin/");
   await page.getByRole("heading", { name: "Your schedule" }).waitFor();
   await axe("admin bookings");
+  booking.status = "pending";
+  booking.error = "google_reconnect_required";
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await page
+    .getByText(
+      "Reconnect Google Calendar in Settings, then verify the connection and refresh this booking’s status.",
+      { exact: true },
+    )
+    .waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Reschedule", exact: true }).count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByText(/A cancellation will be requested/)
+    .waitFor();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cancel booking", exact: true })
+    .click();
+  await page.getByText("Cancelling", { exact: true }).waitFor();
+  await page
+    .getByText(
+      /Check this meeting in Zoom: the result of its last update is unknown/,
+    )
+    .waitFor();
+  assert.equal(booking.status, "cancelling");
+  assert.equal(
+    await page.getByRole("button", { name: "Cancel", exact: true }).count(),
+    0,
+  );
+  booking.status = "failed";
+  booking.error = "email_needs_attention";
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await page
+    .getByText(/Email delivery needs review. Automatic sending is paused/)
+    .waitFor();
+  await page.getByRole("button", { name: "Cancel", exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Reschedule", exact: true }).count(),
+    0,
+  );
+  booking.status = "confirmed";
+  booking.error = "email_delivery_pending";
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await page
+    .getByText(/Email delivery has not been confirmed. A retry is queued/)
+    .waitFor();
+  await axe("admin provider recovery");
+  booking.error = undefined;
   await page.getByRole("tab", { name: "Availability", exact: true }).click();
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();

@@ -159,7 +159,9 @@ function render() {
 }
 function onSetting(event: Event) {
   const el = event.target as
-    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | HTMLSelectElement;
   if (!el.dataset.setting) return;
   let value: unknown =
     el instanceof HTMLInputElement && el.type === "checkbox"
@@ -448,9 +450,70 @@ async function connectionAction(path: string, method: string, body: unknown) {
     return false;
   }
 }
+function bookingIssue(booking: PublicBooking) {
+  const code = booking.error || "";
+  if (["google_reconnect_required", "google_not_connected"].includes(code))
+    return t(
+      "Reconnect Google Calendar in Settings, then verify the connection and refresh this booking’s status.",
+      "Vuelve a conectar Google Calendar en Configuración, verifica la conexión y actualiza el estado de esta reserva.",
+    );
+  if (code === "zoom_write_uncertain")
+    return t(
+      "Check this meeting in Zoom: the result of its last update is unknown. The scheduler is checking for the existing meeting. Cancellation may remain pending until that is resolved.",
+      "Revisa esta reunión en Zoom: se desconoce el resultado de su última actualización. El sistema está buscando la reunión existente. La cancelación puede quedar pendiente hasta que se resuelva.",
+    );
+  if (["zoom_reconnect_required", "zoom_not_connected"].includes(code))
+    return t(
+      "Reconnect Zoom in Settings, then verify the connection and refresh this booking’s status.",
+      "Vuelve a conectar Zoom en Configuración, verifica la conexión y actualiza el estado de esta reserva.",
+    );
+  if (code === "email_delivery_pending")
+    return t(
+      "Email delivery has not been confirmed. A retry is queued; check Resend’s delivery history if this continues. The booking status is shown separately above.",
+      "No se ha confirmado la entrega del correo. Hay un reintento pendiente; revisa el historial de Resend si esto continúa. El estado de la reserva se muestra por separado arriba.",
+    );
+  if (code === "email_needs_attention")
+    return t(
+      "Email delivery needs review. Automatic sending is paused for this message to avoid duplicates. Check Resend’s delivery history before sending it manually.",
+      "La entrega del correo requiere revisión. El envío automático de este mensaje está en pausa para evitar duplicados. Revisa el historial de Resend antes de enviarlo manualmente.",
+    );
+  if (code === "booking_needs_attention")
+    return t(
+      "A calendar conflict was found after a video meeting may have been created. Inspect the Google Calendar and Zoom records; this booking is still unresolved.",
+      "Se detectó un conflicto de calendario después de que posiblemente se creara una videollamada. Revisa los registros de Google Calendar y Zoom; esta reserva sigue sin resolverse.",
+    );
+  if (["conference_pending", "conference_repair_pending"].includes(code))
+    return t(
+      "The Google Meet link is not ready yet. The scheduler will check again; refresh this list to see the latest booking status.",
+      "El enlace de Google Meet todavía no está listo. El sistema volverá a comprobarlo; actualiza esta lista para ver el estado más reciente.",
+    );
+  if (code === "slot_unavailable")
+    return booking.status === "confirmed"
+      ? t(
+          "The requested new time became unavailable. The original meeting remains confirmed.",
+          "El nuevo horario solicitado dejó de estar disponible. La reunión original sigue confirmada.",
+        )
+      : t(
+          "This time became unavailable before the booking was confirmed. You can cancel this record and arrange another time.",
+          "Este horario dejó de estar disponible antes de confirmar la reserva. Puedes cancelar este registro y acordar otro horario.",
+        );
+  if (code.startsWith("icloud_") || code.startsWith("calendar_"))
+    return t(
+      "Calendar conflicts could not be checked completely. Verify the calendar connections and selected blocking calendars in Settings.",
+      "No se pudieron comprobar todos los conflictos. Verifica las conexiones y los calendarios que bloquean horarios en Configuración.",
+    );
+  return t(
+    "A provider could not complete this operation. Verify its connection in Settings, inspect the provider’s records, and refresh this booking’s status.",
+    "Un proveedor no pudo completar esta operación. Verifica su conexión en Configuración, revisa sus registros y actualiza el estado de esta reserva.",
+  );
+}
+function bookingActions(booking: PublicBooking) {
+  if (!["confirmed", "pending", "failed"].includes(booking.status)) return "";
+  return `<div class="cluster">${booking.status === "confirmed" ? `<button class="button" type="button" data-admin-reschedule="${esc(booking.id)}">${t("Reschedule", "Cambiar horario")}</button>` : ""}<button class="button danger" type="button" data-admin-cancel="${esc(booking.id)}">${t("Cancel", "Cancelar")}</button></div>`;
+}
 function renderBookings() {
   $("#panel-bookings", app).innerHTML =
-    `<section class="panel"><div class="between"><h2>${t("Upcoming and recent meetings", "Reuniones próximas y recientes")}</h2><button class="button" type="button" data-refresh-bookings>${t("Refresh", "Actualizar")}</button></div><div data-booking-error></div>${bookings.length ? bookings.map((b) => `<article class="booking-row"><div class="between"><h3>${esc(b.name)} · ${esc(b.typeName)}</h3><span class="status-pill ${b.status === "confirmed" ? "good" : b.status === "failed" ? "bad" : ""}">${esc(statusLabel(b.status))}</span></div><p>${esc(dateLabel(b.start, settings.timezone))} · ${esc(settings.timezone)}<br>${esc(b.location || b.mode)} · <a href="mailto:${esc(b.email)}">${esc(b.email)}</a></p>${b.error ? `<p class="notice error">${t("Operation needs attention", "La operación requiere atención")}: ${esc(b.error)}</p>` : ""}${b.topic ? `<p class="topic">${esc(b.topic)}</p>` : ""}${b.status === "confirmed" ? `<div class="cluster"><button class="button" type="button" data-admin-reschedule="${esc(b.id)}">${t("Reschedule", "Cambiar horario")}</button><button class="button danger" type="button" data-admin-cancel="${esc(b.id)}">${t("Cancel", "Cancelar")}</button></div>` : ""}<div data-booking-action="${esc(b.id)}"></div></article>`).join("") : `<div class="empty-state"><h3>${t("Your next conversation starts here.", "Tu próxima conversación empieza aquí.")}</h3><p>${t("Bookings will appear here as people reserve your time.", "Las reservas aparecerán aquí cuando alguien elija un horario.")}</p></div>`}</section>`;
+    `<section class="panel"><div class="between"><h2>${t("Upcoming and recent meetings", "Reuniones próximas y recientes")}</h2><button class="button" type="button" data-refresh-bookings>${t("Refresh", "Actualizar")}</button></div><div data-booking-error></div>${bookings.length ? bookings.map((b) => `<article class="booking-row"><div class="between"><h3>${esc(b.name)} · ${esc(b.typeName)}</h3><span class="status-pill ${b.status === "confirmed" ? "good" : b.status === "failed" ? "bad" : ""}">${esc(statusLabel(b.status))}</span></div><p>${esc(dateLabel(b.start, settings.timezone))} · ${esc(settings.timezone)}<br>${esc(b.location || b.mode)} · <a href="mailto:${esc(b.email)}">${esc(b.email)}</a></p>${b.error ? `<div class="notice error"><p>${esc(bookingIssue(b))}</p><small>${t("Diagnostic code", "Código de diagnóstico")}: ${esc(b.error)}</small></div>` : ""}${b.topic ? `<p class="topic">${esc(b.topic)}</p>` : ""}${bookingActions(b)}<div data-booking-action="${esc(b.id)}"></div></article>`).join("") : `<div class="empty-state"><h3>${t("Your next conversation starts here.", "Tu próxima conversación empieza aquí.")}</h3><p>${t("Bookings will appear here as people reserve your time.", "Las reservas aparecerán aquí cuando alguien elija un horario.")}</p></div>`}</section>`;
   $("[data-refresh-bookings]", app).addEventListener(
     "click",
     () => void refreshBookings(),
@@ -504,8 +567,8 @@ async function cancelBooking(id: string) {
     !(await confirmAction(
       t("Cancel this booking?", "¿Cancelar esta reserva?"),
       t(
-        "The guest’s calendar invitation will be cancelled.",
-        "Se cancelará la invitación de calendario del invitado.",
+        "A cancellation will be requested. Any existing calendar invitation is updated when the providers confirm. This may take time if a provider’s last result is uncertain.",
+        "Se solicitará la cancelación. Las invitaciones existentes se actualizarán cuando los proveedores confirmen. Esto puede tardar si se desconoce el resultado de la última operación.",
       ),
       t("Cancel booking", "Cancelar reserva"),
     ))
