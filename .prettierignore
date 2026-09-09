@@ -1,0 +1,10 @@
+shared/
+node_modules/
+_site/
+work/
+worker-configuration.d.ts
+_includes/
+_plugins/
+assets/build/
+package-lock.json
+Gemfile.lock

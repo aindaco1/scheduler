@@ -1,0 +1,28 @@
+title: Scheduler
+url: https://scheduler.dustwave.xyz
+baseurl: ""
+timezone: America/Denver
+encoding: utf-8
+permalink: pretty
+exclude:
+  - shared
+  - node_modules
+  - worker
+  - web
+  - scripts
+  - docs
+  - work
+  - vendor
+  - README.md
+  - AGENTS.md
+  - Gemfile
+  - Gemfile.lock
+  - package.json
+  - package-lock.json
+  - tsconfig.json
+  - vitest.config.ts
+  - wrangler.jsonc
+  - worker-configuration.d.ts
+  - LICENSE
+  - THIRD_PARTY_NOTICES.md
+  - assets/scheduler.scss

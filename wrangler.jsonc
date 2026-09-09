@@ -1,0 +1,55 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "scheduler",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./_site",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SCHEDULER",
+        "class_name": "Scheduler",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Scheduler"],
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "redact_query_string": true,
+  },
+  "vars": {
+    "PUBLIC_ORIGIN": "https://scheduler.dustwave.xyz",
+    "OWNER_SLUG": "alonso",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAEuIemus7_xGiqTS",
+  },
+  "secrets": {
+    "required": [
+      "SESSION_SECRET",
+      "ENCRYPTION_KEY",
+      "ADMIN_EMAIL",
+      "RESEND_API_KEY",
+      "EMAIL_FROM",
+      "TURNSTILE_SECRET_KEY",
+    ],
+  },
+  "account_id": "fee6147787ab9025e9fd8e6e8fd76910",
+  "routes": [
+    {
+      "pattern": "scheduler.dustwave.xyz",
+      "custom_domain": true,
+    },
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+}

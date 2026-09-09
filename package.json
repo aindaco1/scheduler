@@ -1,0 +1,50 @@
+{
+  "name": "@dustwave/scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run build && wrangler dev --port 8787",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
+    "types": "wrangler types",
+    "test": "vitest run",
+    "check": "npm run template:check && npm run typecheck && npm test && npm run build && npm run test:browser && wrangler deploy --dry-run",
+    "template:check": "node shared/dust-wave-jekyll-template/bin/sync-consumer.mjs --consumer-root . --check",
+    "deploy": "npm run check && wrangler deploy",
+    "test:browser": "node web/tests/browser.mjs",
+    "format": "prettier --write worker/src web scripts *.json *.jsonc *.ts .github/workflows"
+  },
+  "dependencies": {
+    "@dustwave/admin-shell": "file:shared/dust-wave-platform/packages/admin-shell",
+    "@dustwave/site-shell": "file:shared/dust-wave-platform/packages/site-shell",
+    "@dustwave/worker-core": "file:shared/dust-wave-platform/packages/worker-core",
+    "@js-temporal/polyfill": "0.5.1",
+    "ical.js": "2.2.1",
+    "sax": "1.6.1",
+    "tsdav": "2.3.3",
+    "xml-js": "1.6.11",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.5.0",
+    "@types/sax": "1.2.7",
+    "axe-core": "4.13.0",
+    "esbuild": "0.28.2",
+    "prettier": "3.9.6",
+    "sass": "1.104.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "wrangler": "4.130.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.4",
+    "workerd": "1.20260908.1"
+  }
+}

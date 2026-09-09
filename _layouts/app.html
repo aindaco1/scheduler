@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="{{ page.lang | default: 'en' }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="{% if page.description %}{{ page.description | escape }}{% else %}{% if page.lang == 'es' %}Reserva un momento para conversar con Alonso.{% else %}Book a little time to connect with Alonso.{% endif %}{% endif %}"
+    />
+    {% if page.app != 'booking' and page.app != 'privacy' %}
+    <meta name="robots" content="noindex, nofollow" />
+    {% endif %}
+    <title>{{ page.title }} · Scheduler</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/build/scheduler.css" />
+    <script type="module" src="/assets/build/{{ page.app }}.js"></script>
+  </head>
+  <body data-app="{{ page.app }}">
+    <a class="skip-link" href="#main"
+      >{% if page.lang == 'es' %}Saltar al contenido{% else %}Skip to content{%
+      endif %}</a
+    >
+    <header class="site-header wrap">
+      <a
+        class="wordmark"
+        href="{% if page.lang == 'es' %}/es{% endif %}/alonso"
+        aria-label="{% if page.lang == 'es' %}Inicio de reservas{% else %}Booking home{% endif %}"
+        ><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+          <path
+            d="M16 2v28M2 16h28M6.1 6.1l19.8 19.8M6.1 25.9L25.9 6.1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          /></svg
+        ><span>DUST WAVE<span class="wordmark-sub">SCHEDULER</span></span></a
+      >
+      <nav
+        class="site-tools"
+        aria-label="{% if page.lang == 'es' %}Preferencias{% else %}Preferences{% endif %}"
+      >
+        <a
+          id="language-link"
+          lang="{% if page.lang == 'es' %}en{% else %}es{% endif %}"
+          hreflang="{% if page.lang == 'es' %}en{% else %}es{% endif %}"
+          href="{% if page.lang != 'es' %}/es{% endif %}{% if page.app == 'booking' %}/alonso{% else %}/{{ page.app }}/{% endif %}"
+          >{% if page.lang == 'es' %}English{% else %}Español{% endif %}</a
+        >
+        <label class="theme-control"
+          ><span class="sr-only"
+            >{% if page.lang == 'es' %}Apariencia{% else %}Appearance{% endif
+            %}</span
+          ><select id="appearance">
+            <option value="system">
+              {% if page.lang == 'es' %}Sistema{% else %}System{% endif %}
+            </option>
+            <option value="light">
+              {% if page.lang == 'es' %}Claro{% else %}Light{% endif %}
+            </option>
+            <option value="dark">
+              {% if page.lang == 'es' %}Oscuro{% else %}Dark{% endif %}
+            </option>
+          </select></label
+        >
+      </nav>
+    </header>
+    <main id="main" class="wrap" tabindex="-1">
+      {{ content }} {% if page.app == 'privacy' %}
+      <div id="app" hidden></div>
+      {% else %}
+      <div id="app" aria-busy="true">
+        <div class="loading-state" role="status">
+          <span class="loading-dot" aria-hidden="true"></span>{% if page.lang ==
+          'es' %}Preparando tu espacio…{% else %}Getting things ready…{% endif
+          %}
+        </div>
+      </div>
+      <noscript
+        ><div class="notice">
+          {% if page.lang == 'es' %}Activa JavaScript para consultar los
+          horarios y reservar.{% else %}Please enable JavaScript to view
+          available times and book a meeting.{% endif %}
+        </div></noscript
+      >
+      {% endif %}
+    </main>
+    <footer class="site-footer wrap">
+      <span
+        >{% if page.lang == 'es' %}Un poco de tiempo. Nuevas posibilidades.{%
+        else %}A little time. New possibilities.{% endif %}</span
+      >
+      <nav
+        class="cluster"
+        aria-label="{% if page.lang == 'es' %}Enlaces del sitio{% else %}Site links{% endif %}"
+      >
+        <a href="{% if page.lang == 'es' %}/es{% endif %}/privacy/"
+          >{% if page.lang == 'es' %}Privacidad{% else %}Privacy{% endif %}</a
+        >
+        <a href="{% if page.lang == 'es' %}/es{% endif %}/admin/"
+          >{% if page.lang == 'es' %}Administrar{% else %}Manage schedule{%
+          endif %}</a
+        >
+      </nav>
+    </footer>
+  </body>
+</html>
