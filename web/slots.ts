@@ -37,6 +37,10 @@ export class SlotPicker {
     this.render();
     void this.load();
   }
+  setLocation(location: string) {
+    this.options.location = location;
+    void this.load();
+  }
   destroy() {
     this.destroyed = true;
     this.request?.abort();

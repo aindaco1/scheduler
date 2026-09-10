@@ -5,7 +5,10 @@ import type { SlotPicker, SlotPickerOptions } from "./slots";
 export class LazySlotPicker {
   private picker?: SlotPicker;
   private disposed = false;
-  constructor(root: HTMLElement, options: SlotPickerOptions) {
+  constructor(
+    root: HTMLElement,
+    private options: SlotPickerOptions,
+  ) {
     root.innerHTML = `<p role="status" class="help-text">${t("Loading available times…", "Cargando los horarios disponibles…")}</p>`;
     void import("./slots")
       .then(({ SlotPicker }) => {
@@ -16,6 +19,10 @@ export class LazySlotPicker {
         if (!this.disposed && root.isConnected)
           root.innerHTML = `<p role="alert" class="notice error">${esc(t("The time picker could not load. Please reload this page to try again.", "No se pudo cargar el selector de horarios. Recarga la página para intentarlo de nuevo."))}</p>`;
       });
+  }
+  setLocation(location: string) {
+    this.options.location = location;
+    this.picker?.setLocation(location);
   }
   destroy() {
     this.disposed = true;

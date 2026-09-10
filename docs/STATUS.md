@@ -290,3 +290,10 @@ Deployment: source `ca7d48e` is live in Worker version `80f863d4-2ef4-4da6-bc79-
 Changed the English location prompt to “Where should we meet?” and updated the existing browser test label. Spanish wording is unchanged. The production build and quality checks passed (eight localized pages, 311 paired messages and asset budgets). Deployment verification follows below.
 
 Deployment: source `f49b5df` is live in Worker version `c62e1db2-18ed-4639-8c23-c4c088ed7bac`. Both public booking locale routes reference the new bundle, which matches the local build byte for byte and includes the updated English question. [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34451893262) was still running at live verification. No live settings, bookings or messages were changed.
+
+
+## Preserve the week when changing locations
+
+Switching in-person locations now refreshes the existing time picker instead of rebuilding it. The current Monday-to-Monday week, selected time zone and location-field focus remain in place; times and the address update for the new venue. Clearing and reselecting a location also retains that browsing context. The shared picker keeps its existing request cancellation and stale-response protection.
+
+Local verification: `npm run check` passed all 149 Workers tests, template/type/build checks, 311 paired UI messages, asset budgets, independent fork setup, browser/keyboard acceptance, axe scans and Wrangler dry run. Regression checks cover a later week with a non-default time zone, an empty venue, clearing/reselecting a venue and continued week navigation in English desktop and Spanish mobile views. Both rendered views were inspected. No live settings, bookings or messages were changed. Deployment and CI evidence follow below.
