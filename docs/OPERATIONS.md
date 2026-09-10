@@ -1,5 +1,7 @@
 # Development and operations
 
+For a new deployment, follow [the fork/setup guide](FORKING.md). Identity and public routes come from Wrangler vars, so use `npm run build` rather than bare Jekyll.
+
 ## Architecture and local checks
 
 Jekyll produces static shells, Inter/font assets and small browser entrypoints. A Cloudflare Worker serves them and the same-origin API. One SQLite Durable Object per owner contains settings, bookings, hashed sessions and a durable provider/email job queue. No separate SQL server, Redis, D1, KV, or application server is required.
@@ -16,7 +18,7 @@ Run `npm run check`, then `npx wrangler deploy`. Provision secrets with `npx wra
 
 Required bootstrap secrets: `SESSION_SECRET`, `ENCRYPTION_KEY`, `ADMIN_EMAIL`, `RESEND_API_KEY`, `EMAIL_FROM`, `TURNSTILE_SECRET_KEY`. Google additionally requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` before connection or booking is possible. The paused site and owner dashboard can be deployed before Google credentials are available. Zoom additionally uses `ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET` when a Zoom type is enabled. `TURNSTILE_SITE_KEY` is public and belongs in Wrangler vars.
 
-The Check workflow runs on pushes and pull requests with read-only repository permissions. Deployment currently runs from the authenticated local Wrangler CLI; it does not store a broad Cloudflare credential in GitHub. A future deployment workflow should use a dedicated scoped credential.
+The Check workflow runs on pushes, pull requests and a weekly schedule with read-only repository permissions. Deployment currently runs from the authenticated local Wrangler CLI; it does not store a broad Cloudflare credential in GitHub. A future deployment workflow should use a dedicated scoped credential.
 
 ## Owner setup
 

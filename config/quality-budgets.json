@@ -1,0 +1,11 @@
+{
+  "entryGzipBytes": {
+    "booking": 75000,
+    "manage": 75000,
+    "admin": 95000,
+    "privacy": 15000
+  },
+  "totalJavaScriptBytes": 320000,
+  "cssGzipBytes": 10000,
+  "cssBytes": 25000
+}

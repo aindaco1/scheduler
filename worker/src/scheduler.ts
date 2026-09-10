@@ -34,11 +34,12 @@ import {
   timingSafeEqual,
 } from "./security";
 import { GoogleCalendar, googleToken } from "./providers/google";
-import { icloudBusy, icloudCalendars } from "./providers/icloud";
+import { IcloudSession, icloudCalendars } from "./providers/icloud";
 import { refreshZoom, ZoomMeetings } from "./providers/zoom";
 import { bookingEmail, loginEmail, sendEmail, type Email } from "./email";
 import type { RuntimeEnv } from "./env";
 import { validateLogo } from "./logo";
+import { FreshCache, BUSY_CACHE_TTL_MS, busyWindow } from "./fresh-cache";
 
 interface Job {
   id: string;
@@ -65,6 +66,10 @@ const active = ["pending", "confirmed", "cancelling", "rescheduling"];
 
 export class Scheduler extends DurableObject<RuntimeEnv> {
   private zoomRefresh?: Promise<ZoomConnection>;
+  private googleAccess?: { token: string; expires: number };
+  private googleRefresh?: Promise<{ token: string; expires: number }>;
+  private appleSession?: IcloudSession;
+  private busyCache = new FreshCache<Busy[]>();
   constructor(ctx: DurableObjectState, env: RuntimeEnv) {
     super(ctx, env);
     ctx.storage.sql.exec(
@@ -89,7 +94,10 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       "CREATE TABLE IF NOT EXISTS logos (id TEXT PRIMARY KEY, content_type TEXT NOT NULL, data BLOB NOT NULL, created REAL NOT NULL)",
     );
     if (!this.read<StoredConfig>("settings"))
-      this.write("settings", { settings: defaultSettings(), revision: 1 });
+      this.write("settings", {
+        settings: defaultSettings(this.env.OWNER_NAME, this.env.OWNER_TIMEZONE),
+        revision: 1,
+      });
   }
   private read<T>(key: string): T | undefined {
     const row = this.ctx.storage.sql
@@ -166,6 +174,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     return JSON.parse(row.data);
   }
   private save(b: Booking) {
+    this.busyCache.clear();
     b.updated = Date.now();
     this.ctx.storage.sql.exec(
       "INSERT INTO bookings(id,request_id,start,end,status,data) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET start=excluded.start,end=excluded.end,status=excluded.status,data=excluded.data",
@@ -252,6 +261,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     maintenance = false,
   ) {
     const encrypted = await seal(value, this.env.ENCRYPTION_KEY);
+    this.clearCalendarConnections();
     const accountId = "accountId" in value ? value.accountId : undefined;
     const previous = this.read<string>("identity:" + provider);
     if (
@@ -276,17 +286,52 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       }
     });
   }
+  private clearCalendarConnections() {
+    this.busyCache.clear();
+    this.googleAccess = undefined;
+    this.googleRefresh = undefined;
+    this.appleSession = undefined;
+  }
+  private async apple(): Promise<IcloudSession | undefined> {
+    if (this.appleSession) return this.appleSession;
+    const stored = this.read<string>("connection:icloud");
+    if (!stored) return;
+    const connection = await unseal<IcloudConnection>(
+      stored,
+      this.env.ENCRYPTION_KEY,
+    );
+    const session = new IcloudSession(connection);
+    if (stored === this.read("connection:icloud")) this.appleSession = session;
+    return session;
+  }
   private async google(): Promise<GoogleCalendar> {
     if (!this.env.GOOGLE_CLIENT_ID || !this.env.GOOGLE_CLIENT_SECRET)
       throw new AppError("google_not_configured", 503);
-    const connection = await this.connection<GoogleConnection>("google");
-    if (!connection) throw new AppError("google_not_connected", 503);
-    return new GoogleCalendar(
-      await googleToken(
-        connection,
-        this.env.GOOGLE_CLIENT_ID,
-        this.env.GOOGLE_CLIENT_SECRET,
-      ),
+    const stored = this.read<string>("connection:google");
+    if (!stored) throw new AppError("google_not_connected", 503);
+    if (!this.googleAccess || this.googleAccess.expires <= Date.now()) {
+      const pending = (this.googleRefresh ??= (async () => {
+        const connection = await unseal<GoogleConnection>(
+          stored,
+          this.env.ENCRYPTION_KEY,
+        );
+        return googleToken(
+          connection,
+          this.env.GOOGLE_CLIENT_ID!,
+          this.env.GOOGLE_CLIENT_SECRET!,
+        );
+      })());
+      try {
+        const access = await pending;
+        if (this.read("connection:google") !== stored)
+          throw new AppError("settings_changed", 409);
+        this.googleAccess = access;
+      } finally {
+        if (this.googleRefresh === pending) this.googleRefresh = undefined;
+      }
+    }
+    return new GoogleCalendar(this.googleAccess.token, () =>
+      this.clearCalendarConnections(),
     );
   }
   private async zoom(): Promise<ZoomMeetings> {
@@ -371,50 +416,89 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     settings: Settings,
     from: number,
     to: number,
+    browse = false,
   ): Promise<Busy[]> {
     const issues = this.configured(settings);
     if (issues.length) throw new AppError(issues[0], 503);
-    const [google, apple] = await Promise.all([
-      this.google(),
-      this.connection<IcloudConnection>("icloud"),
-    ]);
-    const results = await Promise.all([
-      google.busy(settings.googleCalendars, from, to, settings.timezone),
-      settings.icloudCalendars.length
-        ? apple
-          ? icloudBusy(
-              apple,
-              settings.icloudCalendars,
-              from,
-              to,
-              settings.timezone,
-            )
-          : Promise.reject(new AppError("icloud_not_connected", 503))
-        : Promise.resolve([]),
-    ]);
-    this.write("lastVerified", Date.now());
-    return results.flat();
+    const load = async (start: number, end: number) => {
+      const [google, apple] = await Promise.all([this.google(), this.apple()]);
+      const results = await Promise.all([
+        google.busy(settings.googleCalendars, start, end, settings.timezone),
+        settings.icloudCalendars.length
+          ? apple
+            ? apple.busy(
+                settings.icloudCalendars,
+                start,
+                end,
+                settings.timezone,
+              )
+            : Promise.reject(new AppError("icloud_not_connected", 503))
+          : Promise.resolve([]),
+      ]);
+      this.write("lastVerified", Date.now());
+      return results.flat();
+    };
+    if (browse && this.env.CALENDAR_CACHE_ENABLED !== "false") {
+      const range = busyWindow(from, to);
+      const key = JSON.stringify([
+        settings.googleCalendars,
+        settings.icloudCalendars,
+        settings.timezone,
+        range.from,
+        range.to,
+      ]);
+      return this.busyCache.get(key, BUSY_CACHE_TTL_MS, async () => {
+        let result: Busy[];
+        try {
+          result = await load(range.from, range.to);
+        } catch (error) {
+          this.busyCache.clear();
+          throw error;
+        }
+        // Do not retain unusually dense calendars in memory.
+        if (result.length > 10_000) this.busyCache.clear();
+        return result;
+      });
+    }
+    // Confirmation, rescheduling and verification always read providers afresh.
+    // Clear at both ends so an overlapping browse cannot repopulate an old view.
+    this.busyCache.clear();
+    try {
+      return await load(from, to);
+    } finally {
+      this.busyCache.clear();
+    }
   }
+
   async connections(verify = false) {
+    if (verify) this.clearCalendarConnections();
     const settings = this.getSettings().settings,
       issues = this.configured(settings);
     const calendars: CalendarChoice[] = [];
     const gc = await this.connection<GoogleConnection>("google");
     const ic = await this.connection<IcloudConnection>("icloud");
-    if (gc) {
-      try {
-        calendars.push(...(await (await this.google()).calendars()));
-      } catch (e) {
-        issues.push(e instanceof AppError ? e.code : "google_unavailable");
-      }
-    }
-    if (ic) {
-      try {
-        calendars.push(...(await icloudCalendars(ic)));
-      } catch (e) {
-        issues.push(e instanceof AppError ? e.code : "icloud_unavailable");
-      }
-    }
+    await Promise.all([
+      (async () => {
+        if (!gc) return;
+        try {
+          calendars.push(...(await (await this.google()).calendars()));
+        } catch (e) {
+          issues.push(e instanceof AppError ? e.code : "google_unavailable");
+        }
+      })(),
+      (async () => {
+        if (!ic) return;
+        try {
+          calendars.push(...(await (await this.apple())!.calendars()));
+        } catch (e) {
+          issues.push(e instanceof AppError ? e.code : "icloud_unavailable");
+        }
+      })(),
+    ]);
+    calendars.sort(
+      (a, b) =>
+        a.provider.localeCompare(b.provider) || a.name.localeCompare(b.name),
+    );
     if (verify && !issues.length) {
       try {
         await this.externalBusy(
@@ -451,6 +535,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     return this.connections();
   }
   async disconnect(provider: string) {
+    this.clearCalendarConnections();
     if (!["google", "icloud", "zoom"].includes(provider))
       throw new AppError("invalid_provider");
     this.ctx.storage.sql.exec(
@@ -505,6 +590,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         .toArray().length
     )
       throw new AppError("logo_missing");
+    this.busyCache.clear();
     this.write("settings", { settings, revision: revision + 1 });
     return this.getSettings();
   }
@@ -535,10 +621,18 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       to - from > MAX_AVAILABILITY_RANGE_MS
     )
       throw new AppError("invalid_date_range");
+    resolveType(config.settings, typeId, locationId);
+    const now = Date.now();
+    if (
+      to <= now + config.settings.noticeHours * 3_600_000 ||
+      from > now + config.settings.horizonDays * 86_400_000
+    )
+      return { slots: [] };
     const busy = await this.externalBusy(
       config.settings,
       from - 4 * 3_600_000,
       to + 8 * 3_600_000,
+      true,
     );
     if (this.getSettings().revision !== config.revision)
       throw new AppError("settings_changed", 409);

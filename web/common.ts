@@ -6,7 +6,8 @@ import { LOGO_MAX_BYTES, LOGO_MAX_DIMENSION } from "../worker/src/logo-policy";
 export const locale: Locale =
   document.documentElement.lang === "es" ? "es" : "en";
 export const t = (en: string, es: string) => (locale === "es" ? es : en);
-export const local = (v: { en: string; es: string }) => v[locale] || v.en;
+export const local = (v: { en: string; es: string }) =>
+  v[locale] || v.en || v.es;
 export const esc = (v: unknown) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -18,6 +19,7 @@ export const esc = (v: unknown) =>
 export const app = document.querySelector<HTMLElement>("#app")!;
 const defaultWordmark = document.querySelector(".wordmark")?.innerHTML || "";
 export const prefix = locale === "es" ? "/es" : "";
+export const bookingPath = document.body.dataset.bookingPath || "/";
 export const api = new AdminApiClient({
   baseUrl: "/api",
   credentials: "same-origin",
@@ -144,12 +146,13 @@ export function errorText(error: unknown) {
       "This link or session has expired. Please use your latest booking email or sign in again.",
       "Este enlace o sesión ha caducado. Usa tu correo de reserva más reciente o vuelve a iniciar sesión.",
     );
-  if (code.toLowerCase().includes("turnstile"))
+  if (code.toLowerCase().includes("turnstile") || code.startsWith("challenge_"))
     return t(
       "Please complete the spam check again.",
       "Completa de nuevo la verificación contra spam.",
     );
   if (
+    code === "management_closed" ||
     code.toLowerCase().includes("cutoff") ||
     code.toLowerCase().includes("too_late")
   )
@@ -199,7 +202,7 @@ export function applyBrand(settings: PublicSettings) {
   const logo = safeHttps(settings.brand.logoUrl);
   if (mark)
     mark.innerHTML = logo
-      ? `<img class="header-logo" src="${esc(logo)}" alt="${esc(settings.name)}">`
+      ? `<img class="header-logo" width="120" height="52" decoding="async" src="${esc(logo)}" alt="${esc(settings.name)}">`
       : defaultWordmark;
   if (/^#[0-9a-fA-F]{6}$/.test(settings.brand.primary)) {
     document.documentElement.style.setProperty(

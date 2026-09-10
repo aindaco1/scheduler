@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 
-export async function checkBookingWeeks(browser, base, apiFixture, settings) {
+export async function checkBookingWeeks(
+  browser,
+  base,
+  apiFixture,
+  settings,
+  bookingPath,
+) {
   const context = await browser.newContext({
     timezoneId: "America/Denver",
     viewport: { width: 1280, height: 900 },
@@ -37,13 +43,13 @@ export async function checkBookingWeeks(browser, base, apiFixture, settings) {
     await action();
     await response;
     await page.waitForFunction(
-      () => document.querySelector("[data-slot-status]")?.textContent === "",
+      () => !!document.querySelector("[data-slot-status] .sr-only"),
     );
   };
   const open = async (date, spanish = false) => {
     now = Date.parse(date);
     await page.clock.setFixedTime(now);
-    await page.goto(base + (spanish ? "/es/alonso" : "/alonso"));
+    await page.goto(base + (spanish ? "/es" : "") + bookingPath);
     await loaded(() => page.locator('[data-type="conversation"]').click());
   };
   try {

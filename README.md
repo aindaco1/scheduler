@@ -4,8 +4,12 @@ A small, open-source meeting scheduler built with Jekyll, Cloudflare Workers, Go
 
 Alonso's booking page is **https://scheduler.dustwave.xyz/alonso**.
 
+**[Set up your own instance →](docs/FORKING.md)**
+
 ## Project documentation
 
+- [Quality, security, accessibility, performance, SEO and i18n](docs/QUALITY.md)
+- [Contributing](CONTRIBUTING.md) and [security reporting](SECURITY.md)
 - [Phase 1 decisions](docs/decisions/phase-1.md)
 - [Implementation and verification status](docs/STATUS.md)
 - [Research and architecture](docs/research/scheduler-research-and-scope.md)

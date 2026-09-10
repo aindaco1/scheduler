@@ -1,5 +1,5 @@
 PUBLIC_ORIGIN=http://localhost:8787
-OWNER_SLUG=alonso
+# OWNER_SLUG and the public site key come from Wrangler.
 ADMIN_EMAIL=owner@example.com
 EMAIL_FROM=Scheduler <bookings@example.com>
 # Optional monitored reply address; defaults to ADMIN_EMAIL.

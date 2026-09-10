@@ -43,7 +43,9 @@ function sessionToken(request: Request) {
 function bearer(request: Request) {
   return request.headers.get("Authorization")?.replace(/^Bearer /, "") || "";
 }
-function secure(response: Response, isApi: boolean): Response {
+function secure(response: Response, path: string): Response {
+  const isApi = path.startsWith("/api/");
+  const privatePage = /^\/(?:es\/)?(?:admin|manage)(?:\/|$)/.test(path);
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "no-referrer");
@@ -53,8 +55,29 @@ function secure(response: Response, isApi: boolean): Response {
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
   );
-  if (isApi && !headers.get("Content-Type")?.startsWith("image/"))
-    headers.set("Cache-Control", "private, no-store");
+  headers.set("Strict-Transport-Security", "max-age=31536000");
+  // Keep zone-wide script injection from conflicting with this app's CSP.
+  // Turnstile is explicitly loaded by the app and remains active.
+  if (headers.get("Content-Type")?.includes("text/html")) {
+    const policy =
+      headers.get("Cache-Control") || "public, max-age=0, must-revalidate";
+    headers.set(
+      "Cache-Control",
+      policy.includes("no-transform") ? policy : policy + ", no-transform",
+    );
+  }
+  if (isApi || privatePage || response.status >= 400)
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+  if (
+    privatePage ||
+    (isApi && !headers.get("Content-Type")?.startsWith("image/"))
+  )
+    headers.set("Cache-Control", "private, no-store, no-transform");
+  if (
+    response.status === 200 &&
+    /^\/assets\/build\/[a-z]+-[A-Za-z0-9_-]+\.(js|css)$/.test(path)
+  )
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -414,10 +437,7 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
 export default {
   async fetch(request: Request, env: RuntimeEnv): Promise<Response> {
     try {
-      return secure(
-        await route(request, env),
-        new URL(request.url).pathname.startsWith("/api/"),
-      );
+      return secure(await route(request, env), new URL(request.url).pathname);
     } catch (e) {
       // RPC preserves serializable error fields, not custom prototypes/instanceof.
       const remote =
@@ -449,7 +469,7 @@ export default {
           },
           application ? Number(remote.status) : validation ? 400 : 503,
         ),
-        true,
+        new URL(request.url).pathname,
       );
     }
   },

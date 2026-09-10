@@ -28,6 +28,7 @@ export class SlotPicker {
   private start = Date.now();
   private timezone: string;
   private destroyed = false;
+  private request?: AbortController;
   constructor(
     private root: HTMLElement,
     private options: SlotPickerOptions,
@@ -38,6 +39,7 @@ export class SlotPicker {
   }
   destroy() {
     this.destroyed = true;
+    this.request?.abort();
     this.generation++;
   }
   private render() {
@@ -56,14 +58,26 @@ export class SlotPicker {
     $("[data-prev]", this.root).addEventListener("click", () => {
       this.offset = Math.max(0, this.offset - 1);
       this.render();
+      this.focusNavigation("prev");
       void this.load();
     });
     $("[data-next]", this.root).addEventListener("click", () => {
       this.offset += 1;
       this.render();
+      this.focusNavigation("next");
       void this.load();
     });
     this.updateWeek();
+  }
+  private focusNavigation(direction: "prev" | "next") {
+    const preferred = $<HTMLButtonElement>(`[data-${direction}]`, this.root);
+    (preferred.disabled
+      ? $<HTMLButtonElement>(
+          `[data-${direction === "prev" ? "next" : "prev"}]`,
+          this.root,
+        )
+      : preferred
+    ).focus();
   }
   private week() {
     return bookingWeek(
@@ -79,11 +93,13 @@ export class SlotPicker {
       `${dateLabel(from, this.timezone, { month: "short", day: "numeric" })} – ${dateLabel(next, this.timezone, { month: "short", day: "numeric" })}`;
   }
   private async load() {
+    this.request?.abort();
+    const controller = (this.request = new AbortController());
     const generation = ++this.generation;
     const status = $("[data-slot-status]", this.root);
     this.slots = [];
     $("[data-slots]", this.root).replaceChildren();
-    status.innerHTML = `<p class="help-text">${t("Checking your calendars…", "Consultando los calendarios…")}</p>`;
+    status.innerHTML = `<p class="help-text">${t("Checking available times…", "Consultando los horarios disponibles…")}</p>`;
     const { from, to } = this.week();
     const query = new URLSearchParams({
       type: this.options.type,
@@ -98,10 +114,11 @@ export class SlotPicker {
     try {
       const result = (await api.request(`/availability?${query}`, {
         headers,
+        signal: controller.signal,
       })) as { slots: string[] };
       if (this.destroyed || generation !== this.generation) return;
       this.slots = result.slots;
-      status.textContent = "";
+      status.innerHTML = `<span class="sr-only">${this.slots.length ? t(`${this.slots.length} available times. Choose a time below.`, `${this.slots.length} horarios disponibles. Elige uno a continuación.`) : t("No openings this week.", "No hay horarios esta semana.")}</span>`;
       this.renderSlots();
     } catch (e) {
       if (this.destroyed || generation !== this.generation) return;

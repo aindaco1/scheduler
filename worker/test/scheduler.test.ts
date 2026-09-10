@@ -73,6 +73,92 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("reuses browsing snapshots but rejects a new provider conflict at booking", async () => {
+    const stub = await setup();
+    let reads = 0;
+    fetchMock
+      .get("https://oauth2.googleapis.com")
+      .intercept({ path: "/token", method: "POST" })
+      .reply(200, { access_token: "access", expires_in: 3600 })
+      .persist();
+    const start = startTime();
+    fetchMock
+      .get("https://www.googleapis.com")
+      .intercept({ path: (p) => p.includes("/events?"), method: "GET" })
+      .reply(() => ({
+        statusCode: 200,
+        data: {
+          items:
+            ++reads === 1
+              ? []
+              : [
+                  {
+                    id: "new-conflict",
+                    start: { dateTime: new Date(start).toISOString() },
+                    end: { dateTime: new Date(start + 3600000).toISOString() },
+                  },
+                ],
+        },
+      }))
+      .persist();
+    const slots = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        stub.availability("conversation", "", start, start + 86400000),
+      ),
+    );
+    expect(reads).toBe(1);
+    expect(slots[0].slots).toContain(new Date(start).toISOString());
+    await expectRpc(stub.createBooking(input(start))).rejects.toMatchObject({
+      code: "slot_unavailable",
+    });
+    expect(reads).toBe(2);
+    const refreshed = await stub.availability(
+      "conversation",
+      "",
+      start,
+      start + 86400000,
+    );
+    expect(reads).toBe(3);
+    expect(refreshed.slots).not.toContain(new Date(start).toISOString());
+  });
+  it("invalidates browsing after settings edits and avoids out-of-window provider reads", async () => {
+    const stub = await setup();
+    mockReads();
+    const spy = vi.spyOn(globalThis, "fetch");
+    const start = startTime();
+    await stub.availability("conversation", "", start, start + 86400000);
+    const before = spy.mock.calls.length;
+    await stub.availability("conversation", "", start, start + 86400000);
+    expect(spy.mock.calls.length).toBe(before);
+    const config = await stub.getSettings();
+    config.settings.blackouts.push({
+      id: "trip",
+      start: new Date(start).toISOString(),
+      end: new Date(start + 86400000).toISOString(),
+      label: "Trip",
+      scope: "all",
+    });
+    await stub.updateSettings(config.settings, config.revision);
+    expect(
+      (await stub.availability("conversation", "", start, start + 86400000))
+        .slots,
+    ).toEqual([]);
+    expect(spy.mock.calls.length).toBeGreaterThan(before);
+    spy.mockClear();
+    expect(
+      (
+        await stub.availability(
+          "conversation",
+          "",
+          start + 200 * 86400000,
+          start + 201 * 86400000,
+        )
+      ).slots,
+    ).toEqual([]);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
   it("defaults legacy settings off, saves the holiday preference offline, and preserves it for older clients", async () => {
     const stub = await setup();
     await runInDurableObject(stub, (_instance, state) => {

@@ -16,3 +16,6 @@ playwright-report/
 work/
 .DS_Store
 *.log
+
+_data/build.json
+_data/deployment.json

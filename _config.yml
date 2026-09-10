@@ -1,5 +1,5 @@
 title: Scheduler
-url: https://scheduler.dustwave.xyz
+url: "" # Set from Wrangler by the production build.
 baseurl: ""
 timezone: America/Denver
 encoding: utf-8
@@ -26,3 +26,6 @@ exclude:
   - LICENSE
   - THIRD_PARTY_NOTICES.md
   - assets/scheduler.scss
+  - SECURITY.md
+  - CONTRIBUTING.md
+  - config

@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Booking } from "../src/model";
-import { icloudBusy, validateMultistatus } from "../src/providers/icloud";
+import {
+  IcloudSession,
+  icloudBusy,
+  validateMultistatus,
+} from "../src/providers/icloud";
 import { GoogleCalendar } from "../src/providers/google";
 import { refreshZoom, ZoomMeetings } from "../src/providers/zoom";
 
@@ -122,6 +126,26 @@ function mockIcloudReport(body: string | undefined, status = 207) {
 }
 
 describe("iCloud response completeness", () => {
+  it("reuses discovery but performs a fresh REPORT and rediscovers after failure", async () => {
+    mockIcloudReport(multistatus());
+    const session = new IcloudSession(credentials);
+    expect(
+      await session.busy([calendarUrl], from, to, "America/Denver"),
+    ).toEqual([]);
+    // No discovery fixtures remain: this second read must only issue REPORT.
+    fetchMock
+      .get(appleOrigin)
+      .intercept({ path: "/fixture/calendars/family/", method: "REPORT" })
+      .reply(503, "provider unavailable");
+    await expect(
+      session.busy([calendarUrl], from, to, "America/Denver"),
+    ).rejects.toMatchObject({ code: "icloud_unavailable" });
+    mockIcloudReport(multistatus());
+    expect(
+      await session.busy([calendarUrl], from, to, "America/Denver"),
+    ).toEqual([]);
+  });
+
   it.each([
     { status: 200, body: "" },
     {

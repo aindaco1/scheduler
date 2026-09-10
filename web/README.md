@@ -9,7 +9,7 @@ The browser uses the server's availability and booking decisions. It never
 creates calendar events directly. Management credentials remain in the URL
 fragment and use a bearer header for reads, including rescheduling availability.
 Guest names, email addresses, topics, and management credentials are never put in
-browser storage. The only stored browser preference is appearance.
+browser storage. Only appearance and the last admin tab are stored as browser preferences.
 
 The pinned Dust Wave admin-shell supplies API requests, accessible responsive
 tabs, dirty-button state, unsaved-change guards, and Turnstile sizing. The local

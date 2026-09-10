@@ -31,6 +31,9 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://scheduler.dustwave.xyz",
     "OWNER_SLUG": "alonso",
+    "OWNER_NAME": "Alonso",
+    "OWNER_TIMEZONE": "America/Denver",
+    "BRAND_NAME": "DUST WAVE",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAEuIemus7_xGiqTS",
   },
   "secrets": {

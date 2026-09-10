@@ -3,6 +3,10 @@ import { z } from "zod";
 export const localized = z
   .object({ en: z.string().max(2000), es: z.string().max(2000) })
   .strict();
+const localizedName = localized.refine(
+  (value) => !!(value.en.trim() || value.es.trim()),
+  "A name is required in at least one language",
+);
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 export const weekly = z
   .object({
@@ -36,7 +40,7 @@ export const reminderSchedule = z
 export const meetingType = z
   .object({
     id: identifier,
-    name: localized,
+    name: localizedName,
     description: localized,
     duration: z.number().int().min(5).max(240),
     gap: z.number().int().min(0).max(240),
@@ -48,7 +52,7 @@ export const meetingType = z
 export const location = z
   .object({
     id: identifier,
-    name: localized,
+    name: localizedName,
     address: localized,
     hours: z.array(weekly).max(40),
     enabled: z.boolean(),
@@ -232,14 +236,17 @@ export interface IcloudConnection {
   password: string;
 }
 
-export function defaultSettings(): Settings {
+export function defaultSettings(
+  name = "Your name",
+  timezone = "America/Denver",
+): Settings {
   return {
-    name: "Alonso",
+    name,
     intro: {
       en: "Choose a meeting below and find a time that works for you.",
       es: "Elige una reunión y encuentra un horario que te convenga.",
     },
-    timezone: "America/Denver",
+    timezone,
     enabled: false,
     noticeHours: 24,
     horizonDays: 30,

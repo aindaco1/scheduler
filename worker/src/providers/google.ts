@@ -25,7 +25,7 @@ export async function googleToken(
   connection: GoogleConnection,
   clientId: string,
   clientSecret: string,
-): Promise<string> {
+): Promise<{ token: string; expires: number }> {
   const response = await fetchWithTimeout(
     "https://oauth2.googleapis.com/token",
     {
@@ -40,13 +40,24 @@ export async function googleToken(
     12_000,
   );
   if (!response.ok) throw new AppError("google_reconnect_required", 503);
-  const result = await boundedJson<{ access_token?: string }>(response, 32_768);
+  const result = await boundedJson<{
+    access_token?: string;
+    expires_in?: number;
+  }>(response, 32_768);
   if (!result.access_token)
     throw new AppError("google_reconnect_required", 503);
-  return result.access_token;
+  return {
+    token: result.access_token,
+    expires:
+      Date.now() +
+      Math.max(0, Math.min(Number(result.expires_in) || 0, 3600) - 60) * 1000,
+  };
 }
 export class GoogleCalendar {
-  constructor(private token: string) {}
+  constructor(
+    private token: string,
+    private onUnauthorized = () => {},
+  ) {}
   private async request<T>(
     path: string,
     init: RequestInit = {},
@@ -70,6 +81,7 @@ export class GoogleCalendar {
       throw new AppError("google_unavailable", 503, true);
     }
     if (allowMissing && [404, 410].includes(response.status)) return null;
+    if (response.status === 401) this.onUnauthorized();
     if (!response.ok)
       throw new AppError(
         response.status === 401
@@ -129,6 +141,8 @@ export class GoogleCalendar {
             maxResults: "2500",
             timeZone: zone,
             showDeleted: "false",
+            fields:
+              "nextPageToken,timeZone,items(id,status,transparency,start,end,attendees(self,responseStatus),extendedProperties/private)",
           });
           if (page) query.set("pageToken", page);
           const data = await this.request<{

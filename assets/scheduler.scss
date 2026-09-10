@@ -46,6 +46,7 @@ $dustwave-fit-layout-xsm-inline-gutter: 1rem;
 body {
   margin: 0;
   min-width: 280px;
+  overflow-wrap: anywhere;
 }
 button,
 input,
@@ -176,6 +177,7 @@ small,
 }
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
@@ -201,12 +203,17 @@ small,
 }
 .site-tools {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 1rem;
   font-size: 0.82rem;
 }
+.theme-control { max-width: 100%; }
 .theme-control select {
   width: auto;
+  max-width: 100%;
   border: 0;
   background: transparent;
   padding: 0.4rem 1.4rem 0.4rem 0.2rem;
@@ -268,6 +275,7 @@ small,
   gap: 1rem;
 }
 .choice-card {
+  min-width: 0;
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--border);
@@ -881,7 +889,7 @@ select.field-control,
 }
 @media (max-width: 760px) {
   .choice-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .choice-card {
     min-height: 180px;
@@ -890,7 +898,7 @@ select.field-control,
     padding-block: 2.5rem 2rem;
   }
   .booking-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
   }
   .booking-sidebar {
@@ -949,7 +957,7 @@ select.field-control,
     padding: 1rem;
   }
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .span-all {
     grid-column: auto;
@@ -997,7 +1005,7 @@ select.field-control,
   }
   .hours-row,
   .blackout-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .hours-row .button,
   .blackout-row .button {
@@ -1018,7 +1026,8 @@ select.field-control,
 }
 
 .header-logo {
-  max-width: 180px;
+  max-width: 120px;
+  object-position: left center;
   max-height: 52px;
   object-fit: contain;
 }

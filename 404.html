@@ -7,15 +7,15 @@ permalink: /404.html
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/assets/build/scheduler.css" />
+    <link rel="stylesheet" href="{{ site.data.build.css }}" />
     <title>Page not found · Scheduler</title>
   </head>
   <body>
     <main class="wrap empty-state">
       <h1>This page has moved.</h1>
       <p>Esta página no está disponible.</p>
-      <a class="button primary" href="/alonso"
-        >Book with Alonso / Reservar con Alonso</a
+      <a class="button primary" href="/{{ site.data.deployment.slug }}"
+        >Book a meeting / Reservar una reunión</a
       >
     </main>
   </body>

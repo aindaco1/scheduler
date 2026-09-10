@@ -7,17 +7,31 @@
     <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="{% if page.description %}{{ page.description | escape }}{% else %}{% if page.lang == 'es' %}Reserva una reunión con Alonso.{% else %}Book a meeting with Alonso.{% endif %}{% endif %}"
+      content="{% if page.description %}{{ page.description | escape }}{% else %}{% if page.lang == 'es' %}Reserva una reunión con {{ site.data.deployment.name | escape }}.{% else %}Book a meeting with {{ site.data.deployment.name | escape }}.{% endif %}{% endif %}"
     />
     {% if page.app != 'booking' and page.app != 'privacy' %}
     <meta name="robots" content="noindex, nofollow" />
     {% endif %}
-    <title>{{ page.title }} · Scheduler</title>
+    {% if page.app == 'booking' or page.app == 'privacy' %}
+    {% assign public_path = page.url %}
+    {% if page.app == 'booking' %}{% capture en_path %}/{{ site.data.deployment.slug }}{% endcapture %}{% else %}{% assign en_path = '/privacy/' %}{% endif %}
+    <link rel="canonical" href="{{ public_path | absolute_url }}" />
+    <link rel="alternate" hreflang="en" href="{{ en_path | absolute_url }}" />
+    <link rel="alternate" hreflang="es" href="{{ en_path | prepend: '/es' | absolute_url }}" />
+    <link rel="alternate" hreflang="x-default" href="{{ en_path | absolute_url }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{ page.title | escape }} · Scheduler" />
+    <meta property="og:url" content="{{ public_path | absolute_url }}" />
+    <meta property="og:site_name" content="{{ site.data.deployment.brand | escape }}" />
+    <meta property="og:locale" content="{% if page.lang == 'es' %}es_ES{% else %}en_US{% endif %}" />
+    <meta name="twitter:card" content="summary" />
+    {% endif %}
+    <title>{{ page.title | escape }} · Scheduler</title>
     <link rel="icon" href="/assets/icon.svg?v=2" type="image/svg+xml" />
-    <link rel="stylesheet" href="/assets/build/scheduler.css" />
-    <script type="module" src="/assets/build/{{ page.app }}.js"></script>
+    <link rel="stylesheet" href="{{ site.data.build.css }}" />
+    <script type="module" src="{{ site.data.build[page.app] }}"></script>
   </head>
-  <body data-app="{{ page.app }}">
+  <body data-app="{{ page.app }}" data-booking-path="{% if page.lang == 'es' %}/es{% endif %}/{{ site.data.deployment.slug }}">
     <a class="skip-link" href="#main"
       >{% if page.lang == 'es' %}Saltar al contenido{% else %}Skip to content{%
       endif %}</a
@@ -25,11 +39,11 @@
     <header class="site-header wrap">
       <a
         class="wordmark"
-        href="{% if page.lang == 'es' %}/es{% endif %}/alonso"
+        href="{% if page.lang == 'es' %}/es{% endif %}/{{ site.data.deployment.slug }}"
         aria-label="{% if page.lang == 'es' %}Inicio de reservas{% else %}Booking home{% endif %}"
         ><svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true">
           {% include scheduler-mark.svg %}</svg
-        ><span>DUST WAVE<span class="wordmark-sub">SCHEDULER</span></span></a
+        ><span>{{ site.data.deployment.brand | escape }}<span class="wordmark-sub">SCHEDULER</span></span></a
       >
       <nav
         class="site-tools"
@@ -39,7 +53,7 @@
           id="language-link"
           lang="{% if page.lang == 'es' %}en{% else %}es{% endif %}"
           hreflang="{% if page.lang == 'es' %}en{% else %}es{% endif %}"
-          href="{% if page.lang != 'es' %}/es{% endif %}{% if page.app == 'booking' %}/alonso{% else %}/{{ page.app }}/{% endif %}"
+          href="{% if page.lang != 'es' %}/es{% endif %}{% if page.app == 'booking' %}/{{ site.data.deployment.slug }}{% else %}/{{ page.app }}/{% endif %}"
           >{% if page.lang == 'es' %}English{% else %}Español{% endif %}</a
         >
         <label class="theme-control"
@@ -65,6 +79,9 @@
       <div id="app" hidden></div>
       {% else %}
       <div id="app" aria-busy="true">
+        {% if page.app == 'booking' %}
+        <section class="hero"><h1>{% if page.lang == 'es' %}Reserva con{% else %}Meet with{% endif %} {{ site.data.deployment.name | escape }}.</h1><p class="intro">{% if page.lang == 'es' %}Elige una reunión y encuentra un horario que te convenga.{% else %}Choose a meeting below and find a time that works for you.{% endif %}</p></section>
+        {% endif %}
         <div class="loading-state" role="status">
           <span class="loading-dot" aria-hidden="true"></span>{% if page.lang ==
           'es' %}Preparando tu espacio…{% else %}Getting things ready…{% endif

@@ -5,6 +5,7 @@ import { AppError, type CalendarChoice, type IcloudConnection } from "../model";
 import { icalBusy } from "./ical";
 import { xml2js, type Element } from "xml-js";
 import sax from "sax";
+import { FreshCache } from "../fresh-cache";
 
 export function validateMultistatus(body: string) {
   if (/<!DOCTYPE|<!ENTITY/i.test(body))
@@ -99,22 +100,67 @@ async function client(connection: IcloudConnection) {
     fetch: appleFetch,
   });
 }
-export async function icloudCalendars(
-  connection: IcloudConnection,
-): Promise<CalendarChoice[]> {
-  const dav = await client(connection);
-  const calendars = await dav.fetchCalendars();
-  if (calendars.length > 100) throw new AppError("icloud_incomplete", 503);
-  return calendars.map((c) => {
-    safeUrl(c.url);
-    return {
+// Discovery metadata is reusable; every busy() call still sends a new REPORT.
+export class IcloudSession {
+  private discovery = new FreshCache<{
+    dav: Awaited<ReturnType<typeof client>>;
+    calendars: DAVCalendar[];
+  }>(1);
+  constructor(private connection: IcloudConnection) {}
+  private snapshot() {
+    return this.discovery.get("discovery", 5 * 60_000, async () => {
+      const dav = await client(this.connection);
+      const calendars = await dav.fetchCalendars();
+      if (calendars.length > 100) throw new AppError("icloud_incomplete", 503);
+      calendars.forEach((c) => safeUrl(c.url));
+      return { dav, calendars };
+    });
+  }
+  async calendars(): Promise<CalendarChoice[]> {
+    const { calendars } = await this.snapshot();
+    return calendars.map((c) => ({
       id: c.url,
       name:
         typeof c.displayName === "string" ? c.displayName : "iCloud calendar",
       provider: "icloud",
       writable: false,
-    };
-  });
+    }));
+  }
+  async busy(ids: string[], from: number, to: number, zone: string) {
+    try {
+      const { dav, calendars } = await this.snapshot();
+      const data = await Promise.all(
+        ids.map(async (id) => {
+          safeUrl(id);
+          const calendar = calendars.find((c) => c.url === id);
+          if (!calendar) throw new AppError("icloud_calendar_missing", 503);
+          const objects = await dav.fetchCalendarObjects({
+            calendar,
+            timeRange: {
+              start: new Date(from).toISOString(),
+              end: new Date(to).toISOString(),
+            },
+            expand: true,
+            urlFilter: () => true,
+          });
+          if (objects.length > 5000)
+            throw new AppError("icloud_incomplete", 503);
+          return objects.flatMap((o) => {
+            if (typeof o.data !== "string")
+              throw new AppError("icloud_incomplete", 503);
+            return icalBusy(o.data, from, to, zone);
+          });
+        }),
+      );
+      return data.flat();
+    } catch (error) {
+      this.discovery.clear();
+      throw error;
+    }
+  }
+}
+export async function icloudCalendars(connection: IcloudConnection) {
+  return new IcloudSession(connection).calendars();
 }
 export async function icloudBusy(
   connection: IcloudConnection,
@@ -123,29 +169,5 @@ export async function icloudBusy(
   to: number,
   zone: string,
 ) {
-  const dav = await client(connection);
-  const calendars = await dav.fetchCalendars();
-  const data = await Promise.all(
-    ids.map(async (id) => {
-      safeUrl(id);
-      const calendar = calendars.find((c) => c.url === id);
-      if (!calendar) throw new AppError("icloud_calendar_missing", 503);
-      const objects = await dav.fetchCalendarObjects({
-        calendar: calendar as DAVCalendar,
-        timeRange: {
-          start: new Date(from).toISOString(),
-          end: new Date(to).toISOString(),
-        },
-        expand: true,
-        urlFilter: () => true,
-      });
-      if (objects.length > 5000) throw new AppError("icloud_incomplete", 503);
-      return objects.flatMap((o) => {
-        if (typeof o.data !== "string")
-          throw new AppError("icloud_incomplete", 503);
-        return icalBusy(o.data, from, to, zone);
-      });
-    }),
-  );
-  return data.flat();
+  return new IcloudSession(connection).busy(ids, from, to, zone);
 }

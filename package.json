@@ -13,11 +13,15 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "types": "wrangler types",
     "test": "vitest run",
-    "check": "npm run template:check && npm run typecheck && npm test && npm run build && npm run test:browser && wrangler deploy --dry-run",
+    "check": "npm run template:check && npm run typecheck && npm test && npm run build && npm run test:quality && npm run test:setup && npm run test:browser && wrangler deploy --dry-run",
     "template:check": "node shared/dust-wave-jekyll-template/bin/sync-consumer.mjs --consumer-root . --check",
     "deploy": "npm run check && wrangler deploy",
     "test:browser": "node web/tests/browser.mjs",
-    "format": "prettier --write worker/src web scripts *.json *.jsonc *.ts .github/workflows"
+    "format": "prettier --write worker/src web scripts *.json *.jsonc *.ts .github/workflows",
+    "setup": "node scripts/setup.mjs",
+    "test:quality": "node scripts/audit-quality.mjs",
+    "test:setup": "node scripts/test-setup.mjs",
+    "benchmark:availability": "node scripts/benchmark-availability.mjs"
   },
   "dependencies": {
     "@dustwave/admin-shell": "file:shared/dust-wave-platform/packages/admin-shell",
@@ -36,8 +40,10 @@
     "@playwright/test": "1.63.0",
     "@types/node": "26.5.0",
     "@types/sax": "1.2.7",
+    "acorn": "8.15.0",
     "axe-core": "4.13.0",
     "esbuild": "0.28.2",
+    "jsonc-parser": "3.3.1",
     "prettier": "3.9.6",
     "sass": "1.104.0",
     "typescript": "7.0.2",

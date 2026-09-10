@@ -6,9 +6,12 @@ import { createServer } from "node:http";
 import { readFile, stat, mkdir } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
+import { checkQuality } from "./quality.mjs";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
 const root = resolve(".");
+const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
+const bookingPath = "/" + deployment.slug;
 const model = await build({
   entryPoints: ["worker/src/model.ts"],
   bundle: true,
@@ -20,7 +23,7 @@ const { defaultSettings } = await import(
   "data:text/javascript;base64," +
     Buffer.from(model.outputFiles[0].text).toString("base64")
 );
-const settings = defaultSettings();
+const settings = defaultSettings("Alonso");
 settings.enabled = true;
 settings.icloudCalendars = ["https://caldav.example.test/family"];
 settings.hours[0].end = "24:00";
@@ -298,7 +301,7 @@ async function axe(name) {
   assert.deepEqual(violations, [], `${name}: ${JSON.stringify(violations)}`);
 }
 try {
-  await page.goto(base + "/alonso");
+  await page.goto(base + bookingPath);
   await page.getByRole("heading", { name: "Meet with Alonso." }).waitFor();
   assert.equal(
     await page.getByText("Choose a meeting", { exact: true }).count(),
@@ -386,7 +389,7 @@ try {
     ),
     false,
   );
-  await page.goto(base + "/alonso");
+  await page.goto(base + bookingPath);
   await page.getByRole("button", { name: /Meet in person/ }).click();
   assert.equal(await page.locator("[data-slot]").count(), 0);
   await page.getByLabel("Where shall we meet?").selectOption("studio");
@@ -396,7 +399,7 @@ try {
   await page.getByRole("heading", { name: "Confirmemos la reunión" }).waitFor();
   assert.equal(new URL(page.url()).searchParams.get("slot"), chosen);
   assert.equal(new URL(page.url()).searchParams.get("location"), "studio");
-  await page.goto(base + "/es/alonso");
+  await page.goto(base + "/es" + bookingPath);
   await page.getByRole("heading", { name: "Reserva con Alonso." }).waitFor();
   assert.equal(
     await page.getByText("Elige una reunión", { exact: true }).count(),
@@ -997,7 +1000,8 @@ try {
     .click();
   await preferencePage.locator("#panel-settings").waitFor({ state: "visible" });
   await preferenceContext.close();
-  await checkBookingWeeks(browser, base, apiFixture, settings);
+  await checkQuality(browser, base, apiFixture, bookingPath);
+  await checkBookingWeeks(browser, base, apiFixture, settings, bookingPath);
   await checkSettingsEnhancements(browser, base, apiFixture, settings);
   assert.deepEqual(errors, []);
   console.log(

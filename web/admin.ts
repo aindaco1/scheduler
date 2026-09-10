@@ -24,6 +24,7 @@ import {
   showError,
   errorText,
   prefix,
+  bookingPath,
   timezoneOptions,
   currentZone,
   dateLabel,
@@ -137,7 +138,7 @@ function render() {
     types: t("Meeting types", "Tipos de reunión"),
     settings: t("Settings", "Configuración"),
   };
-  app.innerHTML = `<div class="admin-hero between"><div><h1>${t("Your schedule", "Tu agenda")}</h1><span class="status-pill ${settings.enabled ? "good" : ""}">${settings.enabled ? t("Bookings open", "Reservas abiertas") : t("Bookings paused", "Reservas en pausa")}</span></div><div class="cluster"><a class="button" href="${prefix}/alonso" target="_blank" rel="noopener">${t("View booking page", "Ver página de reservas")} ↗</a><button class="button" type="button" data-logout>${t("Sign out", "Cerrar sesión")}</button></div></div><div data-global-error></div><div id="admin-tabs"><div class="admin-tabs" role="tablist" aria-label="${t("Dashboard sections", "Secciones del panel")}">${Object.entries(
+  app.innerHTML = `<div class="admin-hero between"><div><h1>${t("Your schedule", "Tu agenda")}</h1><span class="status-pill ${settings.enabled ? "good" : ""}">${settings.enabled ? t("Bookings open", "Reservas abiertas") : t("Bookings paused", "Reservas en pausa")}</span></div><div class="cluster"><a class="button" href="${bookingPath}" target="_blank" rel="noopener">${t("View booking page", "Ver página de reservas")} ↗</a><button class="button" type="button" data-logout>${t("Sign out", "Cerrar sesión")}</button></div></div><div data-global-error></div><div id="admin-tabs"><div class="admin-tabs" role="tablist" aria-label="${t("Dashboard sections", "Secciones del panel")}">${Object.entries(
     labels,
   )
     .map(
