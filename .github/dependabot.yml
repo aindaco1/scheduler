@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    # Cloudflare pool 0.22 supports Vitest 4 only. Remove when its peers allow 5+.
+    ignore:
+      - dependency-name: vitest
+        versions: [">=5.0.0"]
     groups:
       tooling:
         dependency-type: development
