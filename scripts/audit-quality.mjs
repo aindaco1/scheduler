@@ -24,7 +24,7 @@ for (const [entry, limit] of Object.entries(budget.entryGzipBytes)) {
     if (visited.has(path)) return;
     visited.add(path);
     for (const child of meta.outputs[path]?.imports || [])
-      if (!child.external) visit(child.path);
+      if (!child.external && child.kind !== "dynamic-import") visit(child.path);
   };
   visit(manifest[entry].slice(1));
   const bytes = [...visited].reduce(

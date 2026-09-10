@@ -79,9 +79,6 @@
       <div id="app" hidden></div>
       {% else %}
       <div id="app" aria-busy="true">
-        {% if page.app == 'booking' %}
-        <section class="hero"><h1>{% if page.lang == 'es' %}Reserva con{% else %}Meet with{% endif %} {{ site.data.deployment.name | escape }}.</h1><p class="intro">{% if page.lang == 'es' %}Elige una reunión y encuentra un horario que te convenga.{% else %}Choose a meeting below and find a time that works for you.{% endif %}</p></section>
-        {% endif %}
         <div class="loading-state" role="status">
           <span class="loading-dot" aria-hidden="true"></span>{% if page.lang ==
           'es' %}Preparando tu espacio…{% else %}Getting things ready…{% endif
@@ -90,6 +87,7 @@
       </div>
       <noscript
         ><div class="notice">
+          {% if page.app == 'booking' %}<h1>{{ page.title | escape }}</h1>{% endif %}
           {% if page.lang == 'es' %}Activa JavaScript para consultar los
           horarios y reservar.{% else %}Please enable JavaScript to view
           available times and book a meeting.{% endif %}

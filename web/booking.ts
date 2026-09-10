@@ -24,7 +24,7 @@ import {
   type Config,
   type PublicBooking,
 } from "./common";
-import { SlotPicker } from "./slots";
+import { LazySlotPicker as SlotPicker } from "./lazy-slots";
 
 initShell();
 let config: Config;

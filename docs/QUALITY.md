@@ -19,7 +19,7 @@ Severity reflects impact in this single-owner application.
 | --- | --- | --- | --- |
 | Performance | Every picker request repeated Google token refresh, Apple discovery and both calendar reads | High UX impact | Private 30-second busy snapshots, shared concurrent reads, reusable token/discovery metadata, early rejection of impossible ranges; coordinator tests verify actual avoided fetches |
 | Performance/privacy | Google returned unused titles/descriptions and other event fields | Medium | Partial-response field mask retains only fields needed for Busy/Free, time bounds, pagination and Scheduler identity; live read must verify mask acceptance |
-| Performance | Each entrypoint bundled duplicate shared code; fixed filenames discouraged safe long caching | Medium | Shared ES modules and content-hashed JS/CSS with immutable asset headers; per-entry transitive gzip and aggregate byte budgets |
+| Performance | Each entrypoint bundled duplicate shared code; fixed filenames discouraged safe long caching | Medium | Shared ES modules and content-hashed JS/CSS with immutable asset headers; per-entry initial transitive gzip and aggregate byte budgets |
 | Security/privacy | Private HTML shells lacked explicit no-store headers and HTTP noindex | Medium | Admin/manage/API responses now set private/no-store/no-transform and X-Robots-Tag; Worker tests cover both locales, successes and errors |
 | Accessibility | Week navigation replaced the focused button and reset keyboard focus | Medium | Restore focus to the corresponding enabled navigation button; keyboard regression test |
 | Accessibility | Successful availability loads had no announcement of results | Medium | Localized live announcement of available-time count or no openings |
@@ -95,7 +95,7 @@ npm audit --audit-level=moderate
 npm run benchmark:availability -- --samples 30
 ```
 
-`check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. Current entry gzip footprints are roughly 57 KB booking, 57 KB management, 68 KB admin and 5 KB privacy, including their shared imports. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
+`check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. The booking and management pages load the timezone/slot-picker code only when a picker opens. Budgets count initial shared imports separately from lazy code, with all code still subject to the aggregate limit. Exact footprints are written to the quality artifact. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
 
 Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixture screenshots, quality metrics and the translation packet for 14 days. It never calls real calendars or sends invitations. The read-only availability benchmark collects sequential duration/status samples without event/guest bodies; its p95 is emitted only for 30 samples. It is not real-user LCP/INP/CLS or sustained-load evidence.
 
