@@ -35,7 +35,12 @@ export const fetchMock = {
       intercept(options: Pick<Fixture, "path" | "method">) {
         return {
           reply(
-            status: number | ((request: { body: string }) => FixtureReply),
+            status:
+              | number
+              | ((request: {
+                  body: string;
+                  headers: Record<string, string>;
+                }) => FixtureReply),
             data?: unknown,
             responseOptions?: FixtureReply["responseOptions"],
           ) {
@@ -44,7 +49,10 @@ export const fetchMock = {
               ...options,
               respond: async (request) =>
                 typeof status === "function"
-                  ? status({ body: await request.text() })
+                  ? status({
+                      body: await request.text(),
+                      headers: Object.fromEntries(request.headers),
+                    })
                   : { statusCode: status, data, responseOptions },
             };
             fixtures.push(fixture);

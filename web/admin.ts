@@ -5,6 +5,12 @@ import { mountUnsavedChangesGuard } from "@dustwave/admin-shell/unsaved-changes"
 import type { Settings, Weekly, CalendarChoice } from "../worker/src/model";
 import { mergeSettings } from "./settings-merge";
 import {
+  LOGO_MAX_BYTES,
+  LOGO_MAX_DIMENSION,
+  LOGO_RECOMMENDED_DIMENSION,
+  LOGO_TYPES,
+} from "../worker/src/logo-policy";
+import {
   api,
   app,
   t,
@@ -45,6 +51,8 @@ let connections: Connections;
 let bookings: PublicBooking[] = [];
 let config: Config;
 let saving = false;
+let logoUploading = false;
+let logoPreview: { url: string; data: string } | undefined;
 let selectedTab: string | undefined;
 let tabs: ReturnType<typeof mountAccessibleTabs>;
 let token = "";
@@ -52,7 +60,8 @@ let challenge: { reset: () => void; remove: () => void } | undefined;
 initShell();
 const guard = mountUnsavedChangesGuard({
   hasUnsavedChanges: () =>
-    Boolean(settings) && JSON.stringify(settings) !== baseline,
+    logoUploading ||
+    (Boolean(settings) && JSON.stringify(settings) !== baseline),
 });
 const days = [
   t("Sunday", "Domingo"),
@@ -111,8 +120,12 @@ function dirty() {
     changed,
     t("All changes saved", "Cambios guardados"),
     t("Save changes", "Guardar cambios"),
-    { forceDisabled: saving },
+    { forceDisabled: saving || logoUploading },
   );
+  $$<HTMLInputElement | HTMLButtonElement>(
+    "[data-logo-file], [data-remove-logo]",
+    app,
+  ).forEach((input) => (input.disabled = saving || logoUploading));
   $("[data-save-state]", app).textContent = changed
     ? t("You have unsaved changes.", "Tienes cambios sin guardar.")
     : t("Your schedule is up to date.", "Tu agenda está al día.");
@@ -217,6 +230,7 @@ function onSetting(event: Event) {
   // A time picker represents midnight as 00:00; an end belongs to the selected day's end.
   if (el.dataset.endOfDay !== undefined && value === "00:00") value = "24:00";
   put(el.dataset.setting, value);
+  if (el.dataset.setting.startsWith("reminderHours.")) validateReminderFields();
   if (el.dataset.setting === "timezone") {
     rerenderEditor();
     $<HTMLSelectElement>('[data-setting="timezone"]', app).focus();
@@ -343,7 +357,7 @@ function renderAvailability() {
 }
 function renderTypes() {
   $("#panel-types", app).innerHTML =
-    `<div class="admin-layout"><section class="panel"><div class="between"><h2>${t("Meeting types", "Tipos de reunión")}</h2><button class="button" type="button" data-add-type>+ ${t("New type", "Nuevo tipo")}</button></div><p>${t("Keep each invitation clear: a duration, a purpose, and a place to connect.", "Cada invitación debe ser clara: una duración, un propósito y un lugar para conectar.")}</p>${settings.types.map((type, i) => `<details class="editor-card" ${i === 0 ? "open" : ""}><summary>${esc(local(type.name) || t("New meeting", "Nueva reunión"))} · ${type.duration} min</summary><div class="stack">${bilingual(`types.${i}.name`, t("Name", "Nombre"))}${bilingual(`types.${i}.description`, t("Description", "Descripción"), true)}<div class="form-grid">${field(`types.${i}.duration`, t("Duration (minutes)", "Duración (minutos)"), { type: "number", min: 5, max: 240 })}${field(`types.${i}.gap`, t("Gap between meetings (minutes)", "Intervalo entre reuniones (minutos)"), { type: "number", min: 0, max: 240 })}<label class="field">${t("Meeting service", "Modalidad de reunión")}<select data-setting="types.${i}.mode"><option value="meet" ${type.mode === "meet" ? "selected" : ""}>Google Meet</option><option value="zoom" ${type.mode === "zoom" ? "selected" : ""}>Zoom</option><option value="in-person" ${type.mode === "in-person" ? "selected" : ""}>${t("In person", "Presencial")}</option></select></label></div><fieldset><legend>${t("Allowed in-person locations", "Lugares presenciales permitidos")}</legend>${settings.locations.length ? settings.locations.map((l) => `<label class="check"><input type="checkbox" data-type-location="${i}" value="${esc(l.id)}" ${type.locationIds.includes(l.id) ? "checked" : ""}>${esc(local(l.name))}</label>`).join("") : `<p class="help-text">${t("Add locations below to offer in-person meetings.", "Añade lugares a continuación para ofrecer reuniones presenciales.")}</p>`}</fieldset>${check(`types.${i}.enabled`, t("Offer this meeting type", "Ofrecer este tipo de reunión"))}<div class="between"><small>${t("Link ID", "ID del enlace")}: ${esc(type.id)}</small><button class="button danger" type="button" data-remove="types" data-index="${i}" ${settings.types.length === 1 ? "disabled" : ""}>${t("Remove type", "Eliminar tipo")}</button></div></div></details>`).join("")}</section><section class="panel"><div class="between"><h2>${t("In-person locations", "Lugares presenciales")}</h2><button class="button" type="button" data-add-location>+ ${t("New location", "Nuevo lugar")}</button></div><p>${t("Each location has its own hours, inside your overall working hours. All hours use your schedule time zone.", "Cada lugar tiene su propio horario, dentro de tu horario general. Todos usan la zona horaria de tu agenda.")}</p>${settings.locations.map((l, i) => `<details class="editor-card" open><summary>${esc(local(l.name) || t("New location", "Nuevo lugar"))}</summary><div class="stack">${bilingual(`locations.${i}.name`, t("Location name", "Nombre del lugar"))}${bilingual(`locations.${i}.address`, t("Address and arrival instructions", "Dirección e instrucciones de llegada"), true)}${hours(`locations.${i}.hours`, l.hours, t("Location hours", "Horario del lugar"))}${check(`locations.${i}.enabled`, t("Offer this location", "Ofrecer este lugar"))}<button class="button danger" type="button" data-remove="locations" data-index="${i}">${t("Remove location", "Eliminar lugar")}</button></div></details>`).join("")}</section></div>`;
+    `<div class="admin-layout"><section class="panel"><div class="between"><h2>${t("Meeting types", "Tipos de reunión")}</h2><button class="button" type="button" data-add-type>+ ${t("New type", "Nuevo tipo")}</button></div><p>${t("Keep each invitation clear: a duration, a purpose, and a place to connect.", "Cada invitación debe ser clara: una duración, un propósito y un lugar para conectar.")}</p>${settings.types.map((type, i) => `<details class="editor-card" ${i === 0 ? "open" : ""}><summary>${esc(local(type.name) || t("New meeting", "Nueva reunión"))} · ${type.duration} min</summary><div class="stack">${bilingual(`types.${i}.name`, t("Name", "Nombre"))}${bilingual(`types.${i}.description`, t("Description", "Descripción"), true)}<div class="form-grid">${field(`types.${i}.duration`, t("Duration (minutes)", "Duración (minutos)"), { type: "number", min: 5, max: 240 })}<label class="field">${t("Meeting service", "Modalidad de reunión")}<select data-setting="types.${i}.mode"><option value="meet" ${type.mode === "meet" ? "selected" : ""}>Google Meet</option><option value="zoom" ${type.mode === "zoom" ? "selected" : ""}>Zoom</option><option value="in-person" ${type.mode === "in-person" ? "selected" : ""}>${t("In person", "Presencial")}</option></select></label></div><fieldset><legend>${t("Allowed in-person locations", "Lugares presenciales permitidos")}</legend>${settings.locations.length ? settings.locations.map((l) => `<label class="check"><input type="checkbox" data-type-location="${i}" value="${esc(l.id)}" ${type.locationIds.includes(l.id) ? "checked" : ""}>${esc(local(l.name))}</label>`).join("") : `<p class="help-text">${t("Add locations below to offer in-person meetings.", "Añade lugares a continuación para ofrecer reuniones presenciales.")}</p>`}</fieldset>${check(`types.${i}.enabled`, t("Offer this meeting type", "Ofrecer este tipo de reunión"))}<div class="between"><small>${t("Link ID", "ID del enlace")}: ${esc(type.id)}</small><button class="button danger" type="button" data-remove="types" data-index="${i}" ${settings.types.length === 1 ? "disabled" : ""}>${t("Remove type", "Eliminar tipo")}</button></div></div></details>`).join("")}</section><section class="panel"><div class="between"><h2>${t("In-person locations", "Lugares presenciales")}</h2><button class="button" type="button" data-add-location>+ ${t("New location", "Nuevo lugar")}</button></div><p>${t("Each location has its own hours, inside your overall working hours. All hours use your schedule time zone.", "Cada lugar tiene su propio horario, dentro de tu horario general. Todos usan la zona horaria de tu agenda.")}</p>${settings.locations.map((l, i) => `<details class="editor-card" open><summary>${esc(local(l.name) || t("New location", "Nuevo lugar"))}</summary><div class="stack">${bilingual(`locations.${i}.name`, t("Location name", "Nombre del lugar"))}${bilingual(`locations.${i}.address`, t("Address and arrival instructions", "Dirección e instrucciones de llegada"), true)}${hours(`locations.${i}.hours`, l.hours, t("Location hours", "Horario del lugar"))}${check(`locations.${i}.enabled`, t("Offer this location", "Ofrecer este lugar"))}<button class="button danger" type="button" data-remove="locations" data-index="${i}">${t("Remove location", "Eliminar lugar")}</button></div></details>`).join("")}</section></div>`;
   $("[data-add-type]", app).addEventListener("click", () => {
     settings.types.push({
       id: `meeting-${crypto.randomUUID().slice(0, 8)}`,
@@ -379,13 +393,120 @@ function renderTypes() {
 }
 function renderSettings() {
   $("#panel-settings", app).innerHTML =
-    `<div class="admin-layout"><section class="panel" data-booking-rules><h2>${t("Booking boundaries", "Límites de reserva")}</h2><div class="form-grid">${field("noticeHours", t("Minimum notice (hours)", "Antelación mínima (horas)"), { type: "number", min: 0, max: 720 })}${field("horizonDays", t("Booking window (days)", "Plazo de reserva (días)"), { type: "number", min: 1, max: 180 })}${field("cancelHours", t("Change deadline (hours before)", "Plazo para cambios (horas antes)"), { type: "number", min: 0, max: 720 })}${field("dailyLimit", t("Maximum meetings per day", "Máximo de reuniones al día"), { type: "number", min: 0, max: 100, help: t("0 means no daily limit.", "0 significa sin límite diario.") })}</div><p class="help-text">${t("Set the gap between meetings inside each meeting type.", "Configura el intervalo entre reuniones en cada tipo de reunión.")}</p></section><section class="panel"><h2>${t("Your booking page", "Tu página de reservas")}</h2><div class="stack">${field("name", t("Display name", "Nombre público"), { required: true })}${bilingual("intro", t("Short introduction", "Introducción breve"), true)}${field("brand.logoUrl", t("Logo URL (optional)", "URL del logotipo (opcional)"), { type: "url", help: t("An HTTPS image you host. Leave empty to use the default wordmark.", "Una imagen HTTPS alojada por ti. Déjalo vacío para usar la marca predeterminada.") })}<label class="field">${t("Primary color", "Color principal")}<div class="color-field"><input type="color" value="${esc(settings.brand.primary)}" data-setting="brand.primary"><span class="help-text">${t("Used for actions in light mode. Text contrast is adjusted automatically.", "Se usa en las acciones del modo claro. El contraste del texto se ajusta automáticamente.")}</span></div></label>${check("enabled", t("Open the booking page for new appointments", "Abrir la página para nuevas reservas"))}<p class="help-text">${t("Review your hours and verify calendar connections before opening bookings.", "Revisa tu horario y verifica las conexiones antes de abrir las reservas.")}</p></div></section><section class="panel"><h2>${t("Calendar connections", "Conexiones de calendario")}</h2><p>${t("Google receives new bookings. Only the calendars you select below block time.", "Google recibe las nuevas reservas. Solo los calendarios seleccionados bloquean horarios.")}</p><div data-connections></div></section><section class="panel" data-holiday-settings><h2>${t("Automatic blackouts", "Bloqueos automáticos")}</h2>${check("blockUsFederalHolidays", t("Block U.S. federal holidays", "Bloquear los feriados federales de EE. UU."))}<p class="help-text">${t("Blocks all meeting types on the 11 annual federal holidays and their observed weekdays, using your schedule time zone.", "Bloquea todos los tipos de reunión durante los 11 feriados federales anuales y los días laborables en que se observan, según la zona horaria de tu agenda.")}</p><a class="help-text" href="https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/" target="_blank" rel="noopener noreferrer">${t("View the federal holiday calendar", "Ver el calendario de feriados federales")} ↗</a></section><section class="panel"><h2>${t("Reminders", "Recordatorios")}</h2>${field("reminderHours", t("Email reminder (hours before)", "Recordatorio por correo (horas antes)"), { type: "number", min: 0, max: 168, help: t("0 turns reminders off. Confirmation and calendar invitations still send.", "0 desactiva los recordatorios. Se siguen enviando la confirmación y la invitación.") })}</section></div>`;
+    `<div class="admin-layout"><section class="panel"><h2>${t("Your booking page", "Tu página de reservas")}</h2><div class="stack">${field("name", t("Display name", "Nombre público"), { required: true })}${bilingual("intro", t("Short introduction", "Introducción breve"), true)}<div data-logo-editor></div><label class="field">${t("Primary color", "Color principal")}<div class="color-field"><input type="color" value="${esc(settings.brand.primary)}" data-setting="brand.primary"><span class="help-text">${t("Used for actions in light mode. Text contrast is adjusted automatically.", "Se usa en las acciones del modo claro. El contraste del texto se ajusta automáticamente.")}</span></div></label>${check("enabled", t("Open the booking page for new appointments", "Abrir la página para nuevas reservas"))}<p class="help-text">${t("Review your hours and verify calendar connections before opening bookings.", "Revisa tu horario y verifica las conexiones antes de abrir las reservas.")}</p></div></section><section class="panel" data-booking-rules><h2>${t("Booking boundaries", "Límites de reserva")}</h2><div class="form-grid">${field("noticeHours", t("Minimum notice (hours)", "Antelación mínima (horas)"), { type: "number", min: 0, max: 720 })}${field("horizonDays", t("Booking window (days)", "Plazo de reserva (días)"), { type: "number", min: 1, max: 180 })}${field("cancelHours", t("Change deadline (hours before)", "Plazo para cambios (horas antes)"), { type: "number", min: 0, max: 720 })}${field("dailyLimit", t("Maximum meetings per day", "Máximo de reuniones al día"), { type: "number", min: 0, max: 100, help: t("0 means no daily limit.", "0 significa sin límite diario.") })}</div><h3>${t("Gap between meetings", "Intervalo entre reuniones")}</h3><p class="help-text">${t("Space before and after each meeting, including busy calendar events.", "Tiempo antes y después de cada reunión, incluidos los eventos ocupados del calendario.")}</p><div class="form-grid">${settings.types.map((type, i) => field(`types.${i}.gap`, `${local(type.name)} · ${t("gap (minutes)", "intervalo (minutos)")}`, { type: "number", min: 0, max: 240 })).join("")}</div></section><section class="panel" data-reminder-settings><h2>${t("Reminders", "Recordatorios")}</h2><p>${t("Up to three email reminders for new or rescheduled meetings. Remove all reminders to turn them off.", "Hasta tres recordatorios por correo para reuniones nuevas o reprogramadas. Elimina todos para desactivarlos.")}</p><div class="rows">${settings.reminderHours.map((hours, i) => `<div class="reminder-row">${field(`reminderHours.${i}`, `${t("Reminder", "Recordatorio")} ${i + 1} ${t("(hours before)", "(horas antes)")}`, { type: "number", min: 1, max: 168, required: true })}<button class="button" type="button" data-remove-reminder="${i}" aria-label="${t("Remove reminder", "Eliminar recordatorio")} ${i + 1}">×</button></div>`).join("")}</div><button class="button" type="button" data-add-reminder ${settings.reminderHours.length >= 3 ? "disabled" : ""}>+ ${t("Add reminder", "Añadir recordatorio")}</button><p class="help-text">${t("Choose different times, from 1 to 168 hours before the meeting. Confirmations and calendar invitations always send.", "Elige horarios distintos, entre 1 y 168 horas antes de la reunión. Siempre se envían la confirmación y la invitación al calendario.")}</p></section><section class="panel" data-holiday-settings><h2>${t("Automatic blackouts", "Bloqueos automáticos")}</h2>${check("blockUsFederalHolidays", t("Block U.S. federal holidays", "Bloquear los feriados federales de EE. UU."))}<p class="help-text">${t("Blocks all meeting types on the 11 annual federal holidays and their observed weekdays, using your schedule time zone.", "Bloquea todos los tipos de reunión durante los 11 feriados federales anuales y los días laborables en que se observan, según la zona horaria de tu agenda.")}</p><a class="help-text" href="https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/" target="_blank" rel="noopener noreferrer">${t("View the federal holiday calendar", "Ver el calendario de feriados federales")} ↗</a></section><section class="panel"><h2>${t("Calendar connections", "Conexiones de calendario")}</h2><p>${t("Google receives new bookings. Only the calendars you select below block time.", "Google recibe las nuevas reservas. Solo los calendarios seleccionados bloquean horarios.")}</p><div data-connections></div></section></div>`;
+  renderLogoEditor();
   renderConnections();
+  validateReminderFields();
+  $("[data-add-reminder]", app).addEventListener("click", () => {
+    if (settings.reminderHours.length >= 3) return;
+    settings.reminderHours.push(
+      [24, 1, 48].find((hour) => !settings.reminderHours.includes(hour))!,
+    );
+    rerenderEditor();
+    $<HTMLInputElement>(
+      `[data-setting="reminderHours.${settings.reminderHours.length - 1}"]`,
+      app,
+    ).focus();
+  });
+  $$<HTMLButtonElement>("[data-remove-reminder]", app).forEach((button) =>
+    button.addEventListener("click", () => {
+      settings.reminderHours.splice(Number(button.dataset.removeReminder), 1);
+      rerenderEditor();
+      $("[data-add-reminder]", app).focus();
+    }),
+  );
+}
+function validateReminderFields() {
+  $$<HTMLInputElement>('[data-setting^="reminderHours."]', app).forEach(
+    (input) => {
+      input.setCustomValidity(
+        settings.reminderHours.filter((hours) => hours === Number(input.value))
+          .length > 1
+          ? t(
+              "Choose a different time for each reminder.",
+              "Elige un horario distinto para cada recordatorio.",
+            )
+          : "",
+      );
+    },
+  );
+}
+function renderLogoEditor() {
+  const target = $("[data-logo-editor]", app);
+  const preview =
+    logoPreview?.url === settings.brand.logoUrl
+      ? logoPreview.data
+      : safeHttps(settings.brand.logoUrl);
+  target.innerHTML = `<div class="stack"><label class="field">${t("Logo image (optional)", "Imagen del logotipo (opcional)")}<input type="file" accept="${LOGO_TYPES.join(",")}" data-logo-file aria-describedby="logo-help" ${logoUploading ? "disabled" : ""}></label><p class="help-text" id="logo-help">${t("PNG or JPEG, up to", "PNG o JPEG, hasta")} ${LOGO_MAX_BYTES / 1_000_000} MB. ${t("Recommended:", "Recomendado:")} ${LOGO_RECOMMENDED_DIMENSION} × ${LOGO_RECOMMENDED_DIMENSION} px. ${t("Maximum:", "Máximo:")} ${LOGO_MAX_DIMENSION} × ${LOGO_MAX_DIMENSION} px. ${t("Use a transparent PNG to keep the background clear.", "Usa un PNG transparente para mantener el fondo sin color.")}</p>${preview ? `<div class="logo-preview"><img src="${esc(preview)}" alt="${t("Logo preview", "Vista previa del logotipo")}"></div><button type="button" class="button" data-remove-logo ${logoUploading ? "disabled" : ""}>${t("Remove logo", "Eliminar logotipo")}</button>` : `<p class="help-text">${t("Using the Scheduler icon.", "Se está usando el icono de Scheduler.")}</p>`}<p class="help-text" data-logo-status role="status">${logoUploading ? t("Uploading image…", "Subiendo imagen…") : ""}</p><div data-logo-error></div></div>`;
+  $("[data-logo-file]", target).addEventListener("change", (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) void uploadLogo(file);
+  });
+  target.querySelector("[data-remove-logo]")?.addEventListener("click", () => {
+    settings.brand.logoUrl = "";
+    logoPreview = undefined;
+    renderLogoEditor();
+    dirty();
+  });
+}
+async function uploadLogo(file: File) {
+  if (logoUploading || saving) return;
+  const error = (code: string) => Object.assign(new Error(code), { code });
+  logoUploading = true;
+  renderLogoEditor();
+  dirty();
+  try {
+    if (file.size > LOGO_MAX_BYTES) throw error("logo_too_large");
+    if (!LOGO_TYPES.includes(file.type)) throw error("invalid_logo");
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(error("invalid_logo"));
+      reader.readAsDataURL(file);
+    });
+    const preview = new Image();
+    preview.src = data;
+    try {
+      await preview.decode();
+    } catch {
+      throw error("invalid_logo");
+    }
+    if (
+      preview.naturalWidth > LOGO_MAX_DIMENSION ||
+      preview.naturalHeight > LOGO_MAX_DIMENSION
+    )
+      throw error("logo_dimensions");
+    const result = (await api.request("/admin/logo", {
+      method: "POST",
+      body: file,
+      headers: { "Content-Type": file.type },
+    })) as { url: string };
+    settings.brand.logoUrl = result.url;
+    logoPreview = { url: result.url, data };
+    logoUploading = false;
+    renderLogoEditor();
+    $("[data-logo-status]", app).textContent = t(
+      "Image ready. Save changes to publish it.",
+      "Imagen lista. Guarda los cambios para publicarla.",
+    );
+  } catch (error) {
+    logoUploading = false;
+    renderLogoEditor();
+    const target = $("[data-logo-error]", app);
+    showError(target, error);
+    if ((error as { status?: number }).status === 503)
+      target.textContent = t(
+        "The image couldn’t be uploaded. Please try again.",
+        "No se pudo subir la imagen. Inténtalo de nuevo.",
+      );
+  } finally {
+    dirty();
+  }
 }
 function renderConnections() {
   const target = $("[data-connections]", app);
   const c = connections;
-  target.innerHTML = `<div class="between"><span class="status-pill ${c.ready ? "good" : "bad"}">${c.ready ? t("Ready to book", "Lista para reservar") : t("Setup needed", "Falta configuración")}</span><button class="button" type="button" data-verify>${t("Verify connections", "Verificar conexiones")}</button></div>${c.issues.length ? `<div class="notice"><strong>${t("Needs attention", "Requiere atención")}</strong><ul>${c.issues.map((issue) => `<li>${esc(connectionIssue(issue))}</li>`).join("")}</ul></div>` : ""}<div data-connection-error></div><div class="connection-card"><div class="between"><h3>Google Calendar</h3><span class="status-pill ${c.google.connected ? "good" : ""}">${c.google.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("New meetings are added automatically to your main Google calendar.", "Las reuniones se añaden automáticamente a tu calendario principal de Google.")} ${esc(c.google.email || "")}</p><div class="cluster"><a class="button" data-oauth href="/api/admin/connect/google">${c.google.connected ? t("Reconnect Google", "Reconectar Google") : t("Connect Google", "Conectar Google")}</a>${c.google.connected ? `<button type="button" class="button danger" data-disconnect="google">${t("Disconnect", "Desconectar")}</button>` : ""}</div></div><div class="connection-card"><div class="between"><h3>iCloud Calendar</h3><span class="status-pill ${c.icloud.connected ? "good" : ""}">${c.icloud.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("Connect directly for family-calendar conflicts using an Apple app-specific password.", "Conecta directamente para consultar conflictos del calendario familiar con una contraseña de aplicación de Apple.")}</p><form class="stack" data-icloud-form><div class="form-grid"><label class="field">${t("Apple Account email", "Correo de tu cuenta de Apple")}<input type="email" name="username" autocomplete="username" required></label><label class="field">${t("App-specific password", "Contraseña de aplicación")}<input type="password" name="password" autocomplete="new-password" required></label></div><div class="cluster"><button class="button" type="submit">${c.icloud.connected ? t("Update connection", "Actualizar conexión") : t("Connect iCloud", "Conectar iCloud")}</button>${c.icloud.connected ? `<button class="button danger" type="button" data-disconnect="icloud">${t("Disconnect", "Desconectar")}</button>` : ""}<a class="help-text" href="https://support.apple.com/102654" target="_blank" rel="noopener noreferrer">${t("Create an app-specific password", "Crear una contraseña de aplicación")} ↗</a></div></form></div><div class="connection-card"><div class="between"><h3>Zoom</h3><span class="status-pill ${c.zoom.connected ? "good" : ""}">${c.zoom.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("Needed only for enabled Zoom meeting types.", "Solo es necesario para los tipos de reunión por Zoom habilitados.")}</p><div class="cluster"><a class="button" data-oauth href="/api/admin/connect/zoom">${c.zoom.connected ? t("Reconnect Zoom", "Reconectar Zoom") : t("Connect Zoom", "Conectar Zoom")}</a>${c.zoom.connected ? `<button type="button" class="button danger" data-disconnect="zoom">${t("Disconnect", "Desconectar")}</button>` : ""}</div></div><hr class="divider"><h3>${t("Calendars that block bookings", "Calendarios que bloquean reservas")}</h3><p class="help-text">${t("Select your subscribed Proton calendar here under Google. Subscription changes can take time to appear.", "Selecciona aquí el calendario de Proton suscrito en Google. Los cambios de la suscripción pueden tardar en aparecer.")}</p><div class="calendar-list">${c.calendars.map((cal) => `<label class="check calendar-label"><input type="checkbox" data-calendar="${esc(cal.provider)}" value="${esc(cal.id)}" ${(cal.provider === "google" ? settings.googleCalendars : settings.icloudCalendars).includes(cal.id) ? "checked" : ""}><span>${esc(cal.name)}<small>${cal.provider === "google" ? "Google Calendar" : "iCloud"}</small></span></label>`).join("") || `<p class="help-text">${t("Connect a calendar account to choose blocking calendars.", "Conecta una cuenta de calendario para elegir los calendarios que bloquean horarios.")}</p>`}</div>${check("requireIcloud", t("Require iCloud conflict checking before accepting bookings", "Exigir la consulta de conflictos de iCloud antes de aceptar reservas"))}`;
+  target.innerHTML = `<div class="between"><span class="status-pill ${c.ready ? "good" : "bad"}">${c.ready ? t("Ready to book", "Lista para reservar") : t("Setup needed", "Falta configuración")}</span><button class="button" type="button" data-verify>${t("Verify connections", "Verificar conexiones")}</button></div>${c.issues.length ? `<div class="notice"><strong>${t("Needs attention", "Requiere atención")}</strong><ul>${c.issues.map((issue) => `<li>${esc(connectionIssue(issue))}</li>`).join("")}</ul></div>` : ""}<div data-connection-error></div><div class="connection-card"><div class="between"><h3>Google Calendar</h3><span class="status-pill ${c.google.connected ? "good" : ""}">${c.google.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("New meetings are added automatically to your main Google calendar.", "Las reuniones se añaden automáticamente a tu calendario principal de Google.")} ${esc(c.google.email || "")}</p><div class="cluster"><a class="button" data-oauth href="/api/admin/connect/google">${c.google.connected ? t("Reconnect Google", "Reconectar Google") : t("Connect Google", "Conectar Google")}</a>${c.google.connected ? `<button type="button" class="button danger" data-disconnect="google">${t("Disconnect", "Desconectar")}</button>` : ""}</div></div><div class="connection-card"><div class="between"><h3>iCloud Calendar</h3><span class="status-pill ${c.icloud.connected ? "good" : ""}">${c.icloud.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("Connect directly for family-calendar conflicts using an Apple app-specific password.", "Conecta directamente para consultar conflictos del calendario familiar con una contraseña de aplicación de Apple.")}</p><form class="stack" data-icloud-form><div class="form-grid"><label class="field">${t("Apple Account email", "Correo de tu cuenta de Apple")}<input type="email" name="username" autocomplete="username" required></label><label class="field">${t("App-specific password", "Contraseña de aplicación")}<input type="password" name="password" autocomplete="new-password" required></label></div><div class="cluster"><button class="button" type="submit">${c.icloud.connected ? t("Update connection", "Actualizar conexión") : t("Connect iCloud", "Conectar iCloud")}</button>${c.icloud.connected ? `<button class="button danger" type="button" data-disconnect="icloud">${t("Disconnect", "Desconectar")}</button>` : ""}<a class="help-text" href="https://support.apple.com/102654" target="_blank" rel="noopener noreferrer">${t("Create an app-specific password", "Crear una contraseña de aplicación")} ↗</a></div></form></div><div class="connection-card"><div class="between"><h3>Zoom</h3><span class="status-pill ${c.zoom.connected ? "good" : ""}">${c.zoom.connected ? t("Connected", "Conectado") : t("Not connected", "Sin conectar")}</span></div><p>${t("Needed only for enabled Zoom meeting types.", "Solo es necesario para los tipos de reunión por Zoom habilitados.")}</p><div class="cluster"><a class="button" data-oauth href="/api/admin/connect/zoom">${c.zoom.connected ? t("Reconnect Zoom", "Reconectar Zoom") : t("Connect Zoom", "Conectar Zoom")}</a>${c.zoom.connected ? `<button type="button" class="button danger" data-disconnect="zoom">${t("Disconnect", "Desconectar")}</button>` : ""}</div></div><hr class="divider"><h3>${t("Calendars that block bookings", "Calendarios que bloquean reservas")}</h3><p class="help-text">${t("Calendar names come from Google or iCloud, including any symbols. Similar names can belong to different calendars. Only checked calendars block bookings.", "Los nombres vienen de Google o iCloud, incluidos sus símbolos. Nombres parecidos pueden corresponder a calendarios distintos. Solo los calendarios marcados bloquean reservas.")} ${t("Select your subscribed Proton calendar under Google. Subscription changes can take time to appear.", "Selecciona el calendario de Proton suscrito en Google. Los cambios de la suscripción pueden tardar en aparecer.")}</p><div class="calendar-list">${c.calendars.map((cal) => `<label class="check calendar-label"><input type="checkbox" data-calendar="${esc(cal.provider)}" value="${esc(cal.id)}" ${(cal.provider === "google" ? settings.googleCalendars : settings.icloudCalendars).includes(cal.id) ? "checked" : ""}><span>${esc(cal.name)}<small>${cal.provider === "google" ? "Google Calendar" : "iCloud"}</small></span></label>`).join("") || `<p class="help-text">${t("Connect a calendar account to choose blocking calendars.", "Conecta una cuenta de calendario para elegir los calendarios que bloquean horarios.")}</p>`}</div>${check("requireIcloud", t("Require iCloud conflict checking before accepting bookings", "Exigir la consulta de conflictos de iCloud antes de aceptar reservas"))}`;
   $("[data-verify]", target).addEventListener(
     "click",
     () => void connectionAction("/admin/verify", "POST", {}),
@@ -681,7 +802,7 @@ async function cancelBooking(id: string) {
 }
 
 async function save() {
-  if (saving) return;
+  if (saving || logoUploading) return;
   const invalid = $$<
     HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
   >("[data-setting]", app).find((input) => !input.checkValidity());

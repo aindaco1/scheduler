@@ -1,6 +1,6 @@
 # Phase 1 browser API contract
 
-All routes same origin under `/api`. JSON responses; errors `{error: CODE}` with 400/401/403/404/409/429/503. No guest data in public config. All mutation requests include same-origin browser Origin. Credentials same-origin.
+All routes same origin under `/api`. JSON responses except logo images; errors `{error: CODE}` with 400/401/403/404/409/413/429/503. No guest data in public config. All mutation requests include same-origin browser Origin. Credentials same-origin.
 
 - GET `/api/config`: `{settings: PublicSettings, turnstileSiteKey: string, ready: boolean}`. PublicSettings = Settings from worker/src/model.ts excluding googleCalendars, icloudCalendars, blackouts, recurringBlackouts, requireIcloud; only enabled meeting types/locations. Hours may be omitted. All browser UI types can import `type` from model.ts (no zod runtime required if type-only).
 - GET `/api/availability?type=TYPE&location=ID&from=ISO&to=ISO`: `{slots: string[]}` ISO starts. The picker requests Monday midnight through the following Monday in the visitor's selected time zone, with the final request clipped to the configured booking horizon (30 days by default). The maximum scan is 8 elapsed days to accommodate calendar weeks crossing daylight-saving/offset changes; `to` is exclusive. May additionally accept `booking=ID` with `Authorization: Bearer TOKEN` to exclude current booking for rescheduling. Unavailable connections => 503. Slot end is derived from meeting duration.
@@ -14,6 +14,10 @@ All routes same origin under `/api`. JSON responses; errors `{error: CODE}` with
 - GET `/api/admin/connections`: `{google:{connected,email?},icloud:{connected},zoom:{connected},calendars:CalendarChoice[],ready:boolean,issues:string[]}`. POST `/api/admin/connections/icloud` `{username,password}` verifies/discovers then stores encrypted, returns same connection envelope. DELETE `/api/admin/connections/PROVIDER` empty body disconnects and pauses bookings.
 - GET `/api/admin/connect/google` and `/zoom`: browser navigation to provider OAuth. Return to `/admin/?connected=PROVIDER` (or error code). Must be authenticated.
 - POST `/api/admin/verify`: `{}` runs real read-only calendar conflict readiness checks -> connection envelope.
+- POST `/api/admin/logo`: authenticated PNG/JPEG body with its image Content-Type, at most 1,000,000 bytes and 2048 pixels on either side. Returns `{url,width,height}` for a staged image; set `settings.brand.logoUrl` to that URL in the normal revision-checked settings save to publish it. At most ten recent drafts plus the current logo are retained. Missing/evicted drafts cannot be published.
+- GET `/api/logo/HASH`: the published image with fixed raster MIME, nosniff and a one-day immutable cache policy. Unpublished, removed or unknown images return 404 (previously cached public logos may remain cached).
+
+`Settings.reminderHours` is now an array of zero to three unique whole hours in 1–168, sorted descending. The old scalar remains accepted for upgrades (`24` becomes `[24]`, `0` becomes `[]`). Existing queued jobs retain their IDs and timing; new bookings and completed reschedules create an independent reminder job per offset.
 
 Routes public `/alonso`, `/es/alonso`; admin `/admin/`, `/es/admin/`; manage `/manage/`, `/es/manage/`. Root redirects to owner. Same Jekyll layout and tiny TS browser modules via esbuild. Theme matches approved Pool/Store warmth with system override. English and Spanish full UI, usable keyboard and narrow screens, no proprietary font binaries.
 

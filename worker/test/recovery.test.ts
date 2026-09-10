@@ -4,7 +4,7 @@ import {
   runInDurableObject,
   runDurableObjectAlarm,
 } from "cloudflare:test";
-import { defaultSettings, type Booking } from "../src/model";
+import { defaultSettings, reminderSchedule, type Booking } from "../src/model";
 import { fetchMock } from "./fetch-fixtures";
 
 type Stub = ReturnType<typeof env.SCHEDULER.getByName>;
@@ -42,7 +42,7 @@ function futureStart() {
   return date.getTime();
 }
 
-async function setup() {
+async function setup(reminderHours = [24]) {
   const busy = { events: [] as object[] };
   fetchMock
     .get("https://oauth2.googleapis.com")
@@ -65,6 +65,7 @@ async function setup() {
   });
   await runInDurableObject(stub, (_instance, state) => {
     const settings = defaultSettings();
+    settings.reminderHours = reminderHours;
     settings.enabled = true;
     settings.timezone = "UTC";
     settings.requireIcloud = false;
@@ -107,8 +108,8 @@ function remoteEvent(id: string, start: number) {
   };
 }
 
-async function confirmAndQueueMail() {
-  const fixture = await setup();
+async function confirmAndQueueMail(reminderHours = [24]) {
+  const fixture = await setup(reminderHours);
   fetchMock
     .get(googleOrigin)
     .intercept({ path: eventPath(fixture.created.booking.id), method: "GET" })
@@ -159,6 +160,157 @@ async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
 }
 
 describe("Coordinator recovery after overlapping actions and partial provider results", () => {
+  it("accepts up to three distinct reminders and upgrades the legacy single reminder", async () => {
+    expect(reminderSchedule.parse(24)).toEqual([24]);
+    expect(reminderSchedule.parse(0)).toEqual([]);
+    expect(reminderSchedule.parse([1, 24, 48])).toEqual([48, 24, 1]);
+    for (const invalid of [[24, 24], [1, 2, 3, 4], [0], [169], [1.5]])
+      expect(reminderSchedule.safeParse(invalid).success).toBe(false);
+    const { stub } = await setup();
+    await runInDurableObject(stub, (_instance, state) => {
+      const stored = JSON.parse(
+        state.storage.sql
+          .exec<{ value: string }>(
+            "SELECT value FROM config WHERE key='settings'",
+          )
+          .one().value,
+      );
+      stored.settings.reminderHours = 24;
+      state.storage.sql.exec(
+        "UPDATE config SET value=? WHERE key='settings'",
+        JSON.stringify(stored),
+      );
+    });
+    const config = await stub.getSettings();
+    expect(config.settings.reminderHours).toEqual([24]);
+    expect(
+      (
+        await stub.updateSettings(
+          { ...config.settings, reminderHours: [48, 24, 1] },
+          config.revision,
+        )
+      ).settings.reminderHours,
+    ).toEqual([48, 24, 1]);
+  });
+  it("queues and delivers three separate reminders once, keeping a stable key on retry", async () => {
+    const { stub, start } = await confirmAndQueueMail([48, 24, 1]);
+    const reminders = (await jobs(stub)).filter(
+      (job) => job.mailKind === "reminder",
+    );
+    expect(reminders.map((job) => job.due).sort()).toEqual(
+      [48, 24, 1].map((hour) => start - hour * 3_600_000).sort(),
+    );
+    expect(new Set(reminders.map((job) => job.id)).size).toBe(3);
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec(
+        "DELETE FROM jobs WHERE json_extract(data,'$.mailKind')!='reminder'",
+      );
+      for (const job of reminders) {
+        job.due = Date.now() - 1;
+        state.storage.sql.exec(
+          "UPDATE jobs SET due=?,data=? WHERE id=?",
+          job.due,
+          JSON.stringify(job),
+          job.id,
+        );
+      }
+      await state.storage.setAlarm(Date.now() + 500);
+    });
+    const attempts: { key: string; body: string }[] = [];
+    fetchMock
+      .get("https://api.resend.com")
+      .intercept({ path: "/emails", method: "POST" })
+      .reply(({ body, headers }) => {
+        attempts.push({ key: String(headers["idempotency-key"]), body });
+        return {
+          statusCode: attempts.length === 1 ? 500 : 200,
+          data: { id: "fixture" },
+        };
+      })
+      .persist();
+    await runDurableObjectAlarm(stub);
+    expect(attempts).toHaveLength(3);
+    expect(new Set(attempts.map((attempt) => attempt.key)).size).toBe(3);
+    await retainAndRunNow(stub, "reminder");
+    await runDurableObjectAlarm(stub);
+    expect(attempts).toHaveLength(4);
+    expect(attempts[3]).toEqual(attempts[0]);
+    expect(await jobs(stub)).toEqual([]);
+  });
+  it("skips elapsed reminders and allows all reminders to be disabled", async () => {
+    const { stub, start } = await confirmAndQueueMail([168, 24, 1]);
+    expect(
+      (await jobs(stub))
+        .filter((job) => job.mailKind === "reminder")
+        .map((job) => job.due)
+        .sort(),
+    ).toEqual([start - 24 * 3_600_000, start - 3_600_000].sort());
+    const disabled = await confirmAndQueueMail([]);
+    expect(
+      (await jobs(disabled.stub)).filter((job) => job.mailKind === "reminder"),
+    ).toEqual([]);
+  });
+  it("rebuilds all three reminders after rescheduling and drops them after cancellation", async () => {
+    const { stub, created, start } = await confirmAndQueueMail([48, 24, 1]);
+    const target = start + day;
+    fetchMock
+      .get(googleOrigin)
+      .intercept({
+        path:
+          eventPath(created.booking.id) +
+          "?sendUpdates=all&conferenceDataVersion=1",
+        method: "PATCH",
+      })
+      .reply(200, remoteEvent(created.booking.id, target));
+    await stub.reschedule(
+      created.booking.id,
+      created.token,
+      new Date(target).toISOString(),
+      crypto.randomUUID(),
+    );
+    await runDurableObjectAlarm(stub);
+    const moved = (await jobs(stub)).filter(
+      (job) => job.mailKind === "reminder" && job.revision === 2,
+    );
+    expect(moved.map((job) => job.due).sort()).toEqual(
+      [48, 24, 1].map((hours) => target - hours * 3_600_000).sort(),
+    );
+    fetchMock
+      .get(googleOrigin)
+      .intercept({
+        path: eventPath(created.booking.id) + "?sendUpdates=all",
+        method: "DELETE",
+      })
+      .reply(204);
+    await stub.cancel(created.booking.id, created.token);
+    await runDurableObjectAlarm(stub);
+    expect(
+      (await stub.getBooking(created.booking.id, created.token)).booking.status,
+    ).toBe("cancelled");
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec(
+        "DELETE FROM jobs WHERE json_extract(data,'$.mailKind')!='reminder'",
+      );
+      const pending = state.storage.sql
+        .exec<{ data: string }>("SELECT data FROM jobs")
+        .toArray()
+        .map(({ data }) => JSON.parse(data) as StoredJob);
+      expect(pending).toHaveLength(6);
+      for (const job of pending) {
+        job.due = Date.now() - 1;
+        state.storage.sql.exec(
+          "UPDATE jobs SET due=?,data=? WHERE id=?",
+          job.due,
+          JSON.stringify(job),
+          job.id,
+        );
+      }
+      await state.storage.setAlarm(Date.now() + 500);
+    });
+    await runDurableObjectAlarm(stub);
+    await runDurableObjectAlarm(stub);
+    expect(await jobs(stub)).toEqual([]);
+  });
   it.each(["cancelled", "rescheduled"] as const)(
     "keeps an owner message with its %s operation through provider and email retries",
     async (kind) => {

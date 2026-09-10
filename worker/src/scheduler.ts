@@ -9,6 +9,7 @@ import {
   changeMessageInput,
   defaultSettings,
   settingsSchema,
+  reminderSchedule,
   type Booking,
   type BookingInput,
   type Busy,
@@ -37,6 +38,7 @@ import { icloudBusy, icloudCalendars } from "./providers/icloud";
 import { refreshZoom, ZoomMeetings } from "./providers/zoom";
 import { bookingEmail, loginEmail, sendEmail, type Email } from "./email";
 import type { RuntimeEnv } from "./env";
+import { validateLogo } from "./logo";
 
 interface Job {
   id: string;
@@ -83,6 +85,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     ctx.storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS limits (key TEXT PRIMARY KEY, reset REAL NOT NULL, count INTEGER NOT NULL)",
     );
+    ctx.storage.sql.exec(
+      "CREATE TABLE IF NOT EXISTS logos (id TEXT PRIMARY KEY, content_type TEXT NOT NULL, data BLOB NOT NULL, created REAL NOT NULL)",
+    );
     if (!this.read<StoredConfig>("settings"))
       this.write("settings", { settings: defaultSettings(), revision: 1 });
   }
@@ -102,7 +107,56 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
   getSettings(): StoredConfig {
     const current = this.read<StoredConfig>("settings")!;
     current.settings.blockUsFederalHolidays ??= false;
+    current.settings.reminderHours = reminderSchedule.parse(
+      current.settings.reminderHours,
+    );
     return current;
+  }
+  async uploadLogo(bytes: Uint8Array, contentType: string) {
+    const dimensions = validateLogo(bytes, contentType);
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+    const id = Array.from(new Uint8Array(hash), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const url = `${this.env.PUBLIC_ORIGIN}/api/logo/${id}`;
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO logos(id,content_type,data,created) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET created=excluded.created",
+        id,
+        contentType,
+        bytes,
+        Date.now(),
+      );
+      // Keep the published logo and ten recent drafts; abandoned uploads stay bounded.
+      const active =
+        this.getSettings().settings.brand.logoUrl.split("/").pop() || "";
+      this.ctx.storage.sql.exec(
+        "DELETE FROM logos WHERE id!=? AND id NOT IN (SELECT id FROM logos WHERE id!=? ORDER BY created DESC,rowid DESC LIMIT 10)",
+        active,
+        active,
+      );
+    });
+    return { url, ...dimensions };
+  }
+  getLogo(id: string) {
+    if (
+      this.getSettings().settings.brand.logoUrl !==
+      `${this.env.PUBLIC_ORIGIN}/api/logo/${id}`
+    )
+      throw new AppError("not_found", 404);
+    const logo = this.ctx.storage.sql
+      .exec<{ content_type: string; data: ArrayBuffer }>(
+        "SELECT content_type,data FROM logos WHERE id=?",
+        id,
+      )
+      .toArray()[0];
+    if (!logo) throw new AppError("not_found", 404);
+    return new Response(logo.data, {
+      headers: {
+        "Content-Type": logo.content_type,
+        "Cache-Control": "public, max-age=86400, immutable",
+      },
+    });
   }
   private booking(id: string): Booking {
     const row = this.ctx.storage.sql
@@ -440,6 +494,17 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     current = this.getSettings();
     if (current.revision !== revision)
       throw new AppError("settings_changed", 409);
+    const logoPrefix = `${this.env.PUBLIC_ORIGIN}/api/logo/`;
+    if (
+      settings.brand.logoUrl.startsWith(logoPrefix) &&
+      !this.ctx.storage.sql
+        .exec(
+          "SELECT id FROM logos WHERE id=?",
+          settings.brand.logoUrl.slice(logoPrefix.length),
+        )
+        .toArray().length
+    )
+      throw new AppError("logo_missing");
     this.write("settings", { settings, revision: revision + 1 });
     return this.getSettings();
   }
@@ -895,9 +960,14 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       throw new AppError("oauth_expired", 401);
     return value.verifier;
   }
-  private queueMail(b: Booking, kind: Job["mailKind"], due = Date.now()) {
+  private queueMail(
+    b: Booking,
+    kind: Job["mailKind"],
+    due = Date.now(),
+    reminderHours?: number,
+  ) {
     this.enqueue({
-      id: `email:${b.id}:${b.revision}:${kind}`,
+      id: `email:${b.id}:${b.revision}:${kind}${reminderHours === undefined ? "" : `:${reminderHours}`}`,
       kind: "email",
       bookingId: b.id,
       revision: b.revision,
@@ -908,9 +978,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     });
   }
   private queueReminder(b: Booking) {
-    const hours = this.getSettings().settings.reminderHours;
-    if (hours && b.start - hours * 3_600_000 > Date.now())
-      this.queueMail(b, "reminder", b.start - hours * 3_600_000);
+    for (const hours of this.getSettings().settings.reminderHours)
+      if (b.start - hours * 3_600_000 > Date.now())
+        this.queueMail(b, "reminder", b.start - hours * 3_600_000, hours);
   }
   private mergeResult(b: Booking, result: Partial<Booking>): boolean {
     const current = this.booking(b.id);

@@ -16,6 +16,23 @@ export const weekly = z
     "End must follow start; split overnight hours into two days",
   );
 const identifier = z.string().regex(/^[a-z0-9][a-z0-9-]{0,59}$/);
+// Accept the former single reminder during upgrades; always return a schedule.
+export const reminderSchedule = z
+  .union([
+    z.number().int().min(0).max(168),
+    z
+      .array(z.number().int().min(1).max(168))
+      .max(3)
+      .refine(
+        (hours) => new Set(hours).size === hours.length,
+        "Reminder times must be different",
+      ),
+  ])
+  .transform((hours) =>
+    (typeof hours === "number" ? (hours ? [hours] : []) : hours).sort(
+      (a, b) => b - a,
+    ),
+  );
 export const meetingType = z
   .object({
     id: identifier,
@@ -57,7 +74,7 @@ export const settingsSchema = z
     horizonDays: z.number().int().min(1).max(180),
     cancelHours: z.number().int().min(0).max(720),
     dailyLimit: z.number().int().min(0).max(100),
-    reminderHours: z.number().int().min(0).max(168),
+    reminderHours: reminderSchedule,
     hours: z.array(weekly).max(40),
     recurringBlackouts: z.array(weekly).max(100),
     blockUsFederalHolidays: z.boolean().optional(),
@@ -228,7 +245,7 @@ export function defaultSettings(): Settings {
     horizonDays: 30,
     cancelHours: 24,
     dailyLimit: 0,
-    reminderHours: 24,
+    reminderHours: [24],
     hours: [1, 2, 3, 4, 5].map((day) => ({
       day,
       start: "09:00",

@@ -1,6 +1,7 @@
 import { AdminApiClient } from "@dustwave/admin-shell/api-client";
 import { responsiveTurnstileSize } from "@dustwave/admin-shell/turnstile";
 import type { Settings, PublicBooking, Locale } from "../worker/src/model";
+import { LOGO_MAX_BYTES, LOGO_MAX_DIMENSION } from "../worker/src/logo-policy";
 
 export const locale: Locale =
   document.documentElement.lang === "es" ? "es" : "en";
@@ -108,6 +109,26 @@ export function focusHeading(selector = "h1") {
 export function errorText(error: unknown) {
   const e = error as { code?: string; status?: number };
   const code = e?.code || "";
+  if (code === "invalid_logo")
+    return t(
+      "Choose a valid PNG or JPEG image.",
+      "Elige una imagen PNG o JPEG válida.",
+    );
+  if (code === "logo_too_large")
+    return t(
+      `This image is too large. Choose a file up to ${LOGO_MAX_BYTES / 1_000_000} MB.`,
+      `Esta imagen es demasiado grande. Elige un archivo de hasta ${LOGO_MAX_BYTES / 1_000_000} MB.`,
+    );
+  if (code === "logo_dimensions")
+    return t(
+      `Resize the image to ${LOGO_MAX_DIMENSION} × ${LOGO_MAX_DIMENSION} pixels or smaller.`,
+      `Reduce la imagen a ${LOGO_MAX_DIMENSION} × ${LOGO_MAX_DIMENSION} píxeles o menos.`,
+    );
+  if (code === "logo_missing")
+    return t(
+      "Please upload the logo again, then save your changes.",
+      "Vuelve a subir el logotipo y guarda los cambios.",
+    );
   if (e.status === 409)
     return t(
       "That time is no longer available, or this item changed. Refresh and try again.",

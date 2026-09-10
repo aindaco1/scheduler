@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { readJsonObject } from "@dustwave/worker-core/request-validation";
+import {
+  readJsonObject,
+  readBoundedBytes,
+} from "@dustwave/worker-core/request-validation";
 import {
   createSessionCookie,
   clearSessionCookie,
@@ -21,6 +24,7 @@ import {
   requireSecret,
 } from "./security";
 import type { RuntimeEnv } from "./env";
+import { LOGO_MAX_BYTES } from "./logo-policy";
 export { Scheduler };
 
 const cookie = "scheduler_session";
@@ -49,7 +53,8 @@ function secure(response: Response, isApi: boolean): Response {
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
   );
-  if (isApi) headers.set("Cache-Control", "private, no-store");
+  if (isApi && !headers.get("Content-Type")?.startsWith("image/"))
+    headers.set("Cache-Control", "private, no-store");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -209,6 +214,8 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
     throw new AppError("untrusted_origin", 403);
   const body = () => readJsonObject(request, 65_536);
   if (path === "/api/health") return json({ ok: true });
+  const logoMatch = path.match(/^\/api\/logo\/([0-9a-f]{64})$/);
+  if (logoMatch && method === "GET") return stub.getLogo(logoMatch[1]);
   if (path === "/api/config" && method === "GET")
     return json(await stub.publicConfig());
   const ip = request.headers.get("CF-Connecting-IP") || "local";
@@ -313,6 +320,20 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
   if (path.startsWith("/api/admin/")) {
     if (!(await stub.session(sessionToken(request))))
       throw new AppError("sign_in_required", 401);
+    if (path === "/api/admin/logo" && method === "POST") {
+      await stub.rateLimit("logo-upload", 20, 3_600_000);
+      let bytes: Uint8Array;
+      try {
+        bytes = await readBoundedBytes(request, LOGO_MAX_BYTES);
+      } catch (error) {
+        if ((error as { code?: string }).code === "body_too_large")
+          throw new AppError("logo_too_large", 413);
+        throw error;
+      }
+      return json(
+        await stub.uploadLogo(bytes, request.headers.get("Content-Type") || ""),
+      );
+    }
     if (path === "/api/admin/logout" && method === "POST") {
       await stub.logout(sessionToken(request));
       return new Response(JSON.stringify({ ok: true }), {
@@ -407,7 +428,9 @@ export default {
         remote.name === "SchedulerError" &&
         typeof remote.code === "string" &&
         /^[a-z_]{1,80}$/.test(remote.code) &&
-        [400, 401, 403, 404, 409, 429, 503].includes(Number(remote.status));
+        [400, 401, 403, 404, 409, 413, 429, 503].includes(
+          Number(remote.status),
+        );
       const validation = e instanceof z.ZodError || remote.name === "ZodError";
       const known = application || validation;
       // Log only a bounded classification. Provider errors can contain calendar contents or tokens.

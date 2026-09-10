@@ -7,6 +7,7 @@ import { readFile, stat, mkdir } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
+import { checkSettingsEnhancements } from "./settings.mjs";
 const root = resolve(".");
 const model = await build({
   entryPoints: ["worker/src/model.ts"],
@@ -21,6 +22,7 @@ const { defaultSettings } = await import(
 );
 const settings = defaultSettings();
 settings.enabled = true;
+settings.icloudCalendars = ["https://caldav.example.test/family"];
 settings.hours[0].end = "24:00";
 settings.recurringBlackouts = [{ day: 1, start: "12:00", end: "13:00" }];
 settings.types.forEach((type) => (type.enabled = true));
@@ -248,6 +250,18 @@ async function apiFixture(route) {
         {
           id: "https://caldav.example.test/family",
           name: "Family",
+          provider: "icloud",
+          writable: false,
+        },
+        {
+          id: "https://caldav.example.test/old-family",
+          name: "Family ⚠️",
+          provider: "icloud",
+          writable: false,
+        },
+        {
+          id: "https://caldav.example.test/reminders",
+          name: "Reminders ⚠️",
           provider: "icloud",
           writable: false,
         },
@@ -984,6 +998,7 @@ try {
   await preferencePage.locator("#panel-settings").waitFor({ state: "visible" });
   await preferenceContext.close();
   await checkBookingWeeks(browser, base, apiFixture, settings);
+  await checkSettingsEnhancements(browser, base, apiFixture, settings);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",
