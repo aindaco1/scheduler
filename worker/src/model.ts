@@ -113,7 +113,7 @@ export const settingsSchema = z
     requireIcloud: z.boolean(),
     brand: z
       .object({
-        name: z.string().trim().min(1).max(100).optional(),
+        name: z.string().trim().max(100).optional(),
         primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
         logoUrl: z
           .union([z.literal(""), z.string().url().max(2000)])

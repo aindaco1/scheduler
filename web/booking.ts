@@ -68,7 +68,7 @@ function intro() {
   const available = config.ready && s.enabled;
   app.innerHTML = `<section class="hero"><h1>${t("Meet with", "Reserva con")} ${esc(s.name)}.</h1><p class="intro">${esc(local(s.intro))}</p></section>${
     !available
-      ? `<section class="panel"><h2>${t("Bookings will open soon", "Pronto podrás reservar")}</h2><p class="muted">${t("The calendar is taking a little pause. Please check back soon.", "La agenda está en pausa. Vuelve a consultar pronto.")}</p></section>`
+      ? `<section class="panel"><h2>${s.enabled ? t("Booking is temporarily unavailable", "Las reservas no están disponibles temporalmente") : t("Not accepting bookings right now", "No se aceptan reservas por ahora")}</h2><p class="muted">${t("Please check back later. If you already have a meeting, you can manage it using the link in your booking email.", "Vuelve a consultar más adelante. Si ya tienes una reunión, puedes gestionarla con el enlace del correo de reserva.")}</p></section>`
       : `<section aria-labelledby="meeting-choices"><div class="section-heading"><h2 id="meeting-choices">${t("Choose a meeting", "Elige una reunión")}</h2></div><div class="choice-grid">${s.types
           .filter((type) => type.enabled)
           .map(

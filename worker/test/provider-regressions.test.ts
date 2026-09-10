@@ -484,3 +484,23 @@ it.each(["en", "es"] as const)(
     ).resolves.toEqual({ eventId, joinUrl: undefined });
   },
 );
+
+it("uses one postal address for either invitation language and falls back to legacy Spanish-only addresses", () => {
+  const location = {
+    id: "studio",
+    name: { en: "Studio", es: "Estudio" },
+    address: { en: "123 Example St\nTown, NM 87102", es: "Legacy translation" },
+    enabled: true,
+    hours: [],
+  };
+  expect(calendarLocation(location, "es")).toBe(
+    "Estudio, 123 Example St, Town, NM 87102",
+  );
+  expect(calendarLocation(location, "en")).toBe(
+    "Studio, 123 Example St, Town, NM 87102",
+  );
+  location.address = { en: " ", es: "Calle Mayor 1, Madrid" };
+  expect(calendarLocation(location, "en")).toBe(
+    "Studio, Calle Mayor 1, Madrid",
+  );
+});

@@ -225,9 +225,35 @@ export async function checkSettingsEnhancements(
     );
     assert.equal(
       await page
-        .getByLabel("Full street address · English", { exact: true })
+        .getByLabel("Full street address", { exact: true })
         .inputValue(),
       settings.locations[0].address.en,
+    );
+    assert.equal(
+      await page.locator('[data-setting="locations.0.address.es"]').count(),
+      0,
+    );
+    await page
+      .getByLabel("Full street address", { exact: true })
+      .first()
+      .fill("123 Example St, Town, NM 87102");
+    await save();
+    assert.deepEqual(settings.locations[0].address, {
+      en: "123 Example St, Town, NM 87102",
+      es: "123 Example St, Town, NM 87102",
+    });
+    assert.equal(
+      await page
+        .locator('[data-setting="locations.0.enabled"]')
+        .getAttribute("type"),
+      "checkbox",
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="locations.0.enabled"]')
+        .locator("..")
+        .textContent(),
+      "Active",
     );
     await page
       .locator("#panel-types .panel")
@@ -268,8 +294,8 @@ export async function checkSettingsEnhancements(
       false,
     );
     assert.equal(
-      await page.locator('[data-setting="locations.0.address.es"]').isVisible(),
-      false,
+      await page.locator('[data-setting="locations.0.address.es"]').count(),
+      0,
     );
     assert.equal(
       await page
@@ -430,6 +456,88 @@ export async function checkSettingsEnhancements(
         .getByRole("img", { name: "Logo preview", exact: true })
         .count(),
       0,
+    );
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator('[data-setting="brand.name"]').fill("");
+    const activeSwitch = page.getByRole("switch", {
+      name: "Active",
+      exact: true,
+    });
+    assert.equal(await activeSwitch.isChecked(), true);
+    await activeSwitch.focus();
+    await activeSwitch.press("Space");
+    assert.equal(await activeSwitch.isChecked(), false);
+    // Settings remain a draft until the existing Save changes action.
+    assert.equal(settings.enabled, true);
+    await save();
+    await reload();
+    assert.equal(settings.enabled, false);
+    assert.equal(settings.brand.name, "");
+    assert.equal(
+      await page.locator('[data-setting="brand.name"]').isVisible(),
+      true,
+    );
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").isVisible(),
+      false,
+    );
+    assert.equal(await page.locator(".wordmark svg").count(), 1);
+    assert.equal(await page.locator(".wordmark .header-logo").count(), 0);
+
+    const heading = await page
+      .locator(".booking-page-heading h2")
+      .boundingBox();
+    const toggle = await page.locator(".active-toggle").boundingBox();
+    assert.ok(toggle.x > heading.x + heading.width);
+    assert.ok(
+      Math.abs(toggle.y + toggle.height / 2 - heading.y - heading.height / 2) <
+        2,
+    );
+    await page
+      .locator("[data-booking-page]")
+      .screenshot({ path: "work/frontend/booking-page-active-desktop.png" });
+    await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
+    assert.deepEqual((await page.evaluate(() => axe.run())).violations, []);
+    const visitor = await context.newPage();
+    for (const [path, label] of [
+      [bookingPath, "Not accepting bookings right now"],
+      ["/es" + bookingPath, "No se aceptan reservas por ahora"],
+    ]) {
+      const response = await visitor.goto(base + path + "?type=conversation");
+      assert.equal(response.status(), 200);
+      await visitor
+        .getByRole("heading", { name: label, exact: true })
+        .waitFor();
+      assert.equal(await visitor.locator(".choice-card").count(), 0);
+      assert.equal(
+        await visitor
+          .locator('meta[property="og:site_name"]')
+          .getAttribute("content"),
+        "Scheduler",
+      );
+      await visitor.screenshot({
+        path: `work/frontend/paused-${path.startsWith("/es") ? "es" : "en"}.png`,
+      });
+    }
+    await visitor.close();
+    await page.setViewportSize({ width: 320, height: 900 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    await page
+      .locator("[data-booking-page]")
+      .screenshot({ path: "work/frontend/booking-page-active-mobile.png" });
+    await activeSwitch.focus();
+    await activeSwitch.press("Space");
+    await page.locator('[data-setting="brand.name"]').fill("Fixture & Brand");
+    await save();
+    assert.equal(settings.enabled, true);
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").isVisible(),
+      true,
     );
     assert.deepEqual(errors, []);
   } finally {

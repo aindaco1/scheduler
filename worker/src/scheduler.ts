@@ -1,5 +1,5 @@
 import { calendarLocation } from "./booking-location";
-import { localizedText } from "./text";
+import { localizedText, streetAddress } from "./text";
 import { meetingGap, normalizePreferences } from "./gap-policy";
 import { DurableObject } from "cloudflare:workers";
 import { prepareResendEmail } from "@dustwave/worker-core/email";
@@ -423,7 +423,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         .map(({ id, name, address, enabled }) => ({
           id,
           name,
-          address,
+          address: { en: streetAddress(address), es: streetAddress(address) },
           enabled,
         })),
     };
@@ -633,7 +633,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     token?: string,
   ) {
     const config = this.getSettings();
-    if (!config.settings.enabled) throw new AppError("booking_paused", 503);
+    // Pausing only stops new appointments; existing private management links remain usable.
+    if (!config.settings.enabled && !id)
+      throw new AppError("booking_paused", 503);
     if (id) {
       const b = await this.authorizedBooking(id, token || "", false);
       if (typeId !== b.typeId || locationId !== b.locationId)

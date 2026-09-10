@@ -160,6 +160,11 @@ export function errorText(error: unknown) {
       "The change deadline has passed. This booking can no longer be changed here.",
       "Ya pasó el plazo para cambios. Esta reserva ya no se puede modificar aquí.",
     );
+  if (code === "booking_paused")
+    return t(
+      "Not accepting bookings right now. Please check back later.",
+      "No se aceptan reservas por ahora. Vuelve a consultar más adelante.",
+    );
   if (e.status === 503)
     return t(
       "Booking is temporarily unavailable while calendar connections are checked. Please try again later.",
@@ -224,12 +229,16 @@ export function applyBrand(settings: PublicSettings) {
         mark.innerHTML = headerLogoMarkup(settings);
     } else {
       if (current) mark.innerHTML = defaultWordmark;
-      const label = mark.querySelector("[data-brand-name]");
-      if (label && settings.brand.name) label.textContent = settings.brand.name;
+      const label = mark.querySelector<HTMLElement>("[data-brand-name]");
+      if (label && settings.brand.name !== undefined) {
+        label.textContent = settings.brand.name;
+        label.hidden = !settings.brand.name;
+      }
     }
   }
   const siteName = $<HTMLMetaElement>('meta[property="og:site_name"]');
-  if (siteName && settings.brand.name) siteName.content = settings.brand.name;
+  if (siteName && settings.brand.name !== undefined)
+    siteName.content = settings.brand.name || "Scheduler";
   if (/^#[0-9a-fA-F]{6}$/.test(settings.brand.primary)) {
     document.documentElement.style.setProperty(
       "--brand-primary",

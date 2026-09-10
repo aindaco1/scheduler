@@ -248,3 +248,12 @@ Local `npm run check` passed: 141 Worker tests, 309 paired UI messages, bundle/S
 - Live Helium review confirmed the Brand name setting (current value DUST WAVE), editable 15-minute video gap in the left column, Active label, and separate address/arrival-instruction fields. Privacy and Admin show the same saved logo. Temporary review tabs were closed without changing live settings or bookings.
 - All eight English/Spanish page responses returned 200 with the saved logo already in initial HTML and without the old visible text fallback. Public instruction data remains omitted, unsigned admin API returns 401, and all nine deployed JS/CSS assets match the checked build. No automatic Cloudflare script injection appeared.
 - Provider/email behavior was verified with isolated fixtures; no live invitation or test email was sent. [Release evidence](research/meeting-details-release-2026-09-09.json) records the source, Worker, CI and read-only live checks.
+
+
+## Booking activation, shared addresses and optional branding
+
+Your booking page now has an accessible Active switch in the top-right heading, applied with Save changes. Location status is also labeled Active. Postal addresses use one full-width field for both languages while names and arrival instructions remain bilingual. Empty logo settings use the Scheduler icon shared with the favicon. An explicitly empty Brand name hides its header line, leaves Scheduler visible, and falls back to Scheduler in site-name metadata; the editable Settings field remains available.
+
+Pausing keeps the public URL at HTTP 200 with a clear English/Spanish not-accepting-bookings message and blocks new appointments. Existing bookings and reminders are unchanged. Private, authorized cancellation and rescheduling remain available within the existing rules; the previously inconsistent pause gate on their availability picker is fixed.
+
+Local verification: `npm run check` passed all 146 Workers tests, type/build/template checks, 311 paired UI messages, asset budgets, independent fork setup, browser/keyboard acceptance, axe scans and Wrangler dry run. Regression cases cover blank-brand persistence and initial HTML, canonical addresses without legacy data loss, unauthenticated pause enforcement and both private booking changes. Desktop and 320-pixel mobile screenshots were reviewed. These checks used fixtures, with no live settings, calendar or email mutations. Deployment and CI evidence follow below.

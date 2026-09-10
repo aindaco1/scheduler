@@ -149,7 +149,7 @@ try {
     const page = await context.newPage();
     await page.goto("https://meet.example.org/taylor");
     await page
-      .getByRole("heading", { name: "Bookings will open soon" })
+      .getByRole("heading", { name: "Not accepting bookings right now" })
       .waitFor();
     assert.equal(
       await page.locator(".wordmark").getAttribute("href"),
@@ -157,7 +157,7 @@ try {
     );
     await page.getByRole("link", { name: "Español", exact: true }).click();
     await page
-      .getByRole("heading", { name: "Pronto podrás reservar" })
+      .getByRole("heading", { name: "No se aceptan reservas por ahora" })
       .waitFor();
     assert.equal(
       await page.locator(".wordmark").getAttribute("href"),

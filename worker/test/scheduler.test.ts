@@ -73,6 +73,112 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("preserves an explicitly empty brand and shares postal addresses without losing legacy data", async () => {
+    const stub = await setup();
+    const config = await stub.getSettings();
+    config.settings.brand.name = "";
+    config.settings.locations = [
+      {
+        id: "studio",
+        name: { en: "Studio", es: "Estudio" },
+        address: { en: "123 Example St, Town, NM 87102", es: "Legacy address" },
+        instructions: { en: "Side door", es: "Puerta lateral" },
+        enabled: true,
+        hours: config.settings.hours,
+      },
+    ];
+    await stub.updateSettings(config.settings, config.revision);
+    const saved = await stub.getSettings();
+    expect(saved.settings.brand.name).toBe("");
+    expect((await stub.presentation()).brand.name).toBe("");
+    expect(saved.settings.locations[0].address.es).toBe("Legacy address");
+    const publicLocation = (await stub.publicConfig()).settings.locations[0];
+    expect(publicLocation.address).toEqual({
+      en: "123 Example St, Town, NM 87102",
+      es: "123 Example St, Town, NM 87102",
+    });
+    expect(publicLocation).not.toHaveProperty("instructions");
+    Reflect.deleteProperty(saved.settings.brand, "name");
+    expect(
+      (await stub.updateSettings(saved.settings, saved.revision)).settings.brand
+        .name,
+    ).toBe("");
+  });
+
+  it.each(["cancel", "reschedule"])(
+    "pauses new appointments while allowing authorized existing booking %s",
+    async (action) => {
+      const stub = await setup();
+      mockReads();
+      const created = await stub.createBooking(input());
+      await runInDurableObject(stub, (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one();
+        const b: Booking = JSON.parse(row.data);
+        b.status = "confirmed";
+        state.storage.sql.exec(
+          "UPDATE bookings SET data=?,status=? WHERE id=?",
+          JSON.stringify(b),
+          b.status,
+          b.id,
+        );
+        state.storage.sql.exec("DELETE FROM jobs");
+      });
+      const current = await stub.getSettings();
+      current.settings.enabled = false;
+      await stub.updateSettings(current.settings, current.revision);
+      const next = startTime() + 3 * 3600_000;
+      await expectRpc(
+        stub.availability("conversation", "", next, next + 3600_000),
+      ).rejects.toMatchObject({ code: "booking_paused" });
+      await expectRpc(stub.createBooking(input(next))).rejects.toMatchObject({
+        code: "booking_paused",
+      });
+      await expectRpc(
+        stub.availability(
+          "conversation",
+          "",
+          next,
+          next + 3600_000,
+          created.booking.id,
+          "wrong-token",
+        ),
+      ).rejects.toThrow();
+      const slots = await stub.availability(
+        "conversation",
+        "",
+        next,
+        next + 3600_000,
+        created.booking.id,
+        created.token,
+      );
+      expect(slots.slots.length).toBeGreaterThan(0);
+      expect(
+        (await stub.getBooking(created.booking.id, created.token)).booking
+          .status,
+      ).toBe("confirmed");
+      const changed =
+        action === "cancel"
+          ? await stub.cancel(created.booking.id, created.token)
+          : await stub.reschedule(
+              created.booking.id,
+              created.token,
+              new Date(next).toISOString(),
+              crypto.randomUUID(),
+            );
+      expect(changed.booking.status).toBe(
+        action === "cancel" ? "cancelling" : "rescheduling",
+      );
+      await runInDurableObject(stub, (_instance, state) =>
+        state.storage.deleteAlarm(),
+      );
+    },
+  );
+
   it("snapshots location instructions without publishing them or overwriting guest notes", async () => {
     const stub = await setup();
     mockReads();

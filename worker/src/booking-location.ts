@@ -1,5 +1,5 @@
 import type { Booking, Settings, Locale } from "./model";
-import { escapeHtml, localizedText } from "./text";
+import { escapeHtml, localizedText, streetAddress } from "./text";
 export const arrivalHeading = (locale: Locale) =>
   locale === "es" ? "Instrucciones de llegada" : "Arrival instructions";
 // Calendar LOCATION is a single text value. Keep access notes out of the address.
@@ -7,9 +7,9 @@ export function calendarLocation(
   location: Settings["locations"][number],
   locale: Locale,
 ): string {
-  return [location.name, location.address]
+  return [localizedText(location.name, locale), streetAddress(location.address)]
     .map((value) =>
-      localizedText(value, locale)
+      value
         .trim()
         .replace(/\r?\n+/g, ", ")
         .replace(/\s+/g, " "),

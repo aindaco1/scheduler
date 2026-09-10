@@ -1144,3 +1144,80 @@ legend {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+// Optional brand names leave one full-size Scheduler line beside the icon.
+.wordmark [data-brand-name][hidden] + .wordmark-sub {
+  margin-top: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.booking-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  h2 {
+    margin: 0;
+  }
+}
+.active-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  flex-shrink: 0;
+  font-weight: 650;
+  cursor: pointer;
+}
+.switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  border: 2px solid var(--control-border);
+  border-radius: 20px;
+  background: var(--soft);
+  &::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+}
+.active-toggle input:checked + .switch-track {
+  background: var(--success);
+  border-color: var(--success);
+  justify-content: flex-end;
+  &::before {
+    background: var(--page);
+  }
+}
+.active-toggle input:focus-visible + .switch-track {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+@media (forced-colors: active) {
+  .switch-track {
+    forced-color-adjust: none;
+    border-color: ButtonText;
+    background: Canvas;
+  }
+  .switch-track::before {
+    background: ButtonText;
+  }
+  .active-toggle input:checked + .switch-track {
+    background: Highlight;
+    border-color: Highlight;
+    &::before {
+      background: HighlightText;
+    }
+  }
+  .active-toggle input:focus-visible + .switch-track {
+    outline-color: Highlight;
+  }
+}

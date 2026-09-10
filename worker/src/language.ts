@@ -46,12 +46,16 @@ export async function localizedAsset(
       })
       .on(".wordmark [data-brand-name]", {
         element(el) {
-          if (brand.name) el.setInnerContent(brand.name);
+          if (brand.name !== undefined) {
+            el.setInnerContent(brand.name);
+            if (!brand.name) el.setAttribute("hidden", "");
+          }
         },
       })
       .on('meta[property="og:site_name"]', {
         element(el) {
-          if (brand.name) el.setAttribute("content", escapeHtml(brand.name));
+          if (brand.name !== undefined)
+            el.setAttribute("content", escapeHtml(brand.name || "Scheduler"));
         },
       });
     if (!spanishEnabled)

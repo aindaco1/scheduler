@@ -162,3 +162,31 @@ it("renders the saved brand and logo in initial HTML, including Privacy, with sa
     }
   }
 });
+
+it("keeps an empty brand blank in initial HTML and uses the Scheduler identity", async () => {
+  const shell =
+    '<html><head><meta property="og:site_name" content="OLD BRAND"></head><body><a class="wordmark"><svg></svg><span><span data-brand-name>OLD BRAND</span><span class="wordmark-sub">SCHEDULER</span></span></a></body></html>';
+  const settings = defaultSettings();
+  settings.brand.name = "   ";
+  const parsed = settingsSchema.parse(settings);
+  expect(parsed.brand.name).toBe("");
+  for (const path of [
+    "/taylor",
+    "/privacy/",
+    "/admin/",
+    "/manage/",
+    "/es/privacy/",
+  ]) {
+    const response = await localizedAsset(
+      new Request("https://schedule.example" + path),
+      assets(shell),
+      Promise.resolve(parsed),
+    );
+    const output = await response.text();
+    expect(output).not.toContain("OLD BRAND");
+    expect(output).toContain('content="Scheduler"');
+    expect(output).toMatch(/data-brand-name[^>]*hidden/);
+    expect(output).toContain("<svg>");
+    expect(output).toContain("SCHEDULER");
+  }
+});
