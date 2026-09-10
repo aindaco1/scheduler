@@ -16,7 +16,13 @@ The responsive matrix passed 40 admin and 84 public states in English/Spanish, i
 
 [Dependabot PR #1](https://github.com/aindaco1/scheduler/pull/1) updates Acorn to 8.18.0 and runs CI on Node 24. Vitest remains at 4.1.11 because the latest Cloudflare test pool (0.22.0) requires Vitest 4; its incompatible Vitest 5 proposal is deferred until those peer requirements change. All four SHA-pinned GitHub actions declare the Node 24 action runtime.
 
+Production deployment verified September 10 from source `10487b0b6433e08cc075c4b57e739c4f7c4de526`, following [successful CI](https://github.com/aindaco1/scheduler/actions/runs/34461926796) on Node **24.20.0**. Cloudflare Worker version: `1f930a09-d255-453d-85da-e05fe54e0e35`. All eight localized routes and nine built assets matched; unauthenticated private API reads returned 401. Public settings remained enabled/ready. Read-only availability for the September 28 week returned 58, 46 and 16 slots across the three locations (one cold read of 2.38 seconds, then 0.42 and 0.34 seconds; these three samples are not a performance percentile).
+
 See the [published 1.0.0 release](https://github.com/aindaco1/scheduler/releases/tag/v1.0.0) for the exact tested source, successful CI and production Worker identifiers. The [launch evidence](research/launch-1.0.0.json) contains fixture counts and asset metrics without private data.
+
+## Checkout cleanup
+
+After publication, reproducible site/bundle/manifests, caches and test reports were removed with `npm run clean`. Old scratch work and provisioning backups were moved to a private recoverable archive outside the checkout. Dependencies, source fixtures, pinned submodules and any local database state are retained; TypeScript checks still pass after cleanup. The merged Dependabot branch and temporary review worktree were removed. Only `main` remains, with no open pull requests at launch.
 
 ## Provider and recipient acceptance
 

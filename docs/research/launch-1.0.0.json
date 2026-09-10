@@ -4,7 +4,7 @@
   "license": "MIT",
   "node": {
     "local": "25.9.0",
-    "ci": "24",
+    "ci": "24.20.0",
     "allPinnedActionRuntimes": "node24"
   },
   "checks": {
@@ -91,5 +91,173 @@
     "translations": 312,
     "pages": 8
   },
-  "scope": "Isolated fixtures; no real invitations, calendar writes or production settings changes."
+  "scope": "Isolated fixtures; no real invitations, calendar writes or production settings changes.",
+  "source": "10487b0b6433e08cc075c4b57e739c4f7c4de526",
+  "ci": "https://github.com/aindaco1/scheduler/actions/runs/34461926796",
+  "workerVersion": "1f930a09-d255-453d-85da-e05fe54e0e35",
+  "production": {
+    "checkedAt": "2026-09-10T09:45:00.223Z",
+    "pages": [
+      {
+        "path": "/alonso",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/es/alonso",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/admin/",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/es/admin/",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/manage/",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/es/manage/",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/privacy/",
+        "status": 200,
+        "currentCss": true
+      },
+      {
+        "path": "/es/privacy/",
+        "status": 200,
+        "currentCss": true
+      }
+    ],
+    "assets": [
+      {
+        "path": "/assets/build/admin-42AVSXUO.js",
+        "status": 200,
+        "sha256": "9ddb973082f950df22b57857b6eb499fb922b6a9bc9188725ff5893b9eac6b2f",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/booking-PVSZJPKC.js",
+        "status": 200,
+        "sha256": "6c649fbe39295fae362fc28d75f44ffe320f8bee1089e6b6d0bebaf0d6b5a770",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/manage-2ZXBYHLR.js",
+        "status": 200,
+        "sha256": "73a41890e421dc31393114748d42751e07548eec917c31f115ee2a0e2123faad",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/privacy-BCW7ZDVI.js",
+        "status": 200,
+        "sha256": "0701187edce9479e92267ec2a46749b461d1570a8afc4ae05d17b8715b2b8d19",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/scheduler-9177813f99aa.css",
+        "status": 200,
+        "sha256": "9177813f99aaa2dbf1aae21e9014648692b8863b4e8b8c1219cb5f3a8a9724dc",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/shared-AAQVDSQ7.js",
+        "status": 200,
+        "sha256": "b248ce880ba27f8f4e2021debea1f4b238938cc2a72d120f492088946ee8fdc9",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/shared-BMIHA4B3.js",
+        "status": 200,
+        "sha256": "d3a341cc92990e91463c0dfd00a102dd2465fffc5ec7bb7eaa771095f58ac88b",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/shared-EOEQNGKN.js",
+        "status": 200,
+        "sha256": "b67b57127451380c313807eb034d932b81a29ddc67188f7cb523866114203d32",
+        "matches": true
+      },
+      {
+        "path": "/assets/build/shared-J5CO4FT2.js",
+        "status": 200,
+        "sha256": "b20a757800036f781ddcedaa2f38ec54bc380badd5ac8848e1b97a0182f99239",
+        "matches": true
+      }
+    ],
+    "privateEndpoints": [
+      {
+        "path": "/api/admin/settings",
+        "status": 401
+      },
+      {
+        "path": "/api/admin/bookings",
+        "status": 401
+      },
+      {
+        "path": "/api/admin/connections",
+        "status": 401
+      }
+    ],
+    "availability": [
+      {
+        "locationId": "place-ade1e5d6",
+        "status": 200,
+        "elapsedMs": 2375,
+        "slots": 58
+      },
+      {
+        "locationId": "place-aad76bc7",
+        "status": 200,
+        "elapsedMs": 420,
+        "slots": 46
+      },
+      {
+        "locationId": "place-02c658ba",
+        "status": 200,
+        "elapsedMs": 344,
+        "slots": 16
+      }
+    ],
+    "publicConfig": {
+      "status": 200,
+      "ready": true,
+      "enabled": true,
+      "spanishEnabled": true
+    }
+  },
+  "browserSmoke": {
+    "browser": "Helium",
+    "releaseCss": "scheduler-9177813f99aa.css",
+    "home": "loaded meeting choices",
+    "locationSelection": "Slow Burn loaded the selected week without an error",
+    "writes": 0
+  },
+  "release": "https://github.com/aindaco1/scheduler/releases/tag/v1.0.0",
+  "cleanup": {
+    "generatedOutputRemoved": true,
+    "scratch": "Private recoverable archive outside repository",
+    "retained": [
+      "development dependencies",
+      "source and fixtures",
+      "pinned submodules",
+      "credentials and local database state, if present"
+    ],
+    "remainingBranches": [
+      "main"
+    ],
+    "extraWorktrees": 0,
+    "openPullRequests": 0,
+    "typecheckAfterCleanup": "passed"
+  }
 }
