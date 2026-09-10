@@ -288,3 +288,5 @@ Deployment: source `ca7d48e` is live in Worker version `80f863d4-2ef4-4da6-bc79-
 ## Location question copy
 
 Changed the English location prompt to “Where should we meet?” and updated the existing browser test label. Spanish wording is unchanged. The production build and quality checks passed (eight localized pages, 311 paired messages and asset budgets). Deployment verification follows below.
+
+Deployment: source `f49b5df` is live in Worker version `c62e1db2-18ed-4639-8c23-c4c088ed7bac`. Both public booking locale routes reference the new bundle, which matches the local build byte for byte and includes the updated English question. [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34451893262) was still running at live verification. No live settings, bookings or messages were changed.
