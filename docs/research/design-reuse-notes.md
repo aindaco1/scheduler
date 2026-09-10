@@ -4,9 +4,9 @@ Reviewed September 9, 2026. **Chosen direction: Pool/Store warmth with system li
 
 Also confirmed: English and Spanish; a 30-day booking window; separate available days/hours per in-person location; Cloudflare Turnstile with no booker email-verification step.
 
-Canonical public URL: `https://scheduler.dustwave.xyz/alonso`. This is the chosen route, not a deployed page. Keep it stable as profiles are added in phase 2.
+Canonical public URL: `https://scheduler.dustwave.xyz/alonso`, now deployed. Keep it stable as profiles are added in phase 2.
 
-This is a design and implementation reference, not a built scheduler. Review included live desktop pages for Pool, Store, Dust Wave, and the signed-out Podcast admin, plus local source. Authenticated dashboard behavior and mobile layouts were not exercised. The exact colors below come from source; a matching live deployment revision was not established.
+The original research below is a dated design reference; the scheduler is now built. See [current status](../STATUS.md) for shipped behavior and release evidence. Review included live desktop pages for Pool, Store, Dust Wave, and the signed-out Podcast admin, plus local source. Authenticated dashboard behavior and mobile layouts were not exercised. The exact colors below come from source; a matching live deployment revision was not established.
 
 ## What to carry forward
 

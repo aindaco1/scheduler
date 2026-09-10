@@ -10,6 +10,7 @@ import { checkQuality } from "./quality.mjs";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
 import { checkResponsiveAdmin } from "./responsive-admin.mjs";
+import { checkResponsivePublic } from "./responsive-public.mjs";
 const root = resolve(".");
 const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
 const bookingPath = "/" + deployment.slug;
@@ -1031,6 +1032,7 @@ try {
     bookingPath,
   );
   await checkResponsiveAdmin(browser, base, apiFixture, settings);
+  await checkResponsivePublic(browser, base, apiFixture, settings, bookingPath);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

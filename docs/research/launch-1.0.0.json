@@ -1,0 +1,95 @@
+{
+  "version": "1.0.0",
+  "date": "2026-09-10",
+  "license": "MIT",
+  "node": {
+    "local": "25.9.0",
+    "ci": "24",
+    "allPinnedActionRuntimes": "node24"
+  },
+  "checks": {
+    "workerFiles": 15,
+    "workerTests": 150,
+    "adminStates": 40,
+    "publicStates": 84,
+    "adminWidths": [
+      320,
+      390,
+      768,
+      1024,
+      1280
+    ],
+    "publicWidths": [
+      320,
+      390,
+      768,
+      1024
+    ],
+    "locale": [
+      "en",
+      "es"
+    ],
+    "enlargedTextPercent": 200,
+    "savedAndUnsavedCenterMaxOffsetPx": 0,
+    "knownNpmAdvisories": 0,
+    "independentForkSetup": "passed",
+    "wranglerDryRun": "passed"
+  },
+  "quality": {
+    "assets": {
+      "assets/build/booking-PVSZJPKC.js": {
+        "bytes": 8326,
+        "gzip": 3467
+      },
+      "assets/build/manage-2ZXBYHLR.js": {
+        "bytes": 6430,
+        "gzip": 2678
+      },
+      "assets/build/shared-J5CO4FT2.js": {
+        "bytes": 774,
+        "gzip": 470
+      },
+      "assets/build/admin-42AVSXUO.js": {
+        "bytes": 52402,
+        "gzip": 17517
+      },
+      "assets/build/privacy-BCW7ZDVI.js": {
+        "bytes": 46,
+        "gzip": 66
+      },
+      "assets/build/shared-EOEQNGKN.js": {
+        "bytes": 5124,
+        "gzip": 2126
+      },
+      "assets/build/shared-AAQVDSQ7.js": {
+        "bytes": 161567,
+        "gzip": 46837
+      },
+      "assets/build/shared-BMIHA4B3.js": {
+        "bytes": 12244,
+        "gzip": 5575
+      }
+    },
+    "entries": {
+      "booking": {
+        "gzip": 9512,
+        "modules": 3
+      },
+      "manage": {
+        "gzip": 8723,
+        "modules": 3
+      },
+      "admin": {
+        "gzip": 69929,
+        "modules": 3
+      },
+      "privacy": {
+        "gzip": 5641,
+        "modules": 2
+      }
+    },
+    "translations": 312,
+    "pages": 8
+  },
+  "scope": "Isolated fixtures; no real invitations, calendar writes or production settings changes."
+}

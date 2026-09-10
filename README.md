@@ -1,42 +1,99 @@
 # Scheduler
 
-A small, open-source meeting scheduler built with Jekyll, Cloudflare Workers, Google Calendar, iCloud, Google Meet, Zoom, and Resend. English and Spanish; system light/dark; no per-booking host approval.
+An open-source, self-hosted meeting scheduler for one person. Guests choose a meeting type, a place or video call, and an available time. Confirmed meetings are added to your main Google calendar automatically.
 
-Alonso's booking page is **https://scheduler.dustwave.xyz/alonso**.
+**Version 1.0 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
 
-**[Set up your own instance →](docs/FORKING.md)**
+[See the booking page](https://scheduler.dustwave.xyz/alonso).
 
-## Project documentation
+## What it does
 
-- [Quality, security, accessibility, performance, SEO and i18n](docs/QUALITY.md)
-- [Contributing](CONTRIBUTING.md) and [security reporting](SECURITY.md)
-- [Phase 1 decisions](docs/decisions/phase-1.md)
-- [Implementation and verification status](docs/STATUS.md)
-- [Research and architecture](docs/research/scheduler-research-and-scope.md)
-- [Design and shared-code reuse](docs/research/design-reuse-notes.md)
-- [Phase 2 Proton research](docs/research/proton-integration-notes.md)
-- [Development and deployment](docs/OPERATIONS.md)
-- [Cross-project email delivery audit](docs/research/email-deliverability-audit.md)
+- Checks selected Google and iCloud calendars for conflicts, respecting each event's Busy/Free setting. A Proton subscription visible in Google can block time too.
+- Supports Google Meet, Zoom and in-person locations with their own opening hours and optional arrival instructions.
+- Gives you weekly availability, recurring and temporary blackouts, inclusive date ranges, in-person-only travel blocks and optional U.S. federal holiday blackouts.
+- Lets you set booking notice, how far ahead guests can book, default video/in-person gaps, per-type gap overrides, daily limits and change deadlines.
+- Sends calendar invitations through Google and confirmations, changes and up to three reminders through Resend. Guests can cancel or reschedule; owners can include a message with a change.
+- Includes a private dashboard, logo upload, optional brand name, optional Spanish, system light/dark themes, and mobile/tablet layouts. Turnstile protects booking without an email-verification step.
 
-Phase 2 adds profiles, pay-what-you-can including free, and direct Proton integration if its feasibility checks pass. Phase 1 uses a Proton calendar subscribed through Google for conflicts.
+Jekyll builds the pages; a Cloudflare Worker serves the app and API. One SQLite Durable Object holds the owner's data. There is no separate database server, Redis, D1 or KV to operate.
 
-## Development
+## Installation and setup
 
-Use Node 22+, Ruby 3.1+ and Bundler. Clone with submodules.
+You'll need Git, Node.js 24 or later, Ruby 3.1 or later with Bundler, a Cloudflare account with a domain, a Google account, and a Resend sending domain. iCloud and Zoom are optional. Cloudflare and provider usage may incur charges.
+
+1. **Fork this repository**, then install your fork with its pinned public dependencies:
+
+   ```sh
+   git clone --recurse-submodules https://github.com/YOUR-USERNAME/scheduler.git
+   cd scheduler
+   npm ci
+   bundle install
+   npx playwright install chromium
+   ```
+
+   If you already cloned it, run `git submodule update --init --recursive`. GitHub's automatic source ZIP does not include submodule contents; use the recursive clone.
+
+2. **Configure your own public identity before deploying.** Create a Turnstile widget for your hostname, then replace the sample values:
+
+   ```sh
+   npm run setup -- \
+     --origin https://schedule.example.com \
+     --slug your-name \
+     --name "Your Name" \
+     --brand "Your Brand" \
+     --timezone America/Denver \
+     --worker my-scheduler \
+     --account YOUR_CLOUDFLARE_ACCOUNT_ID \
+     --turnstile YOUR_PUBLIC_SITE_KEY
+   npm run types
+   ```
+
+   This updates `wrangler.jsonc`; your page becomes `/your-name`. The dashboard controls branding and scheduling preferences after setup. Keep the Worker name, owner slug and encryption key stable when upgrading an existing installation.
+
+3. **Connect your services.** Follow the [account, OAuth and secret setup guide](docs/FORKING.md#3-provision-your-accounts-and-secrets). It lists every required secret, callback URL and sending-domain step. You need your own credentials; the demo's connections do not transfer to a fork. Never commit credentials or paste them into public configuration.
+
+4. **Check and deploy:**
+
+   ```sh
+   npm run check
+   npx wrangler deploy --secrets-file .env.production
+   ```
+
+5. **Open `/admin/` on your domain.** Sign in using the configured owner email. Connect Google, optionally connect iCloud/Zoom, choose blocking calendars, and review your hours, locations, meeting types and reminders. If you do not use iCloud, turn off **Require iCloud**. New installations start paused. Use **Verify connections**, then turn on **Your booking page → Active** and save. Confirm your first booking and email delivery with a consenting test recipient.
+
+The [complete setup guide](docs/FORKING.md) covers production secrets, local development, upgrades and troubleshooting. This is a single-owner deployment; public multi-owner onboarding, paid/sliding-scale bookings, profiles and direct Proton integration are planned for phase 2.
+
+## Local development and testing
 
 ```sh
-git clone --recurse-submodules https://github.com/aindaco1/scheduler.git
-cd scheduler
-npm ci
-bundle install
 cp .dev.vars.example .dev.vars
+# Fill in separate local secrets and provider credentials in .dev.vars.
 npm run dev
 ```
 
-Open http://localhost:8787/alonso and /admin. Calendar setup is required before public booking can be enabled. Unit and Worker tests use isolated fixtures and never contact live calendars.
+Open `http://localhost:8787/your-name` (or `/alonso` in the unchanged upstream checkout) and `/admin/`. Local storage is separate from production; live provider credentials still contact those providers. Local OAuth needs registered localhost callbacks. Automated tests use isolated fixtures and send no real invitations.
 
-```sh
-npm run check
-```
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Build and run the local Worker on port 8787 |
+| `npm run build` | Generate routes, hashed assets and Jekyll output |
+| `npm run check` | Run the complete type, Worker, build, setup, browser and quality checks |
+| `npm audit --audit-level=moderate` | Check current dependency advisories |
+| `npm run clean -- --dry-run` | List disposable generated output |
+| `npm run clean` | Remove generated output; retain dependencies, secrets and local database state |
 
-MIT licensed. Third-party components retain their notices. The included Inter font is OFL licensed; proprietary brand fonts are not distributed.
+Use the project build command rather than bare `jekyll build`. See [operations](docs/OPERATIONS.md) for maintenance and [contributing](CONTRIBUTING.md) for development conventions.
+
+## Documentation
+
+- [Current release and verification](docs/STATUS.md)
+- [Installation, credentials and upgrades](docs/FORKING.md)
+- [Operations and troubleshooting](docs/OPERATIONS.md)
+- [Security, accessibility, performance, SEO and localization](docs/QUALITY.md)
+- [API contract](docs/API.md) and [product decisions](docs/decisions/phase-1.md)
+- [Original research](docs/research/scheduler-research-and-scope.md), [design references](docs/research/design-reuse-notes.md) and [phase 2 Proton research](docs/research/proton-integration-notes.md)
+- [Security reporting](SECURITY.md)
+
+## License
+
+Scheduler is [MIT licensed](LICENSE). Keep its copyright and license notice when copying or modifying it. Bundled dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). The included Inter font is OFL licensed. Proprietary fonts and demo-owner branding are not required to run your own instance.

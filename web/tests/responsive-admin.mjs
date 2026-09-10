@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
+import { responsiveLayoutIssues } from "./responsive-public.mjs";
 
 // All APIs are fixtures. Review the actual production CSS at phone, tablet and
 // desktop widths, including keyboard-operated card switches and compact saves.
@@ -44,11 +45,24 @@ export async function checkResponsiveAdmin(
           if (tab !== "bookings") {
             const bar = await page.locator(".save-bar").boundingBox();
             result.savedBarHeight = bar.height;
-            if (width <= 1024)
+            if (width <= 1024) {
+              const save = await page.locator("[data-save]").boundingBox();
+              result.savedCenterOffset = Math.abs(
+                save.x + save.width / 2 - bar.x - bar.width / 2,
+              );
+              if (tab === "types")
+                await page.screenshot({
+                  path: `work/frontend/admin-${locale}-${width}-saved-centered.png`,
+                });
+              assert.ok(
+                result.savedCenterOffset <= 1,
+                `${locale}/${width}/${tab}: saved label is ${result.savedCenterOffset}px off center`,
+              );
               assert.ok(
                 bar.height <= 44,
                 `${locale}/${width}: saved strip ${bar.height}px`,
               );
+            }
           }
           if (tab === "types") {
             const cards = page.locator("#panel-types .editor-card");
@@ -67,11 +81,28 @@ export async function checkResponsiveAdmin(
                 "Active must not expand/collapse its card",
               );
               const dirtyBar = await page.locator(".save-bar").boundingBox();
-              if (width <= 1024)
+              if (width <= 1024) {
+                const save = await page.locator("[data-save]").boundingBox();
+                const offset = Math.abs(
+                  save.x + save.width / 2 - dirtyBar.x - dirtyBar.width / 2,
+                );
+                result.unsavedCenterOffset = Math.max(
+                  result.unsavedCenterOffset || 0,
+                  offset,
+                );
+                if (i === 0)
+                  await page.screenshot({
+                    path: `work/frontend/admin-${locale}-${width}-unsaved-centered.png`,
+                  });
+                assert.ok(
+                  offset <= 1,
+                  `${locale}/${width}: Save changes is ${offset}px off center`,
+                );
                 assert.ok(
                   dirtyBar.height <= 64,
                   `${locale}/${width}: unsaved bar ${dirtyBar.height}px`,
                 );
+              }
               assert.ok(
                 (await page.locator("[data-save]").boundingBox()).height >= 44,
                 "Save target remains 44px",
@@ -157,6 +188,18 @@ export async function checkResponsiveAdmin(
               });
             }
           }
+          result.issues = await responsiveLayoutIssues(page, "#panel-" + tab);
+          if (
+            result.issues.length ||
+            (tab === "availability" &&
+              locale === "es" &&
+              [320, 768].includes(width))
+          ) {
+            result.screenshot = `work/frontend/admin-${locale}-${width}-${tab}-expanded.png`;
+            await page
+              .locator("#panel-" + tab)
+              .screenshot({ path: result.screenshot });
+          }
           checks.push(result);
         }
         await selectTab("types");
@@ -188,6 +231,11 @@ export async function checkResponsiveAdmin(
     await writeFile(
       "work/frontend/responsive-admin-review.json",
       JSON.stringify(checks, null, 2) + "\n",
+    );
+    assert.deepEqual(
+      checks.filter((check) => check.issues.length),
+      [],
+      "Expanded admin fields must fit without control or text overlap",
     );
     console.log(
       `Responsive admin passed: ${checks.length} locale/viewport/tab checks, card switch keyboard behavior, spacing, save strips and retention settings.`,

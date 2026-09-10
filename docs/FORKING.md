@@ -14,7 +14,7 @@ bundle install
 npx playwright install chromium
 ```
 
-Use Node 22+ and Ruby 3.1+ with Bundler (CI uses Ruby 3.3). If you cloned without dependencies, run `git submodule update --init --recursive`. Both pinned Dust Wave submodules are public and MIT-licensed; no Dust Wave account is needed. Keep their license notices.
+Use Node 24+ and Ruby 3.1+ with Bundler (CI uses Ruby 3.3). If you cloned without dependencies, run `git submodule update --init --recursive`. Both pinned Dust Wave submodules are public and MIT-licensed; no Dust Wave account is needed. Keep their license notices.
 
 ## 2. Configure your identity and domain
 
@@ -44,7 +44,7 @@ The script updates `wrangler.jsonc`. The build derives public routes, links, tit
 
 ## 3. Provision your accounts and secrets
 
-Sign in with `npx wrangler login`. Add secrets individually with `npx wrangler secret put NAME` so secret values do not enter shell history:
+Sign in with `npx wrangler login`. For a new Worker, save the secrets below in an ignored `.env.production` file (dotenv or JSON), then pass it to the first deploy in step 4. For an existing Worker, use `npx wrangler secret put NAME` to enter one value interactively. Keep secret values out of shell history:
 
 | Secret | Purpose |
 | --- | --- |
@@ -66,9 +66,13 @@ Verify your Resend domain's SPF/DKIM and set an aligned DMARC policy. Use a moni
 
 ## 4. Deploy, configure, and verify
 
+For the first deployment, load the private secrets file prepared above:
+
 ```sh
-npx wrangler deploy
+npx wrangler deploy --secrets-file .env.production
 ```
+
+Keep that file private and backed up in your password manager. Later code-only deployments use `npx wrangler deploy`; saved Worker secrets are retained. Do not use `.dev.vars.example` as production credentials: its challenge test keys are for localhost only. See [Cloudflare secrets](https://developers.cloudflare.com/workers/configuration/secrets/).
 
 Open `/admin/`, sign in through the emailed link, connect calendars, and select the calendars that block bookings. Review all meeting types, locations, timezone, weekly hours, blackout dates, notice/gap limits, reminders, and the privacy page. A new installation starts **paused**. Google Calendar is required; disable the default “Require iCloud” setting if you only use Google.
 
@@ -77,6 +81,8 @@ Verify connections and then enable bookings. Use a consenting test recipient to 
 ## Local development and upgrades
 
 Copy `.dev.vars.example` to ignored `.dev.vars`, set separate local credentials and random secrets, then run `npm run dev` at `http://localhost:8787`. It is a real local Worker with isolated local storage, not a fake login bypass. Local OAuth needs registered localhost callbacks. The example Turnstile test keys work only on localhost and are rejected on production origins. Use `npm run build`, not bare `jekyll build`, because the app build generates routes and asset manifests.
+
+The stable launch tag is `v1.0.0`; [release notes](../CHANGELOG.md) describe its scope. Existing installations need no data migration or reconnection for this release. Use `npm run clean -- --dry-run` to inspect generated output and `npm run clean` to remove it while preserving dependencies, secrets and `.wrangler/state`.
 
 Commit your public configuration. To adopt upstream fixes, add an upstream remote and merge/rebase deliberately, preserving your Wrangler configuration and secrets. Run `npm ci`, `git submodule update --init --recursive`, and `npm run check` before each deploy. Ordinary code deployments preserve SQLite state and queued work. Do not reapply a new namespace migration or delete the Durable Object to perform an upgrade.
 

@@ -1,6 +1,6 @@
 # Open-source scheduler: research and agreed scope
 
-Research date: September 9, 2026. This is a research and implementation brief; no scheduler has been deployed or connected to live calendars.
+Research date: September 9, 2026. This is the archived pre-build research brief. Scheduler is now implemented and deployed; use [current status](../STATUS.md), [product decisions](../decisions/phase-1.md) and [installation](../FORKING.md) for the shipped application. Project comparisons and open questions below retain their original research date.
 
 Companion research: [design and shared-code reuse](design-reuse-notes.md), [Protoxide knowledge for phase 2](proton-integration-notes.md).
 
@@ -142,4 +142,4 @@ Keep `calendar provider` behind a small interface from phase 1. This makes Proto
 5. Confirm Google OAuth remains connected beyond development testing. External OAuth projects left in Testing can receive seven-day refresh tokens for calendar scopes; setup must account for this. [Google OAuth token expiration](https://developers.google.com/identity/protocols/oauth2)
 6. Add phase 2 profiles and pricing through the same booking path. Test cross-profile collisions, free bookings, paid bookings, abandonment, duplicate/late webhooks, payment-success/calendar-failure recovery, and refunds in Stripe test mode before live use. Complete the Proton feasibility milestone separately.
 
-Remaining setup choices can stay editable: exact video/in-person gap lengths, durations, allowed locations and their hours, reminder timing, booking caps, displayed introduction/name, and phase 2 refund rules. Public versus unlisted meeting types and extra guests remain optional scope choices. The confirmed 30-day horizon is editable. The public URL is chosen, but DNS and deployment are not configured yet. Research, source review, local behavior tests, deployed provider tests, and recipient delivery are separate completion claims.
+Remaining setup choices can stay editable: exact video/in-person gap lengths, durations, allowed locations and their hours, reminder timing, booking caps, displayed introduction/name, and phase 2 refund rules. Public versus unlisted meeting types and extra guests remain optional scope choices. The confirmed 30-day horizon is editable. At the time of this research, the public URL was chosen but DNS and deployment were not yet configured. Those setup steps are now complete for the owner deployment. Research, source review, local behavior tests, deployed provider tests, and recipient delivery are separate completion claims.

@@ -1,6 +1,6 @@
 # Quality review and ongoing checks
 
-Reviewed September 9, 2026 against the current application, generated pages, Workers-runtime fixtures, and the Pool/Store documentation. This is an engineering review with regression fixes, not an independent penetration test, formal WCAG conformance statement, or native-speaker translation certification. Deployment and measured production results are recorded separately in [STATUS.md](STATUS.md).
+Initially reviewed September 9, 2026 and refreshed for 1.0 on September 10 against the current application, generated pages, Workers-runtime fixtures, and the Pool/Store documentation. This is an engineering review with regression fixes, not an independent penetration test, formal WCAG conformance statement, or native-speaker translation certification. Deployment and measured production results are recorded separately in [STATUS.md](STATUS.md).
 
 ## Practices reused
 
@@ -85,7 +85,9 @@ The compact `t(en, es)` convention remains the existing UI catalog, avoiding a s
 
 For a new locale, deliberately extend `Locale`, input schemas, formatting, route generation, email/static copy, translation catalog contract and language navigation. Do not merely add a route that silently serves English. Have a fluent speaker review the generated packet and actual rendered flows before declaring a locale complete.
 
-The admin browser suite also exercises all four tabs at 320, 390, 768, 1024 and 1280 pixels in both languages. It checks independent Active switches and card disclosures, normalized vertical gaps, connection-divider spacing, compact saved states and full-size unsaved actions. The cancelled-booking suite verifies elapsed-time cutoffs, old settings/data, email retry timestamps, filtering before the result limit and continued private access without deleting records.
+The launch review adds 84 public-flow checks across 320, 390, 768 and 1024 pixels in English/Spanish and both system themes, including booking details, guest management, dialogs, privacy, sign-in and 200% text. It checks address clearance from the location focus outline, summary spacing, overflow, control size and keyboard focus. Narrow-screen nested summary padding is capped to leave more room for enlarged text.
+
+The admin browser suite also exercises all four tabs at 320, 390, 768, 1024 and 1280 pixels in both languages. It checks independent Active switches and card disclosures, normalized vertical gaps, connection-divider spacing, compact saved states and full-size unsaved actions. Saved and unsaved controls are centered at phone/tablet widths; desktop retains the status/action layout. The cancelled-booking suite verifies elapsed-time cutoffs, old settings/data, email retry timestamps, filtering before the result limit and continued private access without deleting records.
 
 Manual follow-up remains appropriate for VoiceOver/Safari or NVDA/Firefox speech, mobile screen readers, and native-speaker Spanish review. The current evidence is Chromium keyboard/DOM/axe and high-zoom/reduced-motion testing, not an assistive-technology certification.
 
@@ -105,4 +107,4 @@ SEO checks verify eight localized shells, exact public sitemap membership, recip
 
 Cloudflare documents `no-transform` for preventing automatic [Web Analytics injection](https://developers.cloudflare.com/web-analytics/faq/) and [JavaScript Detections injection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/). Scheduler's explicit Turnstile and server verification remain required. Do not add a zone rule that requires a JSD-passed signal for these no-transform pages; the signal is intentionally absent. No zone-wide settings were changed.
 
-Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [STATUS.md](STATUS.md#final-quality-release-verification), with a [metrics-only evidence file](research/quality-evidence-2026-09-09.json).
+Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [the pre-1.0 verification history](history/pre-1.0.md#final-quality-release-verification), with a [metrics-only evidence file](research/quality-evidence-2026-09-09.json).

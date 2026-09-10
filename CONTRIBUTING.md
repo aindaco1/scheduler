@@ -11,3 +11,5 @@ Run `npm run check` before submitting a change. It includes type checks, Worker 
 Explain the user-visible behavior and relevant test evidence in the pull request. Record meaningful operational changes in `docs/STATUS.md`, keeping local tests, CI, deployment, and real provider/recipient results distinct. Public issues, screenshots and logs must contain only synthetic guest data.
 
 For translation work, run `npm run test:quality` after building. The review packet in `work/audit/translation-review.json` contains paired UI messages. Static page copy and email translations are maintained alongside their English counterparts. See [QUALITY.md](docs/QUALITY.md) for adding locales and manual review boundaries.
+
+For releases, update `package.json`, the root version in `package-lock.json`, and `CHANGELOG.md` together. Follow [the release checklist](docs/OPERATIONS.md#local-cleanup-and-releases). Keep dependency updates within the Cloudflare test runner's declared peer versions; do not bypass incompatible peers with force/legacy flags.

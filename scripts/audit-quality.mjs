@@ -214,6 +214,9 @@ for (const path of [
   ".dev.vars",
   "wrangler.jsonc",
   "package-lock.json",
+  "CHANGELOG.md",
+  "README.md",
+  "CONTRIBUTING.md",
 ])
   await assert.rejects(
     stat(resolve("_site", path)),

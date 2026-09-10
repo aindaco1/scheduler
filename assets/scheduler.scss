@@ -564,6 +564,12 @@ select.field-control,
   display: block;
   margin-bottom: 0.2rem;
 }
+.manage-wrap > .booking-review {
+  margin-bottom: 1rem;
+}
+.booking-panel [data-address]:not(:empty) {
+  margin-top: 0.5rem;
+}
 .empty-state {
   padding: 3rem 1rem;
   text-align: center;
@@ -1028,6 +1034,11 @@ select.field-control,
   .booking-panel {
     padding: 1rem;
   }
+  // Enlarging text should not consume the narrow screen with nested padding.
+  .booking-panel,
+  .booking-review {
+    padding-inline: min(1rem, 16px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1260,7 +1271,7 @@ legend {
     white-space: nowrap;
   }
   .save-bar {
-    justify-content: flex-end;
+    justify-content: center;
     flex-wrap: nowrap;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
