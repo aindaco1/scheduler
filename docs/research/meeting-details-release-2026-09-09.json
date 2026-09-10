@@ -1,0 +1,149 @@
+{
+  "source": "cda9b9dc356b556c02e103af0b1f96c67f527918",
+  "worker": "27dfb602-995b-4067-913b-b3aa5bd07e76",
+  "brandName": "DUST WAVE",
+  "publicInstructionsOmitted": true,
+  "routes": [
+    {
+      "path": "/alonso",
+      "status": 200,
+      "ms": 366,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200,
+      "ms": 238,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/admin/",
+      "status": 200,
+      "ms": 85,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200,
+      "ms": 257,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "ms": 116,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200,
+      "ms": 267,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/manage/",
+      "status": 200,
+      "ms": 171,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200,
+      "ms": 173,
+      "logoInInitialHtml": true,
+      "staticBrandTextAbsent": true,
+      "cache": "private, no-store, no-transform",
+      "noInjectedScripts": true
+    }
+  ],
+  "assets": [
+    {
+      "file": "admin-GJ5W25SR.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "booking-267VF5TU.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "manage-EYNDLEUV.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "privacy-BSSJZ3A5.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "scheduler-464ad5339d7c.css",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "shared-6XEI4IBQ.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "shared-BSGALIPM.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "shared-V5UUIOJE.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "shared-YVWTHSH2.js",
+      "status": 200,
+      "matches": true
+    }
+  ],
+  "privateApiStatus": 401,
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/34436105552",
+    "conclusion": "success"
+  },
+  "local": {
+    "workerTests": 141,
+    "pairedMessages": 309,
+    "fullCheck": "passed",
+    "screenshotsReviewed": [
+      "gap-override-desktop",
+      "location-instructions-desktop",
+      "bookings-header-spacing"
+    ]
+  },
+  "helium": {
+    "adminSettings": "Brand name shown with existing value; saved video/in-person defaults preserved",
+    "meetingTypes": "Editable gap in left column, Active label, separate full address and arrival-instruction fields",
+    "privacy": "Saved logo matches admin",
+    "temporaryTabsClosed": true,
+    "liveSettingsOrBookingsChanged": false
+  }
+}
