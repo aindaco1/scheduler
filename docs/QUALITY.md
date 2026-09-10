@@ -18,7 +18,7 @@ Severity reflects impact in this single-owner application.
 | Area | Finding | Severity | Resolution / evidence |
 | --- | --- | --- | --- |
 | Performance | Every picker request repeated Google token refresh, Apple discovery and both calendar reads | High UX impact | Private 30-second busy snapshots, shared concurrent reads, reusable token/discovery metadata, early rejection of impossible ranges; coordinator tests verify actual avoided fetches |
-| Performance/privacy | Google returned unused titles/descriptions and other event fields | Medium | Partial-response field mask retains only fields needed for Busy/Free, time bounds, pagination and Scheduler identity; live read must verify mask acceptance |
+| Performance/privacy | Google returned unused titles/descriptions and other event fields | Medium | Partial-response field mask retains only fields needed for Busy/Free, time bounds, pagination and Scheduler identity; live availability reads verified mask acceptance |
 | Performance | Each entrypoint bundled duplicate shared code; fixed filenames discouraged safe long caching | Medium | Shared ES modules and content-hashed JS/CSS with immutable asset headers; per-entry initial transitive gzip and aggregate byte budgets |
 | Security/privacy | Private HTML shells lacked explicit no-store headers and HTTP noindex | Medium | Admin/manage/API responses now set private/no-store/no-transform and X-Robots-Tag; Worker tests cover both locales, successes and errors |
 | Accessibility | Week navigation replaced the focused button and reset keyboard focus | Medium | Restore focus to the corresponding enabled navigation button; keyboard regression test |
@@ -28,7 +28,7 @@ Severity reflects impact in this single-owner application.
 | SEO | Missing canonical URLs, language alternates, social titles, robots and sitemap | Medium | Public EN/ES routes receive metadata and a sitemap; private routes remain excluded; generated-artifact assertions |
 | Maintainability | Identity, branding, links and routes hardcoded for upstream owner | Medium | One public deployment identity in Wrangler, generated build data/routes, setup CLI and independent-domain fork test |
 | Maintenance | No persistent quality/advisory gates beyond existing tests | Medium | Asset/SEO/locale/source-publication checks added to `npm run check`; weekly CI and dependency/action update proposals |
-| Privacy/performance | Zone-wide Cloudflare analytics and JavaScript Detections were being injected into pages and blocked by CSP | Medium | HTML now includes no-transform, preventing those automatic injections; explicit Turnstile stays active. Verify on the real edge |
+| Privacy/performance | Zone-wide Cloudflare analytics and JavaScript Detections were being injected into pages and blocked by CSP | Medium | HTML now includes no-transform, preventing those automatic injections; explicit Turnstile stays active. Verified on the real edge |
 | Performance | Header logo lacked explicit dimensions | Low | Reserve a 120×52 contain-fit box; legacy external image optimization remains an operator asset choice |
 | Reporting | No enabled private vulnerability intake | Low | GitHub private vulnerability reporting enabled upstream; SECURITY.md documents fork configuration |
 
@@ -102,3 +102,5 @@ Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixt
 SEO checks verify eight localized shells, exact public sitemap membership, reciprocal alternates, canonical origins, asset existence and private noindex. Management shells stay crawlable so bots can see noindex, following [Google's localized-page guidance](https://developers.google.com/search/docs/specialty/international/localized-versions) and the Store crawl policy. Search-engine indexing and actual social-card rendering are external outcomes, not guaranteed by a passing build.
 
 Cloudflare documents `no-transform` for preventing automatic [Web Analytics injection](https://developers.cloudflare.com/web-analytics/faq/) and [JavaScript Detections injection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/). Scheduler's explicit Turnstile and server verification remain required. Do not add a zone rule that requires a JSD-passed signal for these no-transform pages; the signal is intentionally absent. No zone-wide settings were changed.
+
+Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [STATUS.md](STATUS.md#final-quality-release-verification), with a [metrics-only evidence file](research/quality-evidence-2026-09-09.json).
