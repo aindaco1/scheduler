@@ -393,7 +393,7 @@ try {
   await page.goto(base + bookingPath);
   await page.getByRole("button", { name: /Meet in person/ }).click();
   assert.equal(await page.locator("[data-slot]").count(), 0);
-  await page.getByLabel("Where shall we meet?").selectOption("studio");
+  await page.getByLabel("Where should we meet?").selectOption("studio");
   await page.locator("[data-slot]").first().click();
   const chosen = new URL(page.url()).searchParams.get("slot");
   await page.getByRole("link", { name: "Español", exact: true }).click();

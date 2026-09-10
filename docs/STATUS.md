@@ -283,3 +283,8 @@ CI exposed two pre-existing test timing/isolation issues: an exact redirect URL 
 Removed “A space for your schedule” and its Spanish counterpart from the owner sign-in page, including the paragraph wrapper. The production build and existing quality checks passed (311 paired messages). This is a copy-only change; authentication behavior is unchanged. Deployment and CI verification follow below.
 
 Deployment: source `ca7d48e` is live in Worker version `80f863d4-2ef4-4da6-bc79-2338ac85b62d`. Both admin locale routes reference the verified new bundle, which matches the local build byte for byte and contains neither tagline. [GitHub CI for this change](https://github.com/aindaco1/scheduler/actions/runs/34446880496) was still running at the time of live verification. No live settings, bookings or messages were changed.
+
+
+## Location question copy
+
+Changed the English location prompt to “Where should we meet?” and updated the existing browser test label. Spanish wording is unchanged. The production build and quality checks passed (eight localized pages, 311 paired messages and asset budgets). Deployment verification follows below.
