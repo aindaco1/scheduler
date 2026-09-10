@@ -139,3 +139,11 @@ Local verification passed: all 110 Workers tests, TypeScript, template checks, p
 Deployment: source commit `e7c5f28` is live in Worker version `d728ff88-fd2b-4e97-810e-208af02a3294`. The admin script, booking script, stylesheet, favicon and dropdown SVG matched the verified build byte for byte. All eight English/Spanish booking, admin, management and privacy routes returned HTTP 200 with the new icon reference, mark and footer; HTML includes runtime-injected scripts, so it is not byte-identical to the static build. Health returned HTTP 200 and unauthenticated private settings HTTP 401. A separate Helium tab visually confirmed the live location dropdown inset and footer, and confirmed the admin tagline was gone. The existing custom header logo still takes precedence over the new default mark. No production settings or bookings were changed.
 
 [GitHub CI for `e7c5f28`](https://github.com/aindaco1/scheduler/actions/runs/34423650303) passed the complete check workflow.
+
+## Booking copy and privacy wording
+
+The homepage's three-line notice/horizon/time-zone strip and its unused styling are removed in both languages. Scheduling limits remain enforced. The English and Spanish privacy pages use more direct wording while preserving the disclosures, service names, headings, links and paragraph structure. The Humanizer and Constrained Humanization Editing skills guided the edit; both versions stay within 5% of their original word counts.
+
+Timezone behavior was checked in the existing implementation: the dropdown starts with `Intl.DateTimeFormat().resolvedOptions().timeZone`, falls back to `America/Denver` if unavailable, and lets the visitor select another zone. A valid timezone in a meeting-specific booking link is retained. This feature uses the browser-reported zone rather than a GPS or IP lookup; no timezone behavior changed in this update.
+
+Local verification passed: all 110 Workers tests, TypeScript, template checks, browser/accessibility acceptance and Wrangler dry run. The production build and browser suite passed again after the final static-copy pass. English desktop and Spanish mobile privacy screenshots and the simplified booking homepage were visually reviewed. No live settings, bookings, calendar events or emails were changed. CI and deployment evidence follows below.

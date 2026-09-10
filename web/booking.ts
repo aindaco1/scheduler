@@ -75,9 +75,7 @@ function intro() {
             (type) =>
               `<button class="choice-card" type="button" data-type="${esc(type.id)}"><span class="choice-icon">${icon(type.mode === "in-person" ? "pin" : "video")}</span><span><h3>${esc(local(type.name))}</h3><p>${esc(local(type.description))}</p></span><span class="choice-bottom"><span>${type.duration} ${t("min", "min")} · ${modeLabel(type.mode)}</span><span class="choice-arrow" aria-hidden="true">↗</span></span></button>`,
           )
-          .join(
-            "",
-          )}</div><div class="policy-strip"><span>${s.noticeHours} ${t("hours minimum notice", "horas de antelación mínima")}</span><span>${t("Book up to", "Reserva con hasta")} ${s.horizonDays} ${t("days ahead", "días de antelación")}</span><span>${t("Your time zone, automatically", "Tu zona horaria, automáticamente")}</span></div></section>`
+          .join("")}</div></section>`
   }`;
   app.querySelectorAll<HTMLButtonElement>("[data-type]").forEach((button) =>
     button.addEventListener("click", () => {
