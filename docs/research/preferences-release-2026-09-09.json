@@ -1,0 +1,194 @@
+{
+  "date": "2026-09-09",
+  "source": "ee00213e3027335676ed5053d03d41efd70d6dba",
+  "worker": "7a21e5cf-1b25-4033-ad75-6a936ece9c56",
+  "local": {
+    "workerTests": 135,
+    "pairedMessages": 303,
+    "fullCheck": "passed",
+    "screenshotsReviewed": [
+      "gap-settings-desktop",
+      "gap-override-desktop",
+      "google-connection-desktop",
+      "logo-upload-desktop",
+      "logo-upload-es-mobile-dark"
+    ]
+  },
+  "live": [
+    {
+      "path": "/alonso",
+      "status": 200,
+      "ms": 283,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200,
+      "ms": 414,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/admin/",
+      "status": 200,
+      "ms": 176,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200,
+      "ms": 133,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": false,
+      "injected": false
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "ms": 139,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200,
+      "ms": 275,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/manage/",
+      "status": 200,
+      "ms": 159,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": true,
+      "injected": false
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200,
+      "ms": 138,
+      "cacheControl": "private, no-store, no-transform",
+      "spanishAlternative": false,
+      "injected": false
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "ms": 91,
+      "cacheControl": "private, no-store",
+      "spanishAlternative": false,
+      "injected": false
+    },
+    {
+      "asset": "/assets/build/booking-VZDDYW3U.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "6cb826c79410ddff84e5241030b07a19263117cf7e2f4972c219270e978d8db3",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/manage-IDWUFT7N.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "af8e99b4d8a176641d44044526bac066af6a4ee7eeb5044070dfdc8d0381f47c",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/admin-5YZS425A.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "5135a44588f2752f3b50e904abdcda027da8432c95af71f2b703985187263e7f",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/privacy-4QNEWDQG.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "8e6ad1946046f427bdc1dafcab56a315c91bb51d89253389337e642499f92ca9",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/shared-RT3WVGNJ.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "4f17e057f50e4fd44088a647859142d45be15eb7d4657ef1d5a0f8c3e6cdcac3",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/scheduler-ce01f4f107e3.css",
+      "status": 200,
+      "matches": true,
+      "sha256": "ce01f4f107e3a02cc62b2d7d0aa1184dd85d8af5ca5b0333fec956b17bd2f579",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "privateApiStatus": 401
+    },
+    {
+      "asset": "/assets/build/shared-KKNE3IPU.js",
+      "status": 200,
+      "matches": true,
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/shared-PBUU6T5F.js",
+      "status": 200,
+      "matches": true,
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    {
+      "asset": "/assets/build/shared-Z3MRT7RD.js",
+      "status": 200,
+      "matches": true,
+      "cacheControl": "public, max-age=31536000, immutable"
+    }
+  ],
+  "calendarBenchmark": {
+    "at": "2026-09-10T03:23:44.673Z",
+    "samples": [
+      {
+        "ms": 2702,
+        "status": 200
+      },
+      {
+        "ms": 266,
+        "status": 200
+      },
+      {
+        "ms": 262,
+        "status": 200
+      },
+      {
+        "ms": 312,
+        "status": 200
+      },
+      {
+        "ms": 281,
+        "status": 200
+      }
+    ],
+    "summary": {
+      "minimum": 262,
+      "median": 281,
+      "maximum": 2702
+    },
+    "note": "Sequential read-only samples; first sample may be cold. Not real-user Core Web Vitals or sustained-load evidence."
+  },
+  "limitations": [
+    "Helium admin review was unavailable because the Mac was locked.",
+    "Spanish off/on was verified with isolated browser and Worker fixtures; live Spanish remains enabled.",
+    "No live settings, bookings or invitations were changed during verification."
+  ],
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/34433081743",
+    "conclusion": "success"
+  }
+}

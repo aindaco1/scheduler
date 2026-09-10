@@ -9,11 +9,25 @@ import {
 import { defaultSettings, type Booking } from "../src/model";
 import { sha256Hex } from "../src/security";
 
+type Stub = ReturnType<typeof env.SCHEDULER.getByName>;
+const fixtureStubs = new Set<Stub>();
+
 beforeEach(() => {
   fetchMock.activate();
   fetchMock.disableNetConnect();
 });
-afterEach(() => fetchMock.deactivate());
+afterEach(async () => {
+  // Pending fixture jobs must not wake under another test's global fetch spy.
+  // Keep this test's provider mocks installed until all of its work is disarmed.
+  for (const stub of fixtureStubs)
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec("DELETE FROM jobs");
+      await state.storage.deleteAlarm();
+    });
+  fixtureStubs.clear();
+  vi.restoreAllMocks();
+  fetchMock.deactivate();
+});
 const expectRpc = (promise: PromiseLike<unknown>) =>
   expect(Promise.resolve(promise));
 const origin = "https://scheduler.example";
@@ -36,6 +50,7 @@ function mockReads(events: object[] = []) {
 }
 async function setup(name = crypto.randomUUID()) {
   const stub = env.SCHEDULER.getByName(name);
+  fixtureStubs.add(stub);
   await stub.putConnection("google", {
     refreshToken: "refresh",
     email: "owner@example.com",
@@ -73,6 +88,189 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("preserves an explicitly empty brand and shares postal addresses without losing legacy data", async () => {
+    const stub = await setup();
+    const config = await stub.getSettings();
+    config.settings.brand.name = "";
+    config.settings.locations = [
+      {
+        id: "studio",
+        name: { en: "Studio", es: "Estudio" },
+        address: { en: "123 Example St, Town, NM 87102", es: "Legacy address" },
+        instructions: { en: "Side door", es: "Puerta lateral" },
+        enabled: true,
+        hours: config.settings.hours,
+      },
+    ];
+    await stub.updateSettings(config.settings, config.revision);
+    const saved = await stub.getSettings();
+    expect(saved.settings.brand.name).toBe("");
+    expect((await stub.presentation()).brand.name).toBe("");
+    expect(saved.settings.locations[0].address.es).toBe("Legacy address");
+    const publicLocation = (await stub.publicConfig()).settings.locations[0];
+    expect(publicLocation.address).toEqual({
+      en: "123 Example St, Town, NM 87102",
+      es: "123 Example St, Town, NM 87102",
+    });
+    expect(publicLocation).not.toHaveProperty("instructions");
+    Reflect.deleteProperty(saved.settings.brand, "name");
+    expect(
+      (await stub.updateSettings(saved.settings, saved.revision)).settings.brand
+        .name,
+    ).toBe("");
+  });
+
+  it.each(["cancel", "reschedule"])(
+    "pauses new appointments while allowing authorized existing booking %s",
+    async (action) => {
+      const stub = await setup();
+      mockReads();
+      const created = await stub.createBooking(input());
+      await runInDurableObject(stub, (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one();
+        const b: Booking = JSON.parse(row.data);
+        b.status = "confirmed";
+        state.storage.sql.exec(
+          "UPDATE bookings SET data=?,status=? WHERE id=?",
+          JSON.stringify(b),
+          b.status,
+          b.id,
+        );
+        state.storage.sql.exec("DELETE FROM jobs");
+      });
+      const current = await stub.getSettings();
+      current.settings.enabled = false;
+      await stub.updateSettings(current.settings, current.revision);
+      const next = startTime() + 3 * 3600_000;
+      await expectRpc(
+        stub.availability("conversation", "", next, next + 3600_000),
+      ).rejects.toMatchObject({ code: "booking_paused" });
+      await expectRpc(stub.createBooking(input(next))).rejects.toMatchObject({
+        code: "booking_paused",
+      });
+      await expectRpc(
+        stub.availability(
+          "conversation",
+          "",
+          next,
+          next + 3600_000,
+          created.booking.id,
+          "wrong-token",
+        ),
+      ).rejects.toThrow();
+      const slots = await stub.availability(
+        "conversation",
+        "",
+        next,
+        next + 3600_000,
+        created.booking.id,
+        created.token,
+      );
+      expect(slots.slots.length).toBeGreaterThan(0);
+      expect(
+        (await stub.getBooking(created.booking.id, created.token)).booking
+          .status,
+      ).toBe("confirmed");
+      const changed =
+        action === "cancel"
+          ? await stub.cancel(created.booking.id, created.token)
+          : await stub.reschedule(
+              created.booking.id,
+              created.token,
+              new Date(next).toISOString(),
+              crypto.randomUUID(),
+            );
+      expect(changed.booking.status).toBe(
+        action === "cancel" ? "cancelling" : "rescheduling",
+      );
+      await runInDurableObject(stub, (_instance, state) =>
+        state.storage.deleteAlarm(),
+      );
+    },
+  );
+
+  it("snapshots location instructions without publishing them or overwriting guest notes", async () => {
+    const stub = await setup();
+    mockReads();
+    const current = await stub.getSettings();
+    current.settings.brand.name = "Fixture brand";
+    current.settings.locations = [
+      {
+        id: "studio",
+        name: { en: "Studio", es: "Estudio" },
+        address: {
+          en: "123 Example St, Town, NM 87102",
+          es: "123 Example St, Town, NM 87102",
+        },
+        instructions: { en: "Use the side door", es: "Usa la puerta lateral" },
+        enabled: true,
+        hours: current.settings.hours,
+      },
+    ];
+    current.settings.types[2].enabled = true;
+    current.settings.types[2].locationIds = ["studio"];
+    const saved = await stub.updateSettings(current.settings, current.revision);
+    expect(
+      (await stub.publicConfig()).settings.locations[0],
+    ).not.toHaveProperty("instructions");
+    const result = await stub.createBooking({
+      ...input(),
+      typeId: "in-person",
+      locationId: "studio",
+      topic: "I have a project to discuss",
+    });
+    expect(result.booking.locationInstructions).toBe("Use the side door");
+    expect(result.booking.topic).toBe("I have a project to discuss");
+    const olderDashboard = structuredClone(saved.settings);
+    Reflect.deleteProperty(olderDashboard.locations[0], "instructions");
+    Reflect.deleteProperty(olderDashboard.brand, "name");
+    const upgraded = await stub.updateSettings(olderDashboard, saved.revision);
+    expect(upgraded.settings.locations[0].instructions?.en).toBe(
+      "Use the side door",
+    );
+    expect(upgraded.settings.brand.name).toBe("Fixture brand");
+    await runInDurableObject(stub, (_instance, state) =>
+      state.storage.deleteAlarm(),
+    );
+  });
+
+  it("persists preferences, preserves omitted upgrade fields, and snapshots resolved gaps and booking language", async () => {
+    const stub = await setup();
+    mockReads();
+    const current = await stub.getSettings();
+    current.settings.defaultGaps.video = 45;
+    current.settings.spanishEnabled = false;
+    const saved = await stub.updateSettings(current.settings, current.revision);
+    expect((await stub.publicConfig()).settings.types[0].gap).toBe(45);
+    expect((await stub.publicConfig()).settings.spanishEnabled).toBe(false);
+    const legacyPayload = structuredClone(saved.settings);
+    Reflect.deleteProperty(legacyPayload, "defaultGaps");
+    Reflect.deleteProperty(legacyPayload, "spanishEnabled");
+    const upgraded = await stub.updateSettings(legacyPayload, saved.revision);
+    expect(upgraded.settings.defaultGaps.video).toBe(45);
+    expect(upgraded.settings.spanishEnabled).toBe(false);
+    const result = await stub.createBooking({ ...input(), locale: "es" });
+    expect(result.booking.locale).toBe("en");
+    const changed = await stub.getSettings();
+    changed.settings.defaultGaps.video = 0;
+    await stub.updateSettings(changed.settings, changed.revision);
+    await runInDurableObject(stub, (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM bookings WHERE id=?",
+          result.booking.id,
+        )
+        .one();
+      expect(JSON.parse(row.data).gap).toBe(45);
+      return state.storage.deleteAlarm();
+    });
+  });
+
   it("reuses browsing snapshots but rejects a new provider conflict at booking", async () => {
     const stub = await setup();
     let reads = 0;

@@ -145,6 +145,16 @@ async function jobs(stub: Stub) {
   );
 }
 
+async function storedBooking(stub: Stub, id: string): Promise<Booking> {
+  return runInDurableObject(stub, (_instance, state) =>
+    JSON.parse(
+      state.storage.sql
+        .exec<{ data: string }>("SELECT data FROM bookings WHERE id=?", id)
+        .one().data,
+    ),
+  );
+}
+
 async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
   return runInDurableObject(stub, async (_instance, state) => {
     const all = state.storage.sql
@@ -361,8 +371,12 @@ describe("Coordinator recovery after overlapping actions and partial provider re
       expect((await jobs(stub)).filter((job) => job.kind === "email")).toEqual(
         [],
       );
+      expect(
+        (await storedBooking(stub, created.booking.id)).cancelledAt,
+      ).toBeUndefined();
       await retainAndRunNow(stub, "booking");
       fetchMock.get(googleOrigin).intercept({ path, method }).reply(200, {});
+      const beforeCompletion = Date.now();
       await runDurableObjectAlarm(stub);
       const result = (await stub.getBooking(created.booking.id, created.token))
         .booking;
@@ -370,6 +384,12 @@ describe("Coordinator recovery after overlapping actions and partial provider re
         kind === "cancelled" ? "cancelled" : "confirmed",
       );
       expect(result).not.toHaveProperty("changeMessage");
+      const cancelledAt = (await storedBooking(stub, created.booking.id))
+        .cancelledAt;
+      if (kind === "cancelled") {
+        expect(cancelledAt).toBeGreaterThanOrEqual(beforeCompletion);
+        expect(cancelledAt).toBeLessThanOrEqual(Date.now());
+      } else expect(cancelledAt).toBeUndefined();
       const bodies: string[] = [];
       for (const statusCode of [503, 200]) {
         await retainAndRunNow(stub, kind);
@@ -381,6 +401,9 @@ describe("Coordinator recovery after overlapping actions and partial provider re
             return { statusCode, data: { id: "fixture-message" } };
           });
         await runDurableObjectAlarm(stub);
+        expect(
+          (await storedBooking(stub, created.booking.id)).cancelledAt,
+        ).toBe(cancelledAt);
       }
       expect(bodies).toHaveLength(2);
       expect(bodies[1]).toBe(bodies[0]);

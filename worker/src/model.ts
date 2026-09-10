@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { DEFAULT_GAPS } from "./gap-policy";
+
+export const DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS = 1;
 
 export const localized = z
   .object({ en: z.string().max(2000), es: z.string().max(2000) })
@@ -43,7 +46,7 @@ export const meetingType = z
     name: localizedName,
     description: localized,
     duration: z.number().int().min(5).max(240),
-    gap: z.number().int().min(0).max(240),
+    gap: z.number().int().min(0).max(240).nullable(),
     mode: z.enum(["meet", "zoom", "in-person"]),
     enabled: z.boolean(),
     locationIds: z.array(identifier).max(20),
@@ -54,6 +57,7 @@ export const location = z
     id: identifier,
     name: localizedName,
     address: localized,
+    instructions: localized.optional(),
     hours: z.array(weekly).max(40),
     enabled: z.boolean(),
   })
@@ -62,6 +66,14 @@ export const settingsSchema = z
   .object({
     name: z.string().min(1).max(100),
     intro: localized,
+    spanishEnabled: z.boolean().default(true),
+    defaultGaps: z
+      .object({
+        video: z.number().int().min(0).max(240),
+        inPerson: z.number().int().min(0).max(240),
+      })
+      .strict()
+      .default(() => ({ ...DEFAULT_GAPS })),
     timezone: z
       .string()
       .max(100)
@@ -77,6 +89,12 @@ export const settingsSchema = z
     noticeHours: z.number().int().min(0).max(720),
     horizonDays: z.number().int().min(1).max(180),
     cancelHours: z.number().int().min(0).max(720),
+    cancelledBookingRetentionDays: z
+      .number()
+      .int()
+      .min(0)
+      .max(365)
+      .default(DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS),
     dailyLimit: z.number().int().min(0).max(100),
     reminderHours: reminderSchedule,
     hours: z.array(weekly).max(40),
@@ -103,6 +121,7 @@ export const settingsSchema = z
     requireIcloud: z.boolean(),
     brand: z
       .object({
+        name: z.string().trim().max(100).optional(),
         primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
         logoUrl: z
           .union([z.literal(""), z.string().url().max(2000)])
@@ -147,6 +166,7 @@ export interface Booking {
   mode: MeetingType["mode"];
   locationId: string;
   location: string;
+  locationInstructions?: string;
   start: number;
   end: number;
   gap: number;
@@ -164,6 +184,8 @@ export interface Booking {
     | "rescheduling";
   created: number;
   updated: number;
+  // Successful provider cancellation time, independent of later mail retries.
+  cancelledAt?: number;
   eventId?: string;
   zoomId?: string;
   joinUrl?: string;
@@ -184,6 +206,7 @@ export type PublicBooking = Pick<
   | "mode"
   | "locationId"
   | "location"
+  | "locationInstructions"
   | "start"
   | "end"
   | "status"
@@ -239,6 +262,7 @@ export interface IcloudConnection {
 export function defaultSettings(
   name = "Your name",
   timezone = "America/Denver",
+  brandName = "Your brand",
 ): Settings {
   return {
     name,
@@ -248,9 +272,12 @@ export function defaultSettings(
     },
     timezone,
     enabled: false,
+    spanishEnabled: true,
+    defaultGaps: { ...DEFAULT_GAPS },
     noticeHours: 24,
     horizonDays: 30,
     cancelHours: 24,
+    cancelledBookingRetentionDays: DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS,
     dailyLimit: 0,
     reminderHours: [24],
     hours: [1, 2, 3, 4, 5].map((day) => ({
@@ -270,7 +297,7 @@ export function defaultSettings(
           es: "Ideas, proyectos o una oportunidad para ponernos al día.",
         },
         duration: 30,
-        gap: 15,
+        gap: null,
         mode: "meet",
         enabled: true,
         locationIds: [],
@@ -283,7 +310,7 @@ export function defaultSettings(
           es: "Una conversación por videollamada en Zoom.",
         },
         duration: 30,
-        gap: 15,
+        gap: null,
         mode: "zoom",
         enabled: false,
         locationIds: [],
@@ -296,7 +323,7 @@ export function defaultSettings(
           es: "Reservemos un momento para conversar en persona.",
         },
         duration: 60,
-        gap: 30,
+        gap: null,
         mode: "in-person",
         enabled: false,
         locationIds: [],
@@ -306,7 +333,7 @@ export function defaultSettings(
     googleCalendars: ["primary"],
     icloudCalendars: [],
     requireIcloud: true,
-    brand: { primary: "#101215", logoUrl: "" },
+    brand: { name: brandName, primary: "#101215", logoUrl: "" },
   };
 }
 

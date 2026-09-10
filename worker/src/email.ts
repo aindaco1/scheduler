@@ -1,3 +1,5 @@
+import { escapeHtml as escape } from "./text";
+import { arrivalHeading } from "./booking-location";
 import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
 import {
   ResendApiError,
@@ -5,14 +7,6 @@ import {
 } from "@dustwave/worker-core/resend";
 import { type Booking, type Settings } from "./model";
 
-const escape = (s: string) =>
-  s.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ]!,
-  );
 export interface Email {
   to: string;
   reply_to?: string;
@@ -73,6 +67,11 @@ export function bookingEmail(
   const messageHtml = message
     ? `<h2 style="font-size:19px">${escape(messageHeading)}</h2><p style="overflow-wrap:anywhere">${escape(message).replace(/\r\n?|\n/g, "<br>")}</p>`
     : "";
+  const instructions =
+    kind !== "cancelled" ? booking.locationInstructions?.trim() || "" : "";
+  const instructionsHtml = instructions
+    ? `<h2 style="font-size:19px">${arrivalHeading(booking.locale)}</h2><p style="overflow-wrap:anywhere">${escape(instructions).replace(/\r\n?|\n/g, "<br>")}</p>`
+    : "";
   const text = [
     titles[kind],
     context,
@@ -81,6 +80,7 @@ export function bookingEmail(
     `${date} (${booking.timezone})`,
     `${(booking.end - booking.start) / 60_000} min`,
     where,
+    instructions ? `${arrivalHeading(booking.locale)}:\n${instructions}` : "",
     kind === "cancelled"
       ? ""
       : `${es ? "Gestionar reunión" : "Manage booking"}: ${manage}`,
@@ -88,7 +88,7 @@ export function bookingEmail(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const html = `<!doctype html><html lang="${booking.locale}"><body style="margin:0;background:#f5f5f2;color:#252930;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;padding:32px;background:white;border:1px solid #d2d7df;border-radius:12px"><p>${escape(settings.name)}</p><h1 style="font-size:26px">${escape(titles[kind])}</h1><p>${escape(context)}</p>${messageHtml}<h2 style="font-size:19px">${escape(booking.typeName)}</h2><p>${escape(date)}<br>${escape(booking.timezone)}</p><p>${(booking.end - booking.start) / 60_000} min</p><p>${escape(where)}</p>${kind === "cancelled" ? "" : `<p><a href="${escape(manage)}" style="display:inline-block;background:#101215;color:white;padding:14px 20px;border-radius:8px">${es ? "Gestionar reunión" : "Manage booking"}</a></p>`}<p>${escape(policy)}</p></main></body></html>`;
+  const html = `<!doctype html><html lang="${booking.locale}"><body style="margin:0;background:#f5f5f2;color:#252930;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;padding:32px;background:white;border:1px solid #d2d7df;border-radius:12px"><p>${escape(settings.name)}</p><h1 style="font-size:26px">${escape(titles[kind])}</h1><p>${escape(context)}</p>${messageHtml}<h2 style="font-size:19px">${escape(booking.typeName)}</h2><p>${escape(date)}<br>${escape(booking.timezone)}</p><p>${(booking.end - booking.start) / 60_000} min</p><p>${escape(where)}</p>${instructionsHtml}${kind === "cancelled" ? "" : `<p><a href="${escape(manage)}" style="display:inline-block;background:#101215;color:white;padding:14px 20px;border-radius:8px">${es ? "Gestionar reunión" : "Manage booking"}</a></p>`}<p>${escape(policy)}</p></main></body></html>`;
   return {
     to: booking.email,
     subject: titles[kind] + " · " + settings.name,

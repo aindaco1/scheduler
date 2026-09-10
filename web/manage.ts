@@ -19,7 +19,7 @@ import {
   type PublicBooking,
   type Config,
 } from "./common";
-import { SlotPicker } from "./slots";
+import { LazySlotPicker as SlotPicker } from "./lazy-slots";
 
 initShell();
 const fragment = new URLSearchParams(location.hash.slice(1));

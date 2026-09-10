@@ -198,6 +198,117 @@ Public assets are shared content-hashed modules with size budgets. Generated Jav
 
 Keyboard week navigation and live announcements are repaired. New 200%-text / 320px tests exposed and fixed header/card overflow. English/Spanish error handling and authored-label fallback were corrected. Identity/routes/brand derive from Wrangler, with a setup command and isolated rendered-browser fork test for a different owner/domain/timezone. See [the full audit](QUALITY.md) and [fork guide](FORKING.md).
 
-Local checks pass: 129 Worker tests; 296 paired UI-message checks; eight localized route/SEO/privacy checks; bundle budgets; fork setup; browser booking/admin/management/privacy flows, keyboard, 200% text, reduced motion and axe; type checks; template contract; production build and Wrangler dry run. The npm advisory query found zero known vulnerabilities. GitHub private vulnerability reporting is enabled, with weekly CI/advisory checks and Dependabot configuration committed. These tests use synthetic guests/providers and do not send real invitations.
+Local checks pass: 129 Worker tests; 298 paired UI-message checks; eight localized route/SEO/privacy checks; bundle budgets; fork setup; browser booking/admin/management/privacy flows, keyboard, 200% text, reduced motion and axe; type checks; template contract; production build and Wrangler dry run. The npm advisory query found zero known vulnerabilities. GitHub private vulnerability reporting is enabled, with weekly CI/advisory checks and Dependabot configuration committed. These tests use synthetic guests/providers and do not send real invitations.
 
 A pre-change live Lighthouse mobile lab run measured performance 86, accessibility 100, best practices 92, SEO 100, LCP 2.4 s, TBT 0 ms and CLS 0. It detected Cloudflare-injected CSP violations, a large external header logo, and inspection-environment script overhead; this single lab run is not real-user Web Vitals or proof of complete SEO coverage. Post-deployment evidence is recorded below after release verification.
+
+The first deployed audit candidate passed CI but its mobile lab run exposed CLS 0.699 from a visible initial heading that differed from the owner’s current runtime profile. The heading now stays in the no-JavaScript fallback, header geometry is reserved, and public booking/management load the slot picker lazily. Initial transitive JavaScript is now about 9 KB / 8 KB gzip respectively, with 15 KB regression budgets. Full browser booking/rescheduling checks exercise the lazy picker.
+
+### Final quality release verification
+
+- Source `51efbffcdf2b3144ce38b1be2f1d608646546ba5` is deployed as Worker `45418d0a-a568-42ad-ab07-609f1d4e1fed`. [Final CI passed](https://github.com/aindaco1/scheduler/actions/runs/34431620982).
+- Five matched-query live reads had a median of **319 ms**, versus **2,115 ms** before (about 85% lower). The first read still took 2,670 ms; the four repeat reads took 280–334 ms. An earlier 30-read run of the same calendar backend measured median 239 ms / p95 311 ms, including a 2,117 ms cold read. These are small sequential samples, not sustained-load or real-user percentiles.
+- Final live mobile Lighthouse: **performance 96, accessibility 100, best practices 100, SEO 100**; LCP approximately 2.5 s, TBT 0 ms, CLS 0, speed index 2.0 s. This confirms the visible initial-heading regression was removed. The large legacy external logo remains an asset-optimization opportunity.
+- Live English/Spanish booking/privacy/admin/manage routes, sitemap and robots returned 200; unsigned admin API returned 401. Private headers/noindex and public HTML no-transform were verified. Cloudflare's automatic analytics/JSD injections were absent, with explicit Turnstile still part of the application.
+- Every deployed JavaScript asset matched the final local build byte-for-byte. Initial booking/management JavaScript totals **8,909 / 8,301 bytes gzip** including eager shared imports; all generated JS totals 240,647 bytes (about 59% less than the original duplicated entry bundles).
+- Helium confirmed the real lazy picker loaded, Monday weeks changed from Sep 7–14 to Sep 14–21, 104 available times were announced, and keyboard focus remained on Next week. Temporary verification tabs were closed; no live booking, settings change or test invitation was made during this audit.
+- [Metrics-only evidence](research/quality-evidence-2026-09-09.json) records versions, samples and budgets. Formal screen-reader/native-speaker review, independent penetration testing and an operational restore drill are not claimed; the specific limits and follow-ups are in [QUALITY.md](QUALITY.md).
+
+
+## 2026-09-09 — Default gaps, optional Spanish and compact settings
+
+Implemented separate default video/in-person gaps in Settings with per-type inheritance or explicit overrides (including zero) in Meeting types. Legacy matching defaults migrate to inheritance without changing effective availability; custom gaps and stored booking snapshots remain intact. The Google account address appears below its connection status in green. Logo upload/help and preview/actions share desktop columns and stack on mobile.
+
+**Offer Spanish** defaults on. Turning it off hides Spanish editing fields and expands English fields, preserves translations, hides the site language switch, temporarily redirects Spanish routes to English, and removes Spanish live search alternates/sitemap entries. Existing bookings retain their recorded email language; new bookings use English while disabled. Language-aware shells read only a small local preference alongside static assets, not calendar events. Hashed assets and the calendar cache retain their existing behavior.
+
+Local verification: `npm run check` passed, including 135 Worker tests across 14 files, 303 paired UI messages, generated route/SEO and bundle budgets, isolated fork setup, browser booking/admin/management flows, settings save/reload, default/override behavior, Spanish off/on with translation preservation and full-width fields, desktop/mobile screenshots, axe, keyboard, high text zoom, build and Worker dry run. Initial booking/management JavaScript remains about 9 KB / 8.4 KB gzip. Rendered gap controls, Google connection card and desktop/mobile logo layouts were inspected. These tests use synthetic data and do not send invitations or modify live calendar settings. CI/deployment/live verification follows below.
+
+### Preference release verification
+
+- Source `ee00213e3027335676ed5053d03d41efd70d6dba` deployed as Worker `7a21e5cf-1b25-4033-ad75-6a936ece9c56`; [GitHub CI passed](https://github.com/aindaco1/scheduler/actions/runs/34433081743).
+- Live configuration still has Spanish enabled and effective gaps of 15 / 15 / 30 minutes. All eight English/Spanish application routes and sitemap returned 200; unsigned settings API returned 401. Nine deployed build assets matched the local build exactly, with immutable caching intact. Live HTML had no unexpected Cloudflare script injection.
+- Five read-only calendar queries returned 200: 2,702 ms cold, then 266 / 262 / 312 / 281 ms; median 281 ms. This small sequential sample confirms the existing browse cache is still working; it is not sustained-load evidence.
+- Rendered desktop/mobile fixture checks and local/hosted tests passed. Live Helium dashboard inspection could not run because the Mac was locked. Spanish off/on was exercised in isolated browser/Worker fixtures; no live preferences, calendar events or invitations were changed for testing.
+- [Release evidence](research/preferences-release-2026-09-09.json) contains only versions, status, asset hashes and timings.
+
+
+## 2026-09-09 — Meeting details and live branding
+
+Simplified Gap (minutes) into an editable field in the left desktop column, populated from the appropriate video/in-person default. A different value is an override; entering the current default restores inheritance. Removed the Use default checkbox and changed the meeting-type enable label to Active. Browser tests caught and fixed a duplicate blur/change event that could replay a previous gap when the meeting mode changed. Added space beneath the booking-list Refresh toolbar.
+
+Separated each location’s full street address from optional arrival instructions. Google receives a clean venue/address Location and separately labeled Guest note and Arrival instructions sections in its description. Entry instructions are snapshotted with new bookings, included in private booking summaries and relevant emails, and omitted from anonymous configuration. Existing guest notes, location addresses and stored bookings remain intact. Provider payload tests check English/Spanish text, line breaks and HTML escaping without sending invitations.
+
+Brand name is now a Settings field, seeded from `BRAND_NAME`. The old flash came from Jekyll’s deployment-brand header being replaced only after client configuration loaded; Privacy never made that replacement. All page shells now receive the saved logo/name and site-name metadata in their initial response using the existing presentation read. A shared renderer reserves logo dimensions and retains matching images during hydration. Removing an uploaded logo restores the saved text brand. The blackout label and time inputs were confirmed to use `settings.timezone`, with a browser test switching to Asia/Tokyo.
+
+Local `npm run check` passed: 141 Worker tests, 309 paired UI messages, bundle/SEO/privacy gates, independent fork setup, browser booking/admin/manage flows, desktop/mobile screenshots, keyboard/axe checks, build and Worker dry run. Rendered gap, location and booking-list layouts were visually reviewed. Initial public booking/manage JavaScript stays below the existing 15 KB gzip limits. CI and live release verification follows below.
+
+### Meeting details release verification
+
+- Source `cda9b9dc356b556c02e103af0b1f96c67f527918` deployed as Worker `27dfb602-995b-4067-913b-b3aa5bd07e76`; [CI passed](https://github.com/aindaco1/scheduler/actions/runs/34436105552).
+- Live Helium review confirmed the Brand name setting (current value DUST WAVE), editable 15-minute video gap in the left column, Active label, and separate address/arrival-instruction fields. Privacy and Admin show the same saved logo. Temporary review tabs were closed without changing live settings or bookings.
+- All eight English/Spanish page responses returned 200 with the saved logo already in initial HTML and without the old visible text fallback. Public instruction data remains omitted, unsigned admin API returns 401, and all nine deployed JS/CSS assets match the checked build. No automatic Cloudflare script injection appeared.
+- Provider/email behavior was verified with isolated fixtures; no live invitation or test email was sent. [Release evidence](research/meeting-details-release-2026-09-09.json) records the source, Worker, CI and read-only live checks.
+
+
+## Booking activation, shared addresses and optional branding
+
+Your booking page now has an accessible Active switch in the top-right heading, applied with Save changes. Location status is also labeled Active. Postal addresses use one full-width field for both languages while names and arrival instructions remain bilingual. Empty logo settings use the Scheduler icon shared with the favicon. An explicitly empty Brand name hides its header line, leaves Scheduler visible, and falls back to Scheduler in site-name metadata; the editable Settings field remains available.
+
+Pausing keeps the public URL at HTTP 200 with a clear English/Spanish not-accepting-bookings message and blocks new appointments. Existing bookings and reminders are unchanged. Private, authorized cancellation and rescheduling remain available within the existing rules; the previously inconsistent pause gate on their availability picker is fixed.
+
+Local verification: `npm run check` passed all 146 Workers tests, type/build/template checks, 311 paired UI messages, asset budgets, independent fork setup, browser/keyboard acceptance, axe scans and Wrangler dry run. Regression cases cover blank-brand persistence and initial HTML, canonical addresses without legacy data loss, unauthenticated pause enforcement and both private booking changes. Desktop and 320-pixel mobile screenshots were reviewed. These checks used fixtures, with no live settings, calendar or email mutations. Deployment and CI evidence follow below.
+
+
+Deployment: source commit `6cd9187` is live in Cloudflare Worker version `717d686d-2270-4992-b6de-5a46e672eb21`. All nine build assets matched the verified local files byte for byte; all eight English/Spanish shells returned HTTP 200, referenced the current assets and included the saved logo in their initial HTML. Private settings remained HTTP 401 without authentication. Public configuration kept the live page active and ready, retained its brand/logo, shared the same address across languages, and omitted arrival instructions. A read-only Helium review confirmed the checked Active switch at the top right, updated brand help and All changes saved. No live settings, meetings or emails were changed.
+
+[GitHub CI for `6cd9187`](https://github.com/aindaco1/scheduler/actions/runs/34438230750) passed. Structured release evidence is retained in [active-settings-release-2026-09-09.json](research/active-settings-release-2026-09-09.json).
+
+
+## Card activation, cancelled-booking visibility and responsive admin review
+
+Meeting types and locations now share the booking-page Active switch, placed at the top right of every card and kept outside its disclosure control. Settings now ends with Other, containing Hide cancelled meetings after (days), default 1. The list counts elapsed time since successful cancellation, ignores later email retry timestamps, supports 0–365 days, preserves older-dashboard settings and filters before the result limit. Records and private access remain intact. Returning to Bookings or saving the preference refreshes the list.
+
+The review corrected doubled paragraph/row margins, reduced mobile hours-row height where controls fit, kept meeting durations together in narrow headers, and left 20 pixels between Verify connections and the next divider. Saved changes occupy a 42-pixel strip at phone/tablet widths; unsaved changes retain a 44-pixel Save button in a 62-pixel bar. Screen-reader save announcements remain available.
+
+Local verification: `npm run check` passed all 149 Workers tests across 15 files, template/type/build checks, 312 paired messages, bundle budgets, independent fork setup, browser acceptance and Wrangler dry run. The new review covers all four admin tabs at 320, 390, 768, 1024 and 1280 pixels in English/Spanish (40 combinations), with light/dark variants, card switch/disclosure independence, save state sizes, control spacing and 10 additional axe scans. Phone/tablet/desktop screenshots were visually reviewed. Tests use isolated fixture settings and providers; no live meetings or messages were created or changed. Deployment and CI evidence follow below.
+
+
+Deployment: runtime source `f78d26a` is live in Worker version `5fce6b99-2647-4bef-bf33-4bf06c92a863`. All nine build assets matched the locally verified files, and eight English/Spanish shells returned HTTP 200 with the current assets. The public page remains active and ready; private settings return HTTP 401 without authentication, and anonymous configuration omits the new private visibility preference and arrival instructions. A read-only Helium review confirmed the meeting-type/location switches, Other section and one-day default, with All changes saved. No live settings, meetings or messages were changed.
+
+CI exposed two pre-existing test timing/isolation issues: an exact redirect URL check could miss the picker's added timezone, and old fixture alarms could make requests during the next test's global outage spy. Commits `6dec1fb` and `da0e396` correct the assertions and fixture teardown without changing the production runtime or weakening the settings-save guarantee. The corrected browser suite and all 149 backend tests passed locally. [Final GitHub CI for `da0e396`](https://github.com/aindaco1/scheduler/actions/runs/34439731977) passed the complete workflow. Structured evidence is retained in [responsive-admin-release-2026-09-09.json](research/responsive-admin-release-2026-09-09.json).
+
+
+## Sign-in page copy cleanup
+
+Removed “A space for your schedule” and its Spanish counterpart from the owner sign-in page, including the paragraph wrapper. The production build and existing quality checks passed (311 paired messages). This is a copy-only change; authentication behavior is unchanged. Deployment and CI verification follow below.
+
+Deployment: source `ca7d48e` is live in Worker version `80f863d4-2ef4-4da6-bc79-2338ac85b62d`. Both admin locale routes reference the verified new bundle, which matches the local build byte for byte and contains neither tagline. [GitHub CI for this change](https://github.com/aindaco1/scheduler/actions/runs/34446880496) was still running at the time of live verification. No live settings, bookings or messages were changed.
+
+
+## Location question copy
+
+Changed the English location prompt to “Where should we meet?” and updated the existing browser test label. Spanish wording is unchanged. The production build and quality checks passed (eight localized pages, 311 paired messages and asset budgets). Deployment verification follows below.
+
+Deployment: source `f49b5df` is live in Worker version `c62e1db2-18ed-4639-8c23-c4c088ed7bac`. Both public booking locale routes reference the new bundle, which matches the local build byte for byte and includes the updated English question. [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34451893262) was still running at live verification. No live settings, bookings or messages were changed.
+
+
+## Preserve the week when changing locations
+
+Switching in-person locations now refreshes the existing time picker instead of rebuilding it. The current Monday-to-Monday week, selected time zone and location-field focus remain in place; times and the address update for the new venue. Clearing and reselecting a location also retains that browsing context. The shared picker keeps its existing request cancellation and stale-response protection.
+
+Local verification: `npm run check` passed all 149 Workers tests, template/type/build checks, 311 paired UI messages, asset budgets, independent fork setup, browser/keyboard acceptance, axe scans and Wrangler dry run. Regression checks cover a later week with a non-default time zone, an empty venue, clearing/reselecting a venue and continued week navigation in English desktop and Spanish mobile views. Both rendered views were inspected. No live settings, bookings or messages were changed. Deployment and CI evidence follow below.
+
+Deployment: source `090f9be` is live in Worker version `df51856f-8648-4082-a1d1-5c6eae0b6af7`. The served booking bundle matches the local build byte for byte. After reloading to replace an older cached shell, a read-only Helium check confirmed that switching from Bow & Arrow to Dust Wave Studio kept September 21–28 and America/Denver while updating the address. [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34452283405) passed the complete workflow. No live settings, meetings or emails were changed.
+
+
+## Recover intermittent calendar-check failures
+
+The reported location-picker 503 was no longer reproducible during investigation: all three live locations returned successful availability responses for the pictured week. The exact original provider/error code was not captured by the prior logging, so the cause remains unconfirmed.
+
+The shared picker now retries temporary read failures once after 500 ms, retaining the week, venue and time zone and withholding old slots. Persistent errors retain Try again; reconnection errors are not automatically retried. Choosing another venue, changing the week or time zone, or leaving the picker invalidates its pending retry. Known availability failures now log only a bounded event/code classification for future diagnosis.
+
+Local verification: `npm run check` passed 150 Workers tests, template/type/build checks, 312 paired messages, asset budgets, independent fork setup, browser acceptance/axe and Wrangler dry run. Regression cases cover recovery from one Google/iCloud 503, stopping after two failed reads, no automatic retry for reconnection errors, preserving location/week/zone, and cancelling a retry on leaving. A Worker test confirms logs omit private request and provider data. No live bookings, messages or settings were changed. Deployment and CI evidence follow below.
+
+Deployment: source `b4ac659` is live in Worker version `a7f61677-ba96-4579-a219-df966db9a60b`. The booking and lazy picker bundles match the local build byte for byte. A read-only Helium check of Slow Burn showed the pictured week loading successfully as No openings this week, with no connection error. Fresh availability reads for September 28–October 5 returned selectable times for all three live locations. Automatic retry behavior was verified with isolated failures locally, not by disrupting live calendar providers. No live bookings, messages or settings were changed.
+
+[GitHub CI for `b4ac659`](https://github.com/aindaco1/scheduler/actions/runs/34453107968) passed the complete workflow, including the dependency audit and full check suite.

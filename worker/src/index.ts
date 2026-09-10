@@ -1,3 +1,4 @@
+import { isPresentationPath, localizedAsset } from "./language";
 import { z } from "zod";
 import {
   readJsonObject,
@@ -225,6 +226,11 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
   if (!path.startsWith("/api/")) {
     if (path === "/")
       return Response.redirect(url.origin + "/" + env.OWNER_SLUG, 302);
+    if (
+      ["GET", "HEAD"].includes(method) &&
+      isPresentationPath(path, env.OWNER_SLUG)
+    )
+      return localizedAsset(request, env.ASSETS, stub.presentation());
     return env.ASSETS.fetch(request);
   }
   if (method === "OPTIONS") return new Response(null, { status: 405 });
@@ -457,6 +463,14 @@ export default {
       if (!known)
         console.error(
           JSON.stringify({ event: "request_failed", code: "internal_error" }),
+        );
+      if (
+        application &&
+        Number(remote.status) === 503 &&
+        new URL(request.url).pathname === "/api/availability"
+      )
+        console.warn(
+          JSON.stringify({ event: "availability_failed", code: remote.code }),
         );
       return secure(
         json(

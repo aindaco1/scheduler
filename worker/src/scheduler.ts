@@ -1,3 +1,6 @@
+import { calendarLocation } from "./booking-location";
+import { localizedText, streetAddress } from "./text";
+import { meetingGap, normalizePreferences } from "./gap-policy";
 import { DurableObject } from "cloudflare:workers";
 import { prepareResendEmail } from "@dustwave/worker-core/email";
 import { Temporal } from "@js-temporal/polyfill";
@@ -8,6 +11,7 @@ import {
   bookingInput,
   changeMessageInput,
   defaultSettings,
+  DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS,
   settingsSchema,
   reminderSchedule,
   type Booking,
@@ -95,7 +99,11 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     );
     if (!this.read<StoredConfig>("settings"))
       this.write("settings", {
-        settings: defaultSettings(this.env.OWNER_NAME, this.env.OWNER_TIMEZONE),
+        settings: defaultSettings(
+          this.env.OWNER_NAME,
+          this.env.OWNER_TIMEZONE,
+          this.env.BRAND_NAME,
+        ),
         revision: 1,
       });
   }
@@ -114,7 +122,14 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
   }
   getSettings(): StoredConfig {
     const current = this.read<StoredConfig>("settings")!;
+    normalizePreferences(current.settings);
+    current.settings.brand.name ??= this.env.BRAND_NAME;
+    current.settings.locations.forEach((location) => {
+      location.instructions ??= { en: "", es: "" };
+    });
     current.settings.blockUsFederalHolidays ??= false;
+    current.settings.cancelledBookingRetentionDays ??=
+      DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS;
     current.settings.reminderHours = reminderSchedule.parse(
       current.settings.reminderHours,
     );
@@ -194,6 +209,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       mode,
       locationId,
       location,
+      locationInstructions,
       start,
       end,
       status,
@@ -212,6 +228,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       mode,
       locationId,
       location,
+      locationInstructions,
       start,
       end,
       status,
@@ -385,24 +402,31 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       issues.push("meeting_type_required");
     return issues;
   }
+  presentation() {
+    const { name, brand, spanishEnabled } = this.getSettings().settings;
+    return { name, brand, spanishEnabled };
+  }
   publicConfig() {
     const s = this.getSettings().settings;
     const settings = {
       name: s.name,
       intro: s.intro,
+      spanishEnabled: s.spanishEnabled,
       timezone: s.timezone,
       enabled: s.enabled,
       noticeHours: s.noticeHours,
       horizonDays: s.horizonDays,
       cancelHours: s.cancelHours,
       brand: s.brand,
-      types: s.types.filter((t) => t.enabled),
+      types: s.types
+        .filter((t) => t.enabled)
+        .map((type) => ({ ...type, gap: meetingGap(s, type) })),
       locations: s.locations
         .filter((l) => l.enabled)
         .map(({ id, name, address, enabled }) => ({
           id,
           name,
-          address,
+          address: { en: streetAddress(address), es: streetAddress(address) },
           enabled,
         })),
     };
@@ -555,6 +579,19 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       throw new AppError("settings_changed", 409);
     // Older dashboards may omit the new preference; omission must not turn it off.
     settings.blockUsFederalHolidays ??= current.settings.blockUsFederalHolidays;
+    settings.brand.name ??= current.settings.brand.name;
+    // Preserve preferences when a dashboard opened before this upgrade saves.
+    for (const key of [
+      "defaultGaps",
+      "spanishEnabled",
+      "cancelledBookingRetentionDays",
+    ] as const)
+      if (!Object.hasOwn(value as object, key))
+        Object.assign(settings, { [key]: current.settings[key] });
+    for (const location of settings.locations)
+      location.instructions ??= current.settings.locations.find(
+        (item) => item.id === location.id,
+      )?.instructions ?? { en: "", es: "" };
     // Local availability edits must remain saveable during provider outages.
     // Validate live connections only when opening bookings or changing their
     // dependencies; listing, booking and rescheduling still check every time.
@@ -603,7 +640,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     token?: string,
   ) {
     const config = this.getSettings();
-    if (!config.settings.enabled) throw new AppError("booking_paused", 503);
+    // Pausing only stops new appointments; existing private management links remain usable.
+    if (!config.settings.enabled && !id)
+      throw new AppError("booking_paused", 503);
     if (id) {
       const b = await this.authorizedBooking(id, token || "", false);
       if (typeId !== b.typeId || locationId !== b.locationId)
@@ -778,15 +817,17 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       )
     )
       throw new AppError("slot_unavailable", 409);
+    const bookingLocale = s.spanishEnabled ? input.locale : "en";
     const b: Booking = {
       id,
       requestId: input.requestId,
       typeId: type.id,
-      typeName: type.name[input.locale],
+      typeName: type.name[bookingLocale] || type.name.en || type.name.es,
       mode: type.mode,
       locationId: input.locationId,
-      location: location
-        ? `${location.name[input.locale]} — ${location.address[input.locale]}`
+      location: location ? calendarLocation(location, bookingLocale) : "",
+      locationInstructions: location
+        ? localizedText(location.instructions, bookingLocale).trim()
         : "",
       start,
       end,
@@ -794,7 +835,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       name: input.name,
       email: input.email,
       topic: input.topic,
-      locale: input.locale,
+      locale: bookingLocale,
       timezone: input.timezone,
       status: "pending",
       created: Date.now(),
@@ -830,11 +871,18 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     };
   }
   listBookings() {
+    const now = Date.now();
+    const days = this.getSettings().settings.cancelledBookingRetentionDays;
     return {
       bookings: this.ctx.storage.sql
         .exec<{ data: string }>(
-          "SELECT data FROM bookings WHERE end>? ORDER BY start LIMIT 200",
-          Date.now() - 30 * 86_400_000,
+          // Filter before LIMIT so hidden cancellations cannot displace meetings.
+          // Legacy cancellations predate cancelledAt; updated is their best
+          // available completion time. This only changes dashboard visibility.
+          "SELECT data FROM bookings WHERE (status!='cancelled' AND end>?) OR (status='cancelled' AND ?>0 AND coalesce(json_extract(data,'$.cancelledAt'),json_extract(data,'$.updated'),json_extract(data,'$.created'),0)>?) ORDER BY start LIMIT 200",
+          now - 30 * 86_400_000,
+          days,
+          now - days * 86_400_000,
         )
         .toArray()
         .map((r) => this.present(JSON.parse(r.data))),
@@ -1217,6 +1265,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       await google.cancel(b);
       if (b.mode === "zoom" && b.zoomId) await (await this.zoom()).cancel(b);
       b.status = "cancelled";
+      b.cancelledAt = Date.now();
       b.error = undefined;
       this.ctx.storage.transactionSync(() => {
         this.save(b);

@@ -18,8 +18,8 @@ Severity reflects impact in this single-owner application.
 | Area | Finding | Severity | Resolution / evidence |
 | --- | --- | --- | --- |
 | Performance | Every picker request repeated Google token refresh, Apple discovery and both calendar reads | High UX impact | Private 30-second busy snapshots, shared concurrent reads, reusable token/discovery metadata, early rejection of impossible ranges; coordinator tests verify actual avoided fetches |
-| Performance/privacy | Google returned unused titles/descriptions and other event fields | Medium | Partial-response field mask retains only fields needed for Busy/Free, time bounds, pagination and Scheduler identity; live read must verify mask acceptance |
-| Performance | Each entrypoint bundled duplicate shared code; fixed filenames discouraged safe long caching | Medium | Shared ES modules and content-hashed JS/CSS with immutable asset headers; per-entry transitive gzip and aggregate byte budgets |
+| Performance/privacy | Google returned unused titles/descriptions and other event fields | Medium | Partial-response field mask retains only fields needed for Busy/Free, time bounds, pagination and Scheduler identity; live availability reads verified mask acceptance |
+| Performance | Each entrypoint bundled duplicate shared code; fixed filenames discouraged safe long caching | Medium | Shared ES modules and content-hashed JS/CSS with immutable asset headers; per-entry initial transitive gzip and aggregate byte budgets |
 | Security/privacy | Private HTML shells lacked explicit no-store headers and HTTP noindex | Medium | Admin/manage/API responses now set private/no-store/no-transform and X-Robots-Tag; Worker tests cover both locales, successes and errors |
 | Accessibility | Week navigation replaced the focused button and reset keyboard focus | Medium | Restore focus to the corresponding enabled navigation button; keyboard regression test |
 | Accessibility | Successful availability loads had no announcement of results | Medium | Localized live announcement of available-time count or no openings |
@@ -28,7 +28,7 @@ Severity reflects impact in this single-owner application.
 | SEO | Missing canonical URLs, language alternates, social titles, robots and sitemap | Medium | Public EN/ES routes receive metadata and a sitemap; private routes remain excluded; generated-artifact assertions |
 | Maintainability | Identity, branding, links and routes hardcoded for upstream owner | Medium | One public deployment identity in Wrangler, generated build data/routes, setup CLI and independent-domain fork test |
 | Maintenance | No persistent quality/advisory gates beyond existing tests | Medium | Asset/SEO/locale/source-publication checks added to `npm run check`; weekly CI and dependency/action update proposals |
-| Privacy/performance | Zone-wide Cloudflare analytics and JavaScript Detections were being injected into pages and blocked by CSP | Medium | HTML now includes no-transform, preventing those automatic injections; explicit Turnstile stays active. Verify on the real edge |
+| Privacy/performance | Zone-wide Cloudflare analytics and JavaScript Detections were being injected into pages and blocked by CSP | Medium | HTML now includes no-transform, preventing those automatic injections; explicit Turnstile stays active. Verified on the real edge |
 | Performance | Header logo lacked explicit dimensions | Low | Reserve a 120×52 contain-fit box; legacy external image optimization remains an operator asset choice |
 | Reporting | No enabled private vulnerability intake | Low | GitHub private vulnerability reporting enabled upstream; SECURITY.md documents fork configuration |
 
@@ -55,7 +55,7 @@ The Durable Object remains the source of truth for local bookings. The cache nev
 | Explicit verification | Discards cached connection metadata and performs fresh discovery/conflict checks |
 | Emergency switch | Set Worker var `CALENDAR_CACHE_ENABLED` to string `"false"` and redeploy to bypass busy snapshots; no data migration or purge required |
 
-Cold starts and expired snapshots still wait for the providers. A fresh booking may be slower than browsing because it rechecks conflicts. Other calendar clients can change events between a provider read and write; Google/iCloud do not supply a cross-provider atomic reservation transaction. The scheduler serializes its own reservations, but cannot promise atomic exclusion against unrelated calendar clients.
+Cold starts and expired snapshots still wait for the providers. The picker retries transient read failures once after 500 ms; it keeps the same selection, cancels obsolete retries, and shows the error if the retry fails. It never serves stale slots during recovery. Known availability errors emit only their bounded classification to Worker observability. A fresh booking may be slower than browsing because it rechecks conflicts. Other calendar clients can change events between a provider read and write; Google/iCloud do not supply a cross-provider atomic reservation transaction. The scheduler serializes its own reservations, but cannot promise atomic exclusion against unrelated calendar clients.
 
 A Proton subscription visible through Google inherits Google's subscription refresh delay. A “fresh Google read” is not proof of a fresh direct Proton read. Direct Proton integration remains phase 2.
 
@@ -79,11 +79,13 @@ Residual considerations:
 
 ## Accessibility and localization contract
 
-All public booking, management, admin and privacy routes ship in English and Spanish. Native controls, labels, dialogs, skip links and focus styles remain the default. Dates use `Intl`/Temporal with IANA zones; the browser selects its reported timezone and guests can override it. Monday-week and DST boundaries are covered separately. Owner calendar names and authored content are not automatically translated.
+All public booking, management, admin and privacy routes ship in English and Spanish, with Spanish enabled by default and an owner setting to turn it off. Disabled Spanish routes temporarily redirect to English; runtime language links, alternates and sitemap entries follow the preference. Translations and existing booking email languages are preserved. Native controls, labels, dialogs, skip links and focus styles remain the default. Dates use `Intl`/Temporal with IANA zones; the browser selects its reported timezone and guests can override it. Monday-week and DST boundaries are covered separately. Owner calendar names and authored content are not automatically translated.
 
 The compact `t(en, es)` convention remains the existing UI catalog, avoiding a second translation framework. The quality script parses TypeScript compiled to JavaScript, rejects missing/empty paired literal translations and mismatched template placeholders, and exports a review packet. This validates the paired calls; it cannot detect every newly hardcoded string or judge translation quality. Email and static privacy copy are reviewed alongside their paired language sources and tested in their existing flows.
 
 For a new locale, deliberately extend `Locale`, input schemas, formatting, route generation, email/static copy, translation catalog contract and language navigation. Do not merely add a route that silently serves English. Have a fluent speaker review the generated packet and actual rendered flows before declaring a locale complete.
+
+The admin browser suite also exercises all four tabs at 320, 390, 768, 1024 and 1280 pixels in both languages. It checks independent Active switches and card disclosures, normalized vertical gaps, connection-divider spacing, compact saved states and full-size unsaved actions. The cancelled-booking suite verifies elapsed-time cutoffs, old settings/data, email retry timestamps, filtering before the result limit and continued private access without deleting records.
 
 Manual follow-up remains appropriate for VoiceOver/Safari or NVDA/Firefox speech, mobile screen readers, and native-speaker Spanish review. The current evidence is Chromium keyboard/DOM/axe and high-zoom/reduced-motion testing, not an assistive-technology certification.
 
@@ -95,10 +97,12 @@ npm audit --audit-level=moderate
 npm run benchmark:availability -- --samples 30
 ```
 
-`check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. Current entry gzip footprints are roughly 57 KB booking, 57 KB management, 68 KB admin and 5 KB privacy, including their shared imports. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
+`check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. The booking and management pages load the timezone/slot-picker code only when a picker opens. Budgets count initial shared imports separately from lazy code, with all code still subject to the aggregate limit. Exact footprints are written to the quality artifact. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
 
 Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixture screenshots, quality metrics and the translation packet for 14 days. It never calls real calendars or sends invitations. The read-only availability benchmark collects sequential duration/status samples without event/guest bodies; its p95 is emitted only for 30 samples. It is not real-user LCP/INP/CLS or sustained-load evidence.
 
 SEO checks verify eight localized shells, exact public sitemap membership, reciprocal alternates, canonical origins, asset existence and private noindex. Management shells stay crawlable so bots can see noindex, following [Google's localized-page guidance](https://developers.google.com/search/docs/specialty/international/localized-versions) and the Store crawl policy. Search-engine indexing and actual social-card rendering are external outcomes, not guaranteed by a passing build.
 
 Cloudflare documents `no-transform` for preventing automatic [Web Analytics injection](https://developers.cloudflare.com/web-analytics/faq/) and [JavaScript Detections injection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/). Scheduler's explicit Turnstile and server verification remain required. Do not add a zone rule that requires a JSD-passed signal for these no-transform pages; the signal is intentionally absent. No zone-wide settings were changed.
+
+Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [STATUS.md](STATUS.md#final-quality-release-verification), with a [metrics-only evidence file](research/quality-evidence-2026-09-09.json).

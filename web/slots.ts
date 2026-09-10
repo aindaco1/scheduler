@@ -29,6 +29,7 @@ export class SlotPicker {
   private timezone: string;
   private destroyed = false;
   private request?: AbortController;
+  private retryTimer?: ReturnType<typeof setTimeout>;
   constructor(
     private root: HTMLElement,
     private options: SlotPickerOptions,
@@ -37,8 +38,13 @@ export class SlotPicker {
     this.render();
     void this.load();
   }
+  setLocation(location: string) {
+    this.options.location = location;
+    void this.load();
+  }
   destroy() {
     this.destroyed = true;
+    clearTimeout(this.retryTimer);
     this.request?.abort();
     this.generation++;
   }
@@ -92,7 +98,8 @@ export class SlotPicker {
     $("[data-week]", this.root).textContent =
       `${dateLabel(from, this.timezone, { month: "short", day: "numeric" })} – ${dateLabel(next, this.timezone, { month: "short", day: "numeric" })}`;
   }
-  private async load() {
+  private async load(attempt = 0) {
+    clearTimeout(this.retryTimer);
     this.request?.abort();
     const controller = (this.request = new AbortController());
     const generation = ++this.generation;
@@ -122,6 +129,24 @@ export class SlotPicker {
       this.renderSlots();
     } catch (e) {
       if (this.destroyed || generation !== this.generation) return;
+      const failure = e as { status?: number; code?: string };
+      const temporary =
+        e instanceof TypeError ||
+        [502, 504].includes(failure.status || 0) ||
+        (failure.status === 503 &&
+          [
+            "google_unavailable",
+            "icloud_unavailable",
+            "service_unavailable",
+          ].includes(failure.code || ""));
+      if (attempt === 0 && temporary) {
+        status.innerHTML = `<p class="help-text">${t("Calendar check interrupted. Trying again…", "Se interrumpió la consulta del calendario. Volviendo a intentar…")}</p>`;
+        this.retryTimer = setTimeout(() => {
+          if (!this.destroyed && generation === this.generation)
+            void this.load(1);
+        }, 500);
+        return;
+      }
       status.innerHTML = `<div class="notice error">${esc(errorText(e))}</div><button class="button" type="button" data-retry>${t("Try again", "Reintentar")}</button>`;
       $("[data-retry]", status).addEventListener(
         "click",

@@ -71,3 +71,32 @@ describe("Owner change messages in booking emails", () => {
     },
   );
 });
+
+it.each(["en", "es"] as const)(
+  "keeps entry instructions separate and safely rendered in %s booking emails",
+  (locale) => {
+    const instructions = "Use the side door <do not knock>.\nAsk for A & B.";
+    for (const kind of ["confirmed", "rescheduled", "reminder"] as const) {
+      const email = bookingEmail(
+        {
+          ...booking,
+          locale,
+          topic: "Guest wants to discuss their project",
+          locationInstructions: instructions,
+        },
+        settings,
+        "https://scheduler.example",
+        "token",
+        kind,
+      );
+      expect(email.text).toContain(instructions);
+      expect(email.text).toContain(
+        locale === "es" ? "Instrucciones de llegada:" : "Arrival instructions:",
+      );
+      expect(email.html).toContain(
+        "&lt;do not knock&gt;.<br>Ask for A &amp; B.",
+      );
+      expect(email.html).not.toContain("<do not knock>");
+    }
+  },
+);

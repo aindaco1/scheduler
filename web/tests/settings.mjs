@@ -5,6 +5,7 @@ export async function checkSettingsEnhancements(
   base,
   apiFixture,
   settings,
+  bookingPath,
 ) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
@@ -85,10 +86,11 @@ export async function checkSettingsEnhancements(
         "Reminders",
         "Automatic blackouts",
         "Calendar connections",
+        "Other",
       ],
     );
-    await page.locator('[data-setting="types.0.gap"]').fill("20");
-    await page.locator('[data-setting="types.2.gap"]').fill("45");
+    await page.locator('[data-setting="defaultGaps.video"]').fill("20");
+    await page.locator('[data-setting="defaultGaps.inPerson"]').fill("45");
     await page
       .getByRole("button", { name: "Add reminder", exact: false })
       .click();
@@ -114,11 +116,11 @@ export async function checkSettingsEnhancements(
         .fill(String(hours));
     await save();
     assert.deepEqual(settings.reminderHours, [48, 24, 1]);
-    assert.equal(settings.types[0].gap, 20);
-    assert.equal(settings.types[2].gap, 45);
+    assert.equal(settings.defaultGaps.video, 20);
+    assert.equal(settings.defaultGaps.inPerson, 45);
     await reload();
     assert.equal(
-      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      await page.locator('[data-setting="defaultGaps.video"]').inputValue(),
       "20",
     );
     assert.equal(await page.locator(".reminder-row").count(), 3);
@@ -128,6 +130,208 @@ export async function checkSettingsEnhancements(
     await page
       .locator("[data-reminder-settings]")
       .screenshot({ path: "work/frontend/reminders-desktop.png" });
+    const email = page.locator(".connection-email");
+    assert.equal(await email.textContent(), "owner@example.test");
+    assert.equal(
+      await page.locator(".connection-card p").first().textContent(),
+      "New meetings are added automatically to your main Google calendar.",
+    );
+    await page
+      .locator(".connection-card")
+      .first()
+      .screenshot({ path: "work/frontend/google-connection-desktop.png" });
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(await page.locator("[data-default-gap]").count(), 0);
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').isDisabled(),
+      false,
+    );
+    const gapBox = await page
+      .locator('[data-setting="types.0.gap"]')
+      .boundingBox();
+    const nameBox = await page
+      .locator('[data-setting="types.0.name.en"]')
+      .boundingBox();
+    assert.ok(Math.abs(gapBox.x - nameBox.x) < 2);
+    assert.equal(
+      await page
+        .locator("#panel-types .editor-card")
+        .first()
+        .getByRole("switch", { name: "Active", exact: true })
+        .count(),
+      1,
+    );
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "20",
+    );
+    await page.locator('[data-setting="types.0.gap"]').fill("35");
+    await save();
+    assert.equal(settings.types[0].gap, 35);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="defaultGaps.video"]').fill("25");
+    await save();
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "35",
+    );
+    assert.equal(
+      await page.locator('[data-setting="types.1.gap"]').inputValue(),
+      "25",
+    );
+    await page.locator('[data-setting="types.0.gap"]').fill("25");
+    await page
+      .locator('[data-setting="types.0.mode"]')
+      .selectOption("in-person");
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "45",
+    );
+    await page.locator('[data-setting="types.0.mode"]').selectOption("meet");
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "25",
+    );
+    await page
+      .locator("#panel-types .editor-card")
+      .first()
+      .screenshot({ path: "work/frontend/gap-override-desktop.png" });
+    await save();
+    assert.equal(settings.types[0].gap, null);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="brand.name"]').fill("Fixture & Brand");
+    await save();
+    await reload();
+    assert.equal(settings.brand.name, "Fixture & Brand");
+    assert.equal(
+      await page.locator('[data-setting="brand.name"]').inputValue(),
+      "Fixture & Brand",
+    );
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").textContent(),
+      "Fixture & Brand",
+    );
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    await page
+      .locator('[data-setting="locations.0.instructions.en"]')
+      .fill("Use the side door.\nRing once.");
+    await page
+      .locator('[data-setting="locations.0.instructions.es"]')
+      .fill("Usa la puerta lateral.\nToca una vez.");
+    await save();
+    assert.equal(
+      settings.locations[0].instructions.en,
+      "Use the side door.\nRing once.",
+    );
+    assert.equal(
+      await page
+        .getByLabel("Full street address", { exact: true })
+        .inputValue(),
+      settings.locations[0].address.en,
+    );
+    assert.equal(
+      await page.locator('[data-setting="locations.0.address.es"]').count(),
+      0,
+    );
+    await page
+      .getByLabel("Full street address", { exact: true })
+      .first()
+      .fill("123 Example St, Town, NM 87102");
+    await save();
+    assert.deepEqual(settings.locations[0].address, {
+      en: "123 Example St, Town, NM 87102",
+      es: "123 Example St, Town, NM 87102",
+    });
+    assert.equal(
+      await page
+        .locator('[data-setting="locations.0.enabled"]')
+        .getAttribute("type"),
+      "checkbox",
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="locations.0.enabled"]')
+        .locator("..")
+        .textContent(),
+      "Active",
+    );
+    await page
+      .locator("#panel-types .panel")
+      .last()
+      .screenshot({ path: "work/frontend/location-instructions-desktop.png" });
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    const intro = settings.intro.es;
+    await page.locator('[data-setting="intro.es"]').fill(intro + " Traducido.");
+    await page.locator('[data-setting="spanishEnabled"]').uncheck();
+    assert.equal(
+      await page.locator('[data-setting="intro.es"]').isVisible(),
+      false,
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="spanishEnabled"]')
+        .evaluate((el) => el === document.activeElement),
+      true,
+    );
+    const fullWidth = await page
+      .locator('[data-setting="intro.en"]')
+      .evaluate(
+        (el) =>
+          Math.abs(
+            el.getBoundingClientRect().width -
+              el.closest(".bilingual-fields").getBoundingClientRect().width,
+          ) < 2,
+      );
+    assert.equal(fullWidth, true);
+    await save();
+    await reload();
+    assert.equal(settings.spanishEnabled, false);
+    assert.equal(settings.intro.es, intro + " Traducido.");
+    assert.equal(await page.locator("#language-link").isVisible(), false);
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(
+      await page.locator('[data-setting="types.0.name.es"]').isVisible(),
+      false,
+    );
+    assert.equal(
+      await page.locator('[data-setting="locations.0.address.es"]').count(),
+      0,
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="types.0.name.en"]')
+        .evaluate(
+          (el) =>
+            Math.abs(
+              el.getBoundingClientRect().width -
+                el.closest(".bilingual-fields").getBoundingClientRect().width,
+            ) < 2,
+        ),
+      true,
+    );
+    const guest = await context.newPage();
+    await guest.goto(base + "/es" + bookingPath + "?type=conversation#kept");
+    // The picker may already have added the browser's timezone by the time
+    // navigation completes. Verify preserved navigation state, not that race.
+    await guest.waitForURL(
+      (url) =>
+        url.origin === base &&
+        url.pathname === bookingPath &&
+        url.searchParams.get("type") === "conversation" &&
+        url.hash === "#kept",
+    );
+    await guest.locator("[data-zone]").waitFor();
+    assert.equal(await guest.locator("#language-link").isVisible(), false);
+    await guest.close();
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="spanishEnabled"]').check();
+    assert.equal(
+      await page.locator('[data-setting="intro.es"]').inputValue(),
+      intro + " Traducido.",
+    );
+    await save();
+    assert.equal(await page.locator("#language-link").isVisible(), true);
     const png = await page.evaluate(() => {
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = 512;
@@ -196,6 +400,10 @@ export async function checkSettingsEnhancements(
     await page
       .locator("[data-logo-editor]")
       .screenshot({ path: "work/frontend/logo-upload-desktop.png" });
+    const previewBox = await page.locator(".logo-visual").boundingBox(),
+      controlsBox = await page.locator(".logo-controls").boundingBox();
+    assert.ok(previewBox.x > controlsBox.x + controlsBox.width);
+    assert.ok(Math.abs(previewBox.y - controlsBox.y) < 2);
     await page.setViewportSize({ width: 320, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto(base + "/es/admin/");
@@ -208,6 +416,7 @@ export async function checkSettingsEnhancements(
         "Recordatorios",
         "Bloqueos automáticos",
         "Conexiones de calendario",
+        "Otros",
       ],
     );
     await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
@@ -246,6 +455,10 @@ export async function checkSettingsEnhancements(
       await page.locator("[data-remove-reminder]").first().click();
     await save();
     assert.equal(settings.brand.logoUrl, "");
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").textContent(),
+      "Fixture & Brand",
+    );
     assert.deepEqual(settings.reminderHours, []);
     await reload();
     assert.equal(await page.locator(".reminder-row").count(), 0);
@@ -254,6 +467,90 @@ export async function checkSettingsEnhancements(
         .getByRole("img", { name: "Logo preview", exact: true })
         .count(),
       0,
+    );
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator('[data-setting="brand.name"]').fill("");
+    const activeSwitch = page.getByRole("switch", {
+      name: "Active",
+      exact: true,
+    });
+    assert.equal(await activeSwitch.isChecked(), true);
+    await activeSwitch.focus();
+    await activeSwitch.press("Space");
+    assert.equal(await activeSwitch.isChecked(), false);
+    // Settings remain a draft until the existing Save changes action.
+    assert.equal(settings.enabled, true);
+    await save();
+    await reload();
+    assert.equal(settings.enabled, false);
+    assert.equal(settings.brand.name, "");
+    assert.equal(
+      await page.locator('[data-setting="brand.name"]').isVisible(),
+      true,
+    );
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").isVisible(),
+      false,
+    );
+    assert.equal(await page.locator(".wordmark svg").count(), 1);
+    assert.equal(await page.locator(".wordmark .header-logo").count(), 0);
+
+    const heading = await page
+      .locator(".booking-page-heading h2")
+      .boundingBox();
+    const toggle = await page
+      .locator("[data-booking-page] .active-toggle")
+      .boundingBox();
+    assert.ok(toggle.x > heading.x + heading.width);
+    assert.ok(
+      Math.abs(toggle.y + toggle.height / 2 - heading.y - heading.height / 2) <
+        2,
+    );
+    await page
+      .locator("[data-booking-page]")
+      .screenshot({ path: "work/frontend/booking-page-active-desktop.png" });
+    await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
+    assert.deepEqual((await page.evaluate(() => axe.run())).violations, []);
+    const visitor = await context.newPage();
+    for (const [path, label] of [
+      [bookingPath, "Not accepting bookings right now"],
+      ["/es" + bookingPath, "No se aceptan reservas por ahora"],
+    ]) {
+      const response = await visitor.goto(base + path + "?type=conversation");
+      assert.equal(response.status(), 200);
+      await visitor
+        .getByRole("heading", { name: label, exact: true })
+        .waitFor();
+      assert.equal(await visitor.locator(".choice-card").count(), 0);
+      assert.equal(
+        await visitor
+          .locator('meta[property="og:site_name"]')
+          .getAttribute("content"),
+        "Scheduler",
+      );
+      await visitor.screenshot({
+        path: `work/frontend/paused-${path.startsWith("/es") ? "es" : "en"}.png`,
+      });
+    }
+    await visitor.close();
+    await page.setViewportSize({ width: 320, height: 900 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    await page
+      .locator("[data-booking-page]")
+      .screenshot({ path: "work/frontend/booking-page-active-mobile.png" });
+    await activeSwitch.focus();
+    await activeSwitch.press("Space");
+    await page.locator('[data-setting="brand.name"]').fill("Fixture & Brand");
+    await save();
+    assert.equal(settings.enabled, true);
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").isVisible(),
+      true,
     );
     assert.deepEqual(errors, []);
   } finally {

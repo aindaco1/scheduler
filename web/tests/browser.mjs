@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { checkQuality } from "./quality.mjs";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
+import { checkResponsiveAdmin } from "./responsive-admin.mjs";
 const root = resolve(".");
 const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
 const bookingPath = "/" + deployment.slug;
@@ -392,7 +393,7 @@ try {
   await page.goto(base + bookingPath);
   await page.getByRole("button", { name: /Meet in person/ }).click();
   assert.equal(await page.locator("[data-slot]").count(), 0);
-  await page.getByLabel("Where shall we meet?").selectOption("studio");
+  await page.getByLabel("Where should we meet?").selectOption("studio");
   await page.locator("[data-slot]").first().click();
   const chosen = new URL(page.url()).searchParams.get("slot");
   await page.getByRole("link", { name: "Español", exact: true }).click();
@@ -955,6 +956,15 @@ try {
     .locator('[data-setting="timezone"]')
     .selectOption("Asia/Tokyo");
   assert.equal(await travelEnd.inputValue(), "2026-11-03T16:00");
+  assert.equal(
+    await travelPage
+      .locator("#panel-availability .panel")
+      .last()
+      .locator("p strong")
+      .first()
+      .textContent(),
+    "Asia/Tokyo",
+  );
   await travelPage
     .locator('[data-setting="timezone"]')
     .selectOption("America/Denver");
@@ -1002,7 +1012,25 @@ try {
   await preferenceContext.close();
   await checkQuality(browser, base, apiFixture, bookingPath);
   await checkBookingWeeks(browser, base, apiFixture, settings, bookingPath);
-  await checkSettingsEnhancements(browser, base, apiFixture, settings);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(base + "/admin/");
+  await page.getByRole("tab", { name: "Bookings", exact: true }).click();
+  const refreshBox = await page
+    .locator("[data-refresh-bookings]")
+    .boundingBox();
+  const rowBox = await page.locator(".booking-row").first().boundingBox();
+  assert.ok(rowBox.y - refreshBox.y - refreshBox.height >= 16);
+  await page
+    .locator("#panel-bookings")
+    .screenshot({ path: "work/frontend/bookings-header-spacing.png" });
+  await checkSettingsEnhancements(
+    browser,
+    base,
+    apiFixture,
+    settings,
+    bookingPath,
+  );
+  await checkResponsiveAdmin(browser, base, apiFixture, settings);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

@@ -24,7 +24,7 @@ import {
   type Config,
   type PublicBooking,
 } from "./common";
-import { SlotPicker } from "./slots";
+import { LazySlotPicker as SlotPicker } from "./lazy-slots";
 
 initShell();
 let config: Config;
@@ -68,7 +68,7 @@ function intro() {
   const available = config.ready && s.enabled;
   app.innerHTML = `<section class="hero"><h1>${t("Meet with", "Reserva con")} ${esc(s.name)}.</h1><p class="intro">${esc(local(s.intro))}</p></section>${
     !available
-      ? `<section class="panel"><h2>${t("Bookings will open soon", "Pronto podrás reservar")}</h2><p class="muted">${t("The calendar is taking a little pause. Please check back soon.", "La agenda está en pausa. Vuelve a consultar pronto.")}</p></section>`
+      ? `<section class="panel"><h2>${s.enabled ? t("Booking is temporarily unavailable", "Las reservas no están disponibles temporalmente") : t("Not accepting bookings right now", "No se aceptan reservas por ahora")}</h2><p class="muted">${t("Please check back later. If you already have a meeting, you can manage it using the link in your booking email.", "Vuelve a consultar más adelante. Si ya tienes una reunión, puedes gestionarla con el enlace del correo de reserva.")}</p></section>`
       : `<section aria-labelledby="meeting-choices"><div class="section-heading"><h2 id="meeting-choices">${t("Choose a meeting", "Elige una reunión")}</h2></div><div class="choice-grid">${s.types
           .filter((type) => type.enabled)
           .map(
@@ -112,7 +112,7 @@ function renderSlots() {
   const places = config.settings.locations.filter(
     (l) => l.enabled && type.locationIds.includes(l.id),
   );
-  app.innerHTML = `<div class="booking-layout">${sidebar()}<section class="booking-panel"><p class="step-label">${t("Step 1 of 2", "Paso 1 de 2")}</p><h2>${t("Find a time that works", "Encuentra tu momento")}</h2>${type.mode === "in-person" ? `<label class="field">${t("Where shall we meet?", "¿Dónde nos reunimos?")}<select data-location required><option value="">${t("Choose a location", "Elige un lugar")}</option>${places.map((l) => `<option value="${esc(l.id)}" ${locationId === l.id ? "selected" : ""}>${esc(local(l.name))}</option>`).join("")}</select></label><p class="help-text" data-address></p>` : ""}<div data-picker>${type.mode === "in-person" && !locationId ? `<div class="empty-state">${places.length ? t("Choose a place to see its available times.", "Elige un lugar para ver sus horarios disponibles.") : t("No in-person locations are available yet.", "Aún no hay lugares disponibles para reuniones presenciales.")}</div>` : ""}</div></section></div>`;
+  app.innerHTML = `<div class="booking-layout">${sidebar()}<section class="booking-panel"><p class="step-label">${t("Step 1 of 2", "Paso 1 de 2")}</p><h2>${t("Find a time that works", "Encuentra tu momento")}</h2>${type.mode === "in-person" ? `<label class="field">${t("Where should we meet?", "¿Dónde nos reunimos?")}<select data-location required><option value="">${t("Choose a location", "Elige un lugar")}</option>${places.map((l) => `<option value="${esc(l.id)}" ${locationId === l.id ? "selected" : ""}>${esc(local(l.name))}</option>`).join("")}</select></label><p class="help-text" data-address></p>` : ""}${type.mode === "in-person" ? `<div class="empty-state" data-place-prompt>${places.length ? t("Choose a place to see its available times.", "Elige un lugar para ver sus horarios disponibles.") : t("No in-person locations are available yet.", "Aún no hay lugares disponibles para reuniones presenciales.")}</div>` : ""}<div data-picker></div></section></div>`;
   bindBack();
   if (type.mode === "in-person")
     $<HTMLSelectElement>("[data-location]", app).addEventListener(
@@ -120,13 +120,24 @@ function renderSlots() {
       (e) => {
         locationId = (e.target as HTMLSelectElement).value;
         slot = "";
-        renderSlots();
+        updateUrl();
+        updateLocation();
       },
     );
-  if (type.mode !== "in-person" || locationId) {
-    const l = places.find((p) => p.id === locationId);
-    if (l) $("[data-address]", app).textContent = local(l.address);
-    picker = new SlotPicker($("[data-picker]", app), {
+  function updateLocation() {
+    const root = $("[data-picker]", app);
+    root.hidden = type.mode === "in-person" && !locationId;
+    if (type.mode === "in-person") {
+      const place = places.find((p) => p.id === locationId);
+      $("[data-address]", app).textContent = place ? local(place.address) : "";
+      $("[data-place-prompt]", app).hidden = !!locationId;
+    }
+    if (root.hidden) return;
+    if (picker) {
+      picker.setLocation(locationId);
+      return;
+    }
+    picker = new SlotPicker(root, {
       type: type.id,
       location: locationId,
       horizon: config.settings.horizonDays,
@@ -139,6 +150,7 @@ function renderSlots() {
       },
     });
   }
+  updateLocation();
   focusHeading();
 }
 function renderDetails() {

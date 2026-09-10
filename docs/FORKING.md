@@ -34,9 +34,11 @@ npm run types
 npm run check
 ```
 
-The script updates `wrangler.jsonc`. The build derives public routes, links, titles, canonical URLs, language alternates, and sitemap from those values. Your URLs become `/your-name` and `/es/your-name`. Reserved route names are rejected. No provider credentials belong in these flags or Wrangler vars. `npm run setup -- --check` validates configuration without changing it.
+The script updates `wrangler.jsonc`. The build derives public routes, links, titles, canonical URLs, language alternates, and sitemap from those values. Your URLs become `/your-name` and `/es/your-name`. Spanish starts enabled; turn off **Offer Spanish** in Settings for an English-only site without deleting translations or rebuilding. Spanish routes then redirect to English, and live search alternates/sitemap omit Spanish. Reserved route names are rejected. No provider credentials belong in these flags or Wrangler vars. `npm run setup -- --check` validates configuration without changing it.
 
-`OWNER_NAME` and `OWNER_TIMEZONE` seed an empty installation. Existing dashboard settings are preserved on deploy. `BRAND_NAME` controls the default header; upload a logo and choose your accent in Settings. Search metadata uses the deployment name, so update that value and rebuild if you change your public identity later.
+`OWNER_NAME` and `OWNER_TIMEZONE` seed an empty installation. Existing dashboard settings are preserved on deploy. Set default video/in-person gaps in Settings; individual meeting types start with the default populated in their editable Gap field. Enter a different value to override it, or the current default to restore inheritance.
+
+`BRAND_NAME` seeds the Brand name field in Settings. Change Brand name, upload a logo and choose your accent there. The saved brand name/logo renders in the initial HTML on every page, including Privacy, without a rebuild or a fallback-header flash. Brand name also updates the live site-name metadata. Search metadata uses the deployment name, so update that value and rebuild if you change your public identity later.
 
 **Do this before your first deploy.** Changing an existing deployment's Worker name or `OWNER_SLUG` can select a different Durable Object and make its existing bookings/settings appear missing. It is not a data migration. Keep the Worker name, owner slug, namespace migration and `ENCRYPTION_KEY` stable for upgrades.
 

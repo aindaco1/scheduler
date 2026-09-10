@@ -5,6 +5,7 @@ import {
   icloudBusy,
   validateMultistatus,
 } from "../src/providers/icloud";
+import { calendarLocation } from "../src/booking-location";
 import { GoogleCalendar } from "../src/providers/google";
 import { refreshZoom, ZoomMeetings } from "../src/providers/zoom";
 
@@ -422,4 +423,84 @@ describe("Zoom write outcomes", () => {
       new ZoomMeetings("fixture-token").create({ ...booking, mode: "zoom" }),
     ).rejects.toMatchObject({ code: "zoom_write_uncertain" });
   });
+});
+
+it.each(["en", "es"] as const)(
+  "keeps the street address, guest note and arrival instructions separate in a %s invitation",
+  async (locale) => {
+    const location = {
+      id: "studio",
+      name: { en: "Studio", es: "Estudio" },
+      address: {
+        en: "709 Haines Ave NW\nAlbuquerque, NM 87102, USA",
+        es: "709 Haines Ave NW\nAlbuquerque, NM 87102, EE. UU.",
+      },
+      instructions: {
+        en: "Use side door <A>.\nRing once & wait.",
+        es: "Usa puerta lateral <A>.\nToca una vez y espera.",
+      },
+      enabled: true,
+      hours: [],
+    };
+    const candidate = {
+      ...booking,
+      mode: "in-person" as const,
+      locale,
+      location: calendarLocation(location, locale),
+      topic: "My project <notes> & questions",
+      locationInstructions: location.instructions[locale],
+    };
+    const google = fetchMock.get("https://www.googleapis.com");
+    google.intercept({ path: eventPath, method: "GET" }).reply(404, {});
+    google
+      .intercept({
+        path: "/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
+        method: "POST",
+      })
+      .reply((options) => {
+        const body = JSON.parse(String(options.body));
+        expect(body.location).toContain(
+          "709 Haines Ave NW, Albuquerque, NM 87102",
+        );
+        expect(body.location).not.toContain("door");
+        expect(body.location).not.toContain("puerta");
+        expect(body.description).toContain(
+          locale === "es" ? "Nota del invitado:" : "Guest note:",
+        );
+        expect(body.description).toContain(
+          "My project &lt;notes&gt; &amp; questions",
+        );
+        expect(body.description).toContain(
+          locale === "es"
+            ? "Instrucciones de llegada:"
+            : "Arrival instructions:",
+        );
+        expect(body.description).toContain("&lt;A&gt;");
+        expect(body.description).not.toContain("<A>");
+        return { statusCode: 200, data: event };
+      });
+    await expect(
+      new GoogleCalendar("fixture-token").create(candidate, "alonso"),
+    ).resolves.toEqual({ eventId, joinUrl: undefined });
+  },
+);
+
+it("uses one postal address for either invitation language and falls back to legacy Spanish-only addresses", () => {
+  const location = {
+    id: "studio",
+    name: { en: "Studio", es: "Estudio" },
+    address: { en: "123 Example St\nTown, NM 87102", es: "Legacy translation" },
+    enabled: true,
+    hours: [],
+  };
+  expect(calendarLocation(location, "es")).toBe(
+    "Estudio, 123 Example St, Town, NM 87102",
+  );
+  expect(calendarLocation(location, "en")).toBe(
+    "Studio, 123 Example St, Town, NM 87102",
+  );
+  location.address = { en: " ", es: "Calle Mayor 1, Madrid" };
+  expect(calendarLocation(location, "en")).toBe(
+    "Studio, Calle Mayor 1, Madrid",
+  );
 });

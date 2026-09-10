@@ -1,3 +1,4 @@
+import { meetingGap } from "./gap-policy";
 import { Temporal } from "@js-temporal/polyfill";
 import {
   AppError,
@@ -59,7 +60,7 @@ export function resolveType(
     throw new AppError("invalid_location");
   if (type.mode !== "in-person" && locationId)
     throw new AppError("invalid_location");
-  return { type, location };
+  return { type: { ...type, gap: meetingGap(settings, type) }, location };
 }
 
 export function canBook(
@@ -107,11 +108,10 @@ export function canBook(
       })),
   ];
   if (exclusions.some((b) => overlaps(candidate, b))) return false;
+  const gap = meetingGap(settings, type);
   const conflicts = busy.filter((b) => !ignoreId || b.bookingId !== ignoreId);
   if (
-    conflicts.some((b) =>
-      overlaps(candidate, b, Math.max(type.gap, b.gap ?? type.gap)),
-    )
+    conflicts.some((b) => overlaps(candidate, b, Math.max(gap, b.gap ?? gap)))
   )
     return false;
   if (settings.dailyLimit) {

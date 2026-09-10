@@ -1,7 +1,7 @@
 {
   "entryGzipBytes": {
-    "booking": 75000,
-    "manage": 75000,
+    "booking": 15000,
+    "manage": 15000,
     "admin": 95000,
     "privacy": 15000
   },
