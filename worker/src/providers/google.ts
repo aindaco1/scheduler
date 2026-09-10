@@ -1,5 +1,5 @@
 import { calendarDescription } from "../booking-location";
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "../provider-fetch";
 import { Temporal } from "@js-temporal/polyfill";
 import {
   AppError,
@@ -27,7 +27,7 @@ export async function googleToken(
   clientId: string,
   clientSecret: string,
 ): Promise<{ token: string; expires: number }> {
-  const response = await fetchWithTimeout(
+  const response = await fetchProvider(
     "https://oauth2.googleapis.com/token",
     {
       method: "POST",
@@ -66,7 +66,7 @@ export class GoogleCalendar {
   ): Promise<T | null> {
     let response: Response;
     try {
-      response = await fetchWithTimeout(
+      response = await fetchProvider(
         api + path,
         {
           ...init,

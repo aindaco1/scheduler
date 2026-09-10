@@ -1,0 +1,76 @@
+{
+  "version": "1.0.1",
+  "date": "2026-09-10",
+  "audit": {
+    "baseline": "2d7a585",
+    "reviewAreas": 9,
+    "confirmedFindings": 7,
+    "resolvedFindings": 7,
+    "criticalOrHighFindings": 0,
+    "independentAudit": false
+  },
+  "local": {
+    "checkPassed": true,
+    "node": "24.20.0",
+    "workerTests": 176,
+    "workerTestFiles": 17,
+    "advisoryGateTests": 2,
+    "localizedShells": 8,
+    "pairedMessages": 321,
+    "adminResponsiveStates": 40,
+    "publicResponsiveStates": 84,
+    "forkSetupPassed": true,
+    "browserAxePassed": true,
+    "dryDeployPassed": true
+  },
+  "advisories": {
+    "npmKnown": 0,
+    "rubyPackages": 34,
+    "rubyKnown": 0,
+    "rubyJson": "2.21.2",
+    "rubyFixedAdvisory": "GHSA-9hj4-r449-hfvc"
+  },
+  "recovery": {
+    "started": "2026-09-10T15:59:17.520Z",
+    "worker": "scheduler-recovery-2ff455528a9e6764",
+    "syntheticOnly": true,
+    "productionNamespaceUsed": false,
+    "providerWrites": 0,
+    "cleanup": true,
+    "passed": true,
+    "completed": "2026-09-10T15:59:32.020Z",
+    "tables": {
+      "config": 3,
+      "bookings": 1,
+      "jobs": 1,
+      "tokens": 1,
+      "limits": 1,
+      "logos": 1
+    },
+    "exactSnapshotMatch": true,
+    "credentialRecovered": true,
+    "managementRecovered": true,
+    "heldEmailRecovered": true,
+    "alarmRecovered": true,
+    "undoBookmarkReturned": true,
+    "restoredStateQuarantined": true
+  },
+  "ci": {
+    "status": "pending"
+  },
+  "deployment": {
+    "status": "pending"
+  },
+  "providerRecipient": {
+    "liveBookingWrites": 0,
+    "invitationsSent": 0,
+    "messagesSent": 0,
+    "recipientDeliveryTested": false
+  },
+  "limits": [
+    "Engineering audit, not independent certification",
+    "No production data restore or independent archival backup",
+    "Production encryption-key backup custody not inspected",
+    "No new provider invitation or recipient acceptance"
+  ]
+}

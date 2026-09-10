@@ -1,5 +1,5 @@
 import { createDAVClient, type DAVCalendar } from "tsdav";
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "../provider-fetch";
 import { readBoundedText } from "@dustwave/worker-core/request-validation";
 import { AppError, type CalendarChoice, type IcloudConnection } from "../model";
 import { icalBusy } from "./ical";
@@ -58,10 +58,11 @@ const appleFetch: typeof fetch = async (input, init) => {
         : input.url;
   for (let i = 0; i < 4; i++) {
     safeUrl(url);
-    const response = await fetchWithTimeout(
+    const response = await fetchProvider(
       url,
       { ...init, redirect: "manual" },
       20_000,
+      6_000_000,
     );
     if ([301, 302, 307, 308].includes(response.status)) {
       url = new URL(response.headers.get("location") || "", url).href;
@@ -108,13 +109,19 @@ export class IcloudSession {
   }>(1);
   constructor(private connection: IcloudConnection) {}
   private snapshot() {
-    return this.discovery.get("discovery", 5 * 60_000, async () => {
-      const dav = await client(this.connection);
-      const calendars = await dav.fetchCalendars();
-      if (calendars.length > 100) throw new AppError("icloud_incomplete", 503);
-      calendars.forEach((c) => safeUrl(c.url));
-      return { dav, calendars };
-    });
+    return this.discovery
+      .get("discovery", 5 * 60_000, async () => {
+        const dav = await client(this.connection);
+        const calendars = await dav.fetchCalendars();
+        if (calendars.length > 100)
+          throw new AppError("icloud_incomplete", 503);
+        calendars.forEach((c) => safeUrl(c.url));
+        return { dav, calendars };
+      })
+      .catch((error) => {
+        if (error instanceof AppError) throw error;
+        throw new AppError("icloud_unavailable", 503, true);
+      });
   }
   async calendars(): Promise<CalendarChoice[]> {
     const { calendars } = await this.snapshot();
@@ -155,7 +162,9 @@ export class IcloudSession {
       return data.flat();
     } catch (error) {
       this.discovery.clear();
-      throw error;
+      if (error instanceof AppError) throw error;
+      // tsdav errors can embed response data; only return a stable classification.
+      throw new AppError("icloud_incomplete", 503);
     }
   }
 }

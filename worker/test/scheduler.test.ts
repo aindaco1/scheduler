@@ -87,6 +87,44 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
     turnstile: "valid",
   };
 }
+
+it("rejects out-of-policy reschedule targets before any provider reads", async () => {
+  mockReads();
+  const stub = await setup();
+  const created = await stub.createBooking(input());
+  await runInDurableObject(stub, (_instance, state) => {
+    const b: Booking = JSON.parse(
+      state.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM bookings WHERE id=?",
+          created.booking.id,
+        )
+        .one().data,
+    );
+    b.status = "confirmed";
+    state.storage.sql.exec(
+      "UPDATE bookings SET status=?,data=? WHERE id=?",
+      b.status,
+      JSON.stringify(b),
+      b.id,
+    );
+  });
+  const fetch = vi.spyOn(globalThis, "fetch");
+  for (const target of [
+    "1900-01-01T12:00:00Z",
+    new Date(Date.now() + 365 * 86_400_000).toISOString(),
+  ]) {
+    await expectRpc(
+      stub.reschedule(
+        created.booking.id,
+        created.token,
+        target,
+        crypto.randomUUID(),
+      ),
+    ).rejects.toThrow("slot_unavailable");
+  }
+  expect(fetch).not.toHaveBeenCalled();
+});
 describe("Durable booking coordinator", () => {
   it("preserves an explicitly empty brand and shares postal addresses without losing legacy data", async () => {
     const stub = await setup();

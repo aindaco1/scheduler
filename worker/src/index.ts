@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   readJsonObject,
   readBoundedBytes,
+  RequestValidationError,
 } from "@dustwave/worker-core/request-validation";
 import {
   createSessionCookie,
@@ -15,7 +16,7 @@ import {
   sha256Hex,
   base64urlEncode,
 } from "@dustwave/worker-core/crypto";
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "./provider-fetch";
 import { Scheduler } from "./scheduler";
 import { AppError, bookingInput, changeMessageInput } from "./model";
 import {
@@ -36,13 +37,15 @@ const json = (value: unknown, status = 200) =>
   });
 function sessionToken(request: Request) {
   try {
-    return getCookie(request, cookie);
+    const token = getCookie(request, cookie);
+    return token.length <= 200 ? token : "";
   } catch {
     return "";
   }
 }
 function bearer(request: Request) {
-  return request.headers.get("Authorization")?.replace(/^Bearer /, "") || "";
+  const value = request.headers.get("Authorization") || "";
+  return /^Bearer [A-Za-z0-9_-]{1,200}$/.test(value) ? value.slice(7) : "";
 }
 function secure(response: Response, path: string): Response {
   const isApi = path.startsWith("/api/");
@@ -162,7 +165,7 @@ async function oauth(
     body.set("client_secret", secret);
     body.set("code_verifier", verifier);
   } else headers.Authorization = "Basic " + btoa(clientId + ":" + secret);
-  const result = await fetchWithTimeout(
+  const result = await fetchProvider(
     provider === "google"
       ? "https://oauth2.googleapis.com/token"
       : "https://zoom.us/oauth/token",
@@ -178,7 +181,7 @@ async function oauth(
   if (!data.access_token || !data.refresh_token)
     throw new AppError("oauth_offline_required", 503);
   if (provider === "google") {
-    const response = await fetchWithTimeout(
+    const response = await fetchProvider(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       { headers: { Authorization: "Bearer " + data.access_token } },
       10_000,
@@ -195,7 +198,7 @@ async function oauth(
       accountId: user.id,
     });
   } else {
-    const response = await fetchWithTimeout(
+    const response = await fetchProvider(
       "https://api.zoom.us/v2/users/me",
       { headers: { Authorization: "Bearer " + data.access_token } },
       10_000,
@@ -289,6 +292,14 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
     /^\/api\/bookings\/([0-9a-f-]{36})(?:\/(cancel|reschedule))?$/,
   );
   if (bookingMatch) {
+    await stub.rateLimit(
+      "management:" +
+        method +
+        ":" +
+        (await hmacSha256(ip, requireSecret(env.SESSION_SECRET))),
+      method === "GET" ? 120 : 20,
+      method === "GET" ? 60_000 : 10 * 60_000,
+    );
     const [, id, action] = bookingMatch;
     if (method === "GET" && !action)
       return json(await stub.getBooking(id, bearer(request)));
@@ -454,7 +465,8 @@ export default {
           ? (e as { name?: unknown; code?: unknown; status?: unknown })
           : {};
       const application =
-        remote.name === "SchedulerError" &&
+        (remote.name === "SchedulerError" ||
+          e instanceof RequestValidationError) &&
         typeof remote.code === "string" &&
         /^[a-z_]{1,80}$/.test(remote.code) &&
         [400, 401, 403, 404, 409, 413, 429, 503].includes(

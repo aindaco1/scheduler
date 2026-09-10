@@ -1,6 +1,6 @@
 import { escapeHtml as escape } from "./text";
 import { arrivalHeading } from "./booking-location";
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "./provider-fetch";
 import {
   ResendApiError,
   classifyResendFailure,
@@ -110,7 +110,7 @@ export async function sendEmail(
   from: string,
   idempotencyKey: string,
 ) {
-  const response = await fetchWithTimeout(
+  const response = await fetchProvider(
     "https://api.resend.com/emails",
     {
       method: "POST",

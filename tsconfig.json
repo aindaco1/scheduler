@@ -12,6 +12,10 @@
     "allowJs": true,
     "types": ["node"]
   },
-  "include": ["worker/src/**/*.ts", "worker-configuration.d.ts"],
+  "include": [
+    "worker/src/**/*.ts",
+    "worker-configuration.d.ts",
+    "scripts/recovery-drill/worker.ts"
+  ],
   "exclude": ["node_modules", "shared", "_site", "web"]
 }

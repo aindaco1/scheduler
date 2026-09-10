@@ -82,7 +82,7 @@ Verify connections and then enable bookings. Use a consenting test recipient to 
 
 Copy `.dev.vars.example` to ignored `.dev.vars`, set separate local credentials and random secrets, then run `npm run dev` at `http://localhost:8787`. It is a real local Worker with isolated local storage, not a fake login bypass. Local OAuth needs registered localhost callbacks. The example Turnstile test keys work only on localhost and are rejected on production origins. Use `npm run build`, not bare `jekyll build`, because the app build generates routes and asset manifests.
 
-The stable launch tag is `v1.0.0`; [release notes](../CHANGELOG.md) describe its scope. Existing installations need no data migration or reconnection for this release. Use `npm run clean -- --dry-run` to inspect generated output and `npm run clean` to remove it while preserving dependencies, secrets and `.wrangler/state`.
+The current release tag is `v1.0.1`; [release notes](../CHANGELOG.md) describe its scope. Existing installations need no data migration or reconnection for this release. Use `npm run clean -- --dry-run` to inspect generated output and `npm run clean` to remove it while preserving dependencies, secrets and `.wrangler/state`.
 
 Commit your public configuration. To adopt upstream fixes, add an upstream remote and merge/rebase deliberately, preserving your Wrangler configuration and secrets. Run `npm ci`, `git submodule update --init --recursive`, and `npm run check` before each deploy. Ordinary code deployments preserve SQLite state and queued work. Do not reapply a new namespace migration or delete the Durable Object to perform an upgrade.
 

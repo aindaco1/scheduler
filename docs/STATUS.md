@@ -1,14 +1,24 @@
-# Scheduler 1.0 release status
+# Scheduler release status
 
 Updated September 10, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
-Version 1.0.0 is the first stable release for one owner, under the [MIT license](../LICENSE). The [README](../README.md#installation-and-setup) and [fork guide](FORKING.md) describe installation, account provisioning and upgrades. The [changelog](../CHANGELOG.md) lists the release features. The [roadmap](ROADMAP.md) owns the planned 1.0.1 security audit and Phase 2 profiles, pay-what-you-can bookings, direct Proton integration and two-way Google Calendar sync. These are prospective work; 1.0.1 has not been released or audited.
+Version 1.0.0 is the first stable release for one owner, under the [MIT license](../LICENSE). The [README](../README.md#installation-and-setup) and [fork guide](FORKING.md) describe installation, account provisioning and upgrades. The [changelog](../CHANGELOG.md) lists the release features. The 1.0.1 engineering audit and fixes are complete; release verification is recorded below. The [roadmap](ROADMAP.md) owns Phase 2 profiles, pay-what-you-can bookings, direct Proton integration and two-way Google Calendar sync.
 
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Version 1.0.1 security and sharing release
+
+The [engineering audit](release-evidence/security-audit-1.0.1-2026-09-10.md) covers all nine roadmap review areas and records seven confirmed findings, all fixed. No critical/high finding was confirmed. This is not an independent penetration test or certification.
+
+Local `npm run check` passed on Node 24.20.0: 176 Worker tests in 17 files, two Ruby-advisory gate tests, TypeScript, Jekyll build, eight localized shell/asset/privacy gates, 321 paired browser messages, independent fork setup, complete browser flows/axe, 40 admin and 84 public responsive states, and Wrangler dry deployment. The updated advisory command reported zero npm advisories and no findings across all 34 locked Ruby packages after updating JSON to 2.21.2.
+
+The actual Cloudflare recovery drill passed on an isolated temporary Worker: all six SQL tables, KV, encrypted credentials/management/email payloads and the alarm matched their saved state after PITR and restart. Restored-state quarantine invalidated sessions, held jobs, paused bookings and removed the alarm. Temporary resources were deleted successfully. No production namespace or real provider credentials were supplied.
+
+CI, production deployment and read-only live verification are pending for the candidate. No live bookings, provider writes, invitations or recipient messages were used in the audit. See [the release evidence](release-evidence/security-1.0.1.json) for separated outcomes.
 
 ### September 10 meeting-link preview upgrade
 

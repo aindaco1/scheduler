@@ -49,9 +49,32 @@ External calendars cannot participate in the local database transaction: a last-
 
 ## Private data and maintenance
 
-Provider credentials and management tokens are encrypted; login/session token lookups use hashes. Guest names, email addresses, topics and booking times remain in private storage for booking management. There is no automatic booking-history purge in phase 1. Guest management links carry secrets in the URL fragment; API requests use an Authorization header or JSON body. Public pages never expose busy-event titles or account credentials.
+Provider credentials and management tokens are encrypted; login/session token lookups use hashes. Guest names, email addresses, topics and booking times remain in private storage for booking management. There is no automatic booking-history purge in phase 1. Guest management links carry secrets in the URL fragment; API requests use an Authorization header or JSON body. Public pages never expose busy-event titles or account credentials. Guest management allows 120 reads per minute and 20 mutations per ten minutes per IP, separately from booking/login/availability limits.
 
 Pause bookings before operational repairs. Use Cloudflare's Durable Object storage recovery facilities if a data repair requires rollback, preserving the encryption key separately. Do not roll back only provider state or only local reservations without reconciling the other side. Cloudflare observability redacts request query strings, including OAuth callback values. Review redacted job error classifications instead of logging provider response bodies or full callback/management URLs.
+
+## Backup and recovery
+
+Cloudflare's [SQLite PITR API](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/#pitr-point-in-time-recovery-api) restores SQL and KV state within its 30-day history. It is not available in local emulation. The encryption key is outside that storage: keep a separate secure copy of it and the deployment identity/configuration. A different key cannot decrypt recovered credentials, management tokens or frozen mail. A namespace deletion, lost key, or archival requirement beyond that window needs a separate recovery design; no independent export/backup service is shipped here.
+
+Rehearse the actual platform mechanism with synthetic data:
+
+```sh
+node scripts/rehearse-recovery.mjs --live-isolated
+```
+
+This uses the configured account to create a temporary `scheduler-recovery-…` Worker and a new namespace. It never binds production state or supplies real provider credentials. It validates authentication, all six SQL tables, KV, encrypted payloads, an alarm, restoration, and quarantine, then deletes that temporary Worker. Ignored `work/recovery-drill-*/evidence.json` contains safe counts/outcomes; neighboring files are private operational scratch. A failed cleanup is an error and identifies the exact temporary resource. Do not point the fixture runner at production.
+
+For a real incident:
+
+1. Preserve the current source/configuration, Worker name, owner slug, namespace/migration identity and encryption key. Record the affected bookings privately and stop public mutations. Pausing new bookings alone does **not** stop management actions or alarms.
+2. Use an access-controlled temporary maintenance Worker on the **existing namespace**, with normal mutation routes and all provider/email dispatch disabled, including its alarm handler. Do not add an Internet-accessible restore route to the normal app. Take a pre-repair bookmark. Review the repair and selected timestamp before invoking any restore.
+3. Select the known-good bookmark, call `onNextSessionRestoreBookmark`, retain its returned undo bookmark privately, and restart with `ctx.abort()`. Confirm SQL/KV restoration and decrypt a controlled record with the preserved key. The isolated fixture shows this exact platform sequence; production credentials and guest rows must never be logged.
+4. While still in maintenance, keep bookings paused, clear `tokens` to invalidate restored login/session/OAuth entries, remove the alarm, and hold queued jobs for review. The fixture's `quarantine()` transaction rehearses these steps. Do not replay all restored work: a provider or recipient may already have accepted it after the restored timestamp.
+5. Reconcile affected Google event IDs, Zoom reference/attempt markers, local reservations and Resend idempotency/history. Keep uncertain slots reserved. Mail beyond the deduplication window stays held. Re-enable only reviewed operations with their original IDs; do not manufacture replacement events or resend automatically.
+6. Restore the audited application on the same namespace, verify fresh conflicts and authorized access, rearm only reconciled jobs, and reopen bookings deliberately. Record deployed/provider/recipient outcomes independently.
+
+Disconnect removes local provider credentials and pauses bookings; revoke compromised credentials in the provider account as a separate step. For an encryption-key rotation, preserve the old key, stop writers, re-encrypt every encrypted config/booking/job value with a deliberate migration, verify decryptability and recovery, then switch keys. Changing `ENCRYPTION_KEY` directly is not a rotation procedure. Revoke all owner sessions by clearing the session token records during controlled maintenance; changing `SESSION_SECRET` alone does not invalidate stored opaque sessions.
 
 ## Live acceptance procedure
 

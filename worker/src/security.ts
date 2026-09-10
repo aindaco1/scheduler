@@ -3,7 +3,7 @@ import {
   sha256Hex,
   timingSafeEqual,
 } from "@dustwave/worker-core/crypto";
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "./provider-fetch";
 import { readBoundedText } from "@dustwave/worker-core/request-validation";
 import { AppError } from "./model";
 
@@ -63,7 +63,12 @@ export async function boundedJson<T>(
     method: "POST",
     body: response.body,
   });
-  return JSON.parse(await readBoundedText(request, limit));
+  try {
+    return JSON.parse(await readBoundedText(request, limit));
+  } catch {
+    // JSON parser errors may contain a fragment of the private provider body.
+    throw new AppError("provider_response_invalid", 503);
+  }
 }
 export async function checkTurnstile(
   secret: string | undefined,
@@ -76,7 +81,7 @@ export async function checkTurnstile(
   if (!token || token.length > 2048) throw new AppError("challenge_required");
   let result: { success?: boolean; hostname?: string; action?: string };
   try {
-    const response = await fetchWithTimeout(
+    const response = await fetchProvider(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       {
         method: "POST",

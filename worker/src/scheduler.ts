@@ -276,8 +276,12 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     provider: "google" | "icloud" | "zoom",
     value: GoogleConnection | IcloudConnection | ZoomConnection,
     maintenance = false,
+    expectedStored?: string,
   ) {
     const encrypted = await seal(value, this.env.ENCRYPTION_KEY);
+    if (maintenance && this.read("connection:" + provider) !== expectedStored)
+      throw new AppError("settings_changed", 409);
+    if (provider === "zoom" && !maintenance) this.zoomRefresh = undefined;
     this.clearCalendarConnections();
     const accountId = "accountId" in value ? value.accountId : undefined;
     const previous = this.read<string>("identity:" + provider);
@@ -355,22 +359,24 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     if (!this.env.ZOOM_CLIENT_ID || !this.env.ZOOM_CLIENT_SECRET)
       throw new AppError("zoom_not_configured", 503);
     // Refresh token rotation is serialized per owner and persisted before callers receive it.
-    if (!this.zoomRefresh)
-      this.zoomRefresh = (async () => {
-        const c = await this.connection<ZoomConnection>("zoom");
-        if (!c) throw new AppError("zoom_not_connected", 503);
-        const next = await refreshZoom(
-          c,
-          this.env.ZOOM_CLIENT_ID!,
-          this.env.ZOOM_CLIENT_SECRET!,
-        );
-        if (next !== c) await this.putConnection("zoom", next, true);
-        return next;
-      })();
+    const stored = this.read<string>("connection:zoom");
+    if (!stored) throw new AppError("zoom_not_connected", 503);
+    const pending = (this.zoomRefresh ??= (async () => {
+      const c = await unseal<ZoomConnection>(stored, this.env.ENCRYPTION_KEY);
+      const next = await refreshZoom(
+        c,
+        this.env.ZOOM_CLIENT_ID!,
+        this.env.ZOOM_CLIENT_SECRET!,
+      );
+      if (this.read("connection:zoom") !== stored)
+        throw new AppError("settings_changed", 409);
+      if (next !== c) await this.putConnection("zoom", next, true, stored);
+      return next;
+    })());
     try {
-      return new ZoomMeetings((await this.zoomRefresh).accessToken);
+      return new ZoomMeetings((await pending).accessToken);
     } finally {
-      this.zoomRefresh = undefined;
+      if (this.zoomRefresh === pending) this.zoomRefresh = undefined;
     }
   }
   private configured(settings: Settings): string[] {
@@ -580,6 +586,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     this.clearCalendarConnections();
     if (!["google", "icloud", "zoom"].includes(provider))
       throw new AppError("invalid_provider");
+    if (provider === "zoom") this.zoomRefresh = undefined;
     this.ctx.storage.sql.exec(
       "DELETE FROM config WHERE key=?",
       "connection:" + provider,
@@ -911,9 +918,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       s = this.getSettings().settings;
     message = changeMessageInput.parse(message);
     if (message && !admin) throw new AppError("invalid_request", 403);
-    if (!admin && Date.now() > initial.start - s.cancelHours * 3_600_000)
-      throw new AppError("management_closed", 403);
     const b = this.booking(id);
+    if (!admin && Date.now() >= b.start - s.cancelHours * 3_600_000)
+      throw new AppError("management_closed", 403);
     if (b.status === "cancelled" || b.status === "cancelling") {
       if (admin && message !== (b.changeMessage || ""))
         throw new AppError("request_changed", 409);
@@ -981,12 +988,26 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       duration: (initial.end - initial.start) / 60_000,
       gap: initial.gap,
     };
+    if (
+      !canBook(
+        s,
+        snapshot,
+        initial.locationId,
+        start,
+        this.localBusy(start - 86_400_000, end + 86_400_000),
+        Date.now(),
+        id,
+      )
+    )
+      throw new AppError("slot_unavailable", 409);
     const busy = await this.externalBusy(
       s,
       start - 86_400_000,
       end + 86_400_000,
     );
     const b = this.booking(id);
+    if (!admin && Date.now() >= b.start - s.cancelHours * 3_600_000)
+      throw new AppError("management_closed", 403);
     if (
       b.revision !== initial.revision ||
       b.status !== "confirmed" ||
@@ -1063,7 +1084,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         hash,
       )
       .toArray()[0];
-    if (!row || row.expires < Date.now())
+    if (!row || row.expires <= Date.now())
       throw new AppError("login_expired", 401);
     const session = randomToken();
     this.ctx.storage.sql.exec(
@@ -1113,7 +1134,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         "oauth:" + provider,
       )
       .toArray()[0];
-    if (!row || row.expires < Date.now())
+    if (!row || row.expires <= Date.now())
       throw new AppError("oauth_expired", 401);
     const value: { session: string; verifier: string } = JSON.parse(row.value);
     if (!timingSafeEqual(value.session, await sha256Hex(session)))
@@ -1331,12 +1352,20 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       JSON.stringify(job),
       job.id,
     );
-    await sendEmail(
-      await unseal<Email>(job.payload!, this.env.ENCRYPTION_KEY),
-      this.env.RESEND_API_KEY,
-      job.sender,
-      job.id,
-    );
+    const email = await unseal<Email>(job.payload!, this.env.ENCRYPTION_KEY);
+    // Encryption/decryption yields: a cancellation can supersede this job while
+    // its payload is prepared. Recheck immediately before the external write.
+    if (job.expires && Date.now() >= job.expires) return;
+    if (job.bookingId) {
+      const current = this.booking(job.bookingId);
+      if (
+        current.revision !== job.revision ||
+        (job.mailKind === "reminder" &&
+          (current.status !== "confirmed" || current.start <= Date.now()))
+      )
+        return;
+    }
+    await sendEmail(email, this.env.RESEND_API_KEY, job.sender, job.id);
     if (job.bookingId) {
       const b = this.booking(job.bookingId);
       if (b.revision === job.revision && b.error?.startsWith("email_")) {

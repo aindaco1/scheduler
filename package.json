@@ -1,6 +1,6 @@
 {
   "name": "@dustwave/scheduler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "types": "wrangler types",
     "test": "vitest run",
-    "check": "npm run template:check && npm run typecheck && npm test && npm run build && npm run test:quality && npm run test:setup && npm run test:browser && wrangler deploy --dry-run",
+    "check": "npm run template:check && npm run typecheck && npm run test:audit && npm test && npm run build && npm run test:quality && npm run test:setup && npm run test:browser && wrangler deploy --dry-run",
     "template:check": "node shared/dust-wave-jekyll-template/bin/sync-consumer.mjs --consumer-root . --check",
     "deploy": "npm run check && wrangler deploy",
     "test:browser": "node web/tests/browser.mjs",
@@ -22,7 +22,9 @@
     "test:quality": "node scripts/audit-quality.mjs",
     "test:setup": "node scripts/test-setup.mjs",
     "benchmark:availability": "node scripts/benchmark-availability.mjs",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "audit:dependencies": "npm audit --audit-level=moderate && node scripts/audit-ruby.mjs",
+    "test:audit": "node --test scripts/audit-ruby.test.mjs"
   },
   "dependencies": {
     "@dustwave/admin-shell": "file:shared/dust-wave-platform/packages/admin-shell",

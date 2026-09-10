@@ -1,31 +1,8 @@
 # Roadmap
 
-Prospective work, updated September 10, 2026. Version 1.0.0 is released; the work below is planned, not implemented or audited. Version 1.0.1 is the target for the security audit and resulting fixes. Phase 2 has no release date yet.
+Prospective work, updated September 10, 2026. The 1.0.1 engineering audit and fixes are complete; see the [audit report](release-evidence/security-audit-1.0.1-2026-09-10.md) and [release verification](STATUS.md). The work below is planned. Phase 2 has no release date yet.
 
 Current behaviour belongs in the [documentation index](README.md), completed changes in the [changelog](../CHANGELOG.md), and validation in [release status](STATUS.md) and [release evidence](release-evidence/).
-
-## Version 1.0.1 — thorough security audit
-
-Audit the released application, its deployment configuration and the setup path for a new fork. Build on the [existing quality review](QUALITY.md#security-review-scope-and-accepted-limitations) and [security boundaries](SECURITY.md), then verify them against the actual release candidate.
-
-| Review area | Required coverage |
-| --- | --- |
-| Threat model and data inventory | Trace guest, owner, browser, Worker, Durable Object and provider trust boundaries; identify stored data, credentials, retention and deletion paths. |
-| Authentication and authorization | Review owner login, single-use links, session hashing/expiry, OAuth state and callback validation, guest management tokens, cross-booking access, and privilege checks on every private route. |
-| Request validation and abuse | Exercise Origin/CSRF checks, Turnstile validation, replay, rate limits, payload bounds, malformed inputs and resource exhaustion. Check that public errors do not expose private details. |
-| Browser and uploads | Test injection/XSS, user-authored text, image validation and publication, safe links, CSP/security headers, referrers, browser storage and public/private cache boundaries. |
-| Calendar providers | Review credential scope, token refresh and revocation, outbound URL/redirect validation, XML/ICS parsing, recurrence limits, incomplete responses and fail-closed conflict checking. |
-| Booking integrity and recovery | Exercise concurrent reservations, stale reads, retries, interrupted calendar writes, cancellation/rescheduling races and durable job recovery. Confirm operations cannot duplicate events or bypass availability rules. |
-| Email and private data | Inspect reminder/change-message authorization, durable delivery/idempotency, secret and guest-data redaction, public projections, logs, telemetry and generated artifacts. |
-| Encryption, backup and restore | Review key handling, credential encryption and rotation/revocation procedures; define and rehearse a recovery path with isolated data, documenting any infrastructure needed. |
-| Dependencies, CI and deployment | Audit runtime and development dependencies, pinned submodules/actions, lockfile integrity, Node runtime, GitHub permissions, Cloudflare configuration, secret handling and safe fork defaults. |
-
-Completion criteria:
-
-- [ ] Produce a dated report with scope, methods, evidence, severity, reproduction steps using synthetic data, and clear exclusions.
-- [ ] Fix confirmed findings and add meaningful regression coverage. Resolve critical/high findings before release; document the disposition and rationale for every remaining finding.
-- [ ] Run the complete local and CI checks against the candidate, and perform authorized deployment/provider checks separately. Use isolated calendars and consenting recipients for any external lifecycle tests.
-- [ ] Publish 1.0.1 release evidence and update the security policy, quality review and operational guidance to match the verified result. An independent audit or certification must only be claimed if actually performed.
 
 ## Phase 2 — paid bookings with a sliding scale
 
@@ -58,6 +35,6 @@ The required guest-facing case: **when the booked guest declines the invitation 
 
 ## Scope and sequencing
 
-The 1.0.1 audit precedes new Phase 2 features. Profiles, payments and Google reconciliation can proceed independently of the Proton feasibility milestone. Phase 2 remains centred on one owner's schedule; public multi-owner hosting is a separate scope decision.
+The completed 1.0.1 audit precedes new Phase 2 features. Profiles, payments and Google reconciliation can proceed independently of the Proton feasibility milestone. Phase 2 remains centred on one owner's schedule; public multi-owner hosting is a separate scope decision.
 
 Keep the Jekyll, Cloudflare, Resend, Stripe and GitHub stack, reuse pinned shared packages, and extend the existing scheduling/reservation logic. Move completed work into the changelog with its evidence rather than treating a roadmap checkbox as release acceptance.

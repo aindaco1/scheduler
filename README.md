@@ -2,7 +2,7 @@
 
 An open-source, self-hosted meeting scheduler for one person. Guests choose a meeting type, a place or video call, and an available time. Confirmed meetings are added to your main Google calendar automatically.
 
-**Version 1.0 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
+**Version 1.0.1 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
 
 [See the booking page](https://scheduler.dustwave.xyz/alonso).
 
@@ -62,7 +62,7 @@ You'll need Git, Node.js 24 or later, Ruby 3.1 or later with Bundler, a Cloudfla
 
 5. **Open `/admin/` on your domain.** Sign in using the configured owner email. Connect Google, optionally connect iCloud/Zoom, choose blocking calendars, and review your hours, locations, meeting types and reminders. If you do not use iCloud, turn off **Require iCloud**. New installations start paused. Use **Verify connections**, then turn on **Your booking page → Active** and save. Confirm your first booking and email delivery with a consenting test recipient.
 
-The [complete setup guide](docs/FORKING.md) covers production secrets, local development, upgrades and troubleshooting. This is a single-owner deployment. The [roadmap](docs/ROADMAP.md) covers the planned 1.0.1 security audit and Phase 2 payments, profiles, direct Proton integration and two-way Google Calendar sync.
+The [complete setup guide](docs/FORKING.md) covers production secrets, local development, upgrades and troubleshooting. This is a single-owner deployment. The [roadmap](docs/ROADMAP.md) covers Phase 2 payments, profiles, direct Proton integration and two-way Google Calendar sync.
 
 ## Local development and testing
 
@@ -79,7 +79,7 @@ Open `http://localhost:8787/your-name` (or `/alonso` in the unchanged upstream c
 | `npm run dev` | Build and run the local Worker on port 8787 |
 | `npm run build` | Generate routes, hashed assets and Jekyll output |
 | `npm run check` | Run the complete type, Worker, build, setup, browser and quality checks |
-| `npm audit --audit-level=moderate` | Check current dependency advisories |
+| `npm run audit:dependencies` | Check current dependency advisories |
 | `npm run clean -- --dry-run` | List disposable generated output |
 | `npm run clean` | Remove generated output; retain dependencies, secrets and local database state |
 

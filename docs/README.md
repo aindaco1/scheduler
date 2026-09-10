@@ -34,9 +34,10 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 
 ## Releases and future work
 
-- [Roadmap](ROADMAP.md): planned 1.0.1 security audit and Phase 2 features, including Google Calendar reconciliation.
+- [Roadmap](ROADMAP.md): planned Phase 2 features, including Google Calendar reconciliation.
 - [Changelog](../CHANGELOG.md): completed releases and changes under Unreleased.
 - [Release status](STATUS.md): current deployment and the limits of its verification.
+- [1.0.1 security audit](release-evidence/security-audit-1.0.1-2026-09-10.md): scope, findings, data inventory and isolated recovery rehearsal.
 - [Release evidence](release-evidence/): dated metrics and verification records, separated from research.
 - [Pre-1.0 history](history/pre-1.0.md): older implementation and acceptance records.
 

@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
+import { fetchProvider } from "../provider-fetch";
 import { AppError, type Booking, type ZoomConnection } from "../model";
 import { boundedJson } from "../security";
 
@@ -8,7 +8,7 @@ export async function refreshZoom(
   secret: string,
 ): Promise<ZoomConnection> {
   if (connection.expires > Date.now() + 120_000) return connection;
-  const response = await fetchWithTimeout(
+  const response = await fetchProvider(
     "https://zoom.us/oauth/token",
     {
       method: "POST",
@@ -50,7 +50,7 @@ export class ZoomMeetings {
   ): Promise<T | null> {
     let response: Response;
     try {
-      response = await fetchWithTimeout(
+      response = await fetchProvider(
         "https://api.zoom.us/v2" + path,
         {
           ...init,

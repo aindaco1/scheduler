@@ -127,6 +127,19 @@ function mockIcloudReport(body: string | undefined, status = 207) {
 }
 
 describe("iCloud response completeness", () => {
+  it.each([404, 409, 423, 507])(
+    "rejects a failed REPORT resource with HTTP %s inside multistatus",
+    async (status) => {
+      mockIcloudReport(
+        multistatus(
+          `<d:response><d:href>/fixture/calendars/family/event</d:href><d:status>HTTP/1.1 ${status} Unavailable</d:status></d:response>`,
+        ),
+      );
+      await expect(
+        icloudBusy(credentials, [calendarUrl], from, to, "UTC"),
+      ).rejects.toMatchObject({ code: "icloud_incomplete" });
+    },
+  );
   it("reuses discovery but performs a fresh REPORT and rediscovers after failure", async () => {
     mockIcloudReport(multistatus());
     const session = new IcloudSession(credentials);

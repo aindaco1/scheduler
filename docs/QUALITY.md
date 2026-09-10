@@ -2,6 +2,8 @@
 
 Initially reviewed September 9, 2026 and refreshed for 1.0 on September 10 against the current application, generated pages, Workers-runtime fixtures, and the Pool/Store documentation. This is an engineering review with regression fixes, not an independent penetration test, formal WCAG conformance statement, or native-speaker translation certification. Deployment and measured production results are recorded separately in [STATUS.md](STATUS.md).
 
+The September 10 [1.0.1 audit report](release-evidence/security-audit-1.0.1-2026-09-10.md) supersedes the initial security/restore review below. It includes resolved provider transport, stale credential/email, diagnostics, request-abuse and Ruby dependency findings, plus an actual isolated Cloudflare restore/quarantine drill. The full local candidate check passed 176 Worker tests and the existing browser/fork/quality matrix; release CI/deployment remains separately recorded.
+
 ## Practices reused
 
 - Pool security guidance: server-authoritative validation, scoped sessions/tokens, private data excluded from caches/logs, fail-closed provider reads, bounded external requests, and explicit public/private route boundaries.
@@ -74,8 +76,8 @@ Residual considerations:
 - Anyone holding the private management link can use its booking permissions until their deadline. Keep links out of issue reports, referrers and browser persistence.
 - Apple credentials are broader than this read-only adapter. Google/Zoom OAuth consent, publishing and account controls belong to each deployment owner.
 - The existing external header logo is about 159 KB for a much smaller rendered size. Prefer an optimized uploaded raster; this review did not replace the chosen image or alter another project's source asset.
-- Static deployment metadata can differ from a later dashboard rename until the deployment name is updated/rebuilt.
-- This review did not perform intrusive penetration/load testing on live providers or claim a restore drill. Preserve namespace identity and the encryption key; review backup/recovery needs before expanding beyond personal use.
+- Public page identity and meeting metadata use saved runtime presentation settings; static fallback build metadata still derives from deployment configuration.
+- No intrusive penetration/load testing was performed on live providers. The 1.0.1 isolated platform restore/quarantine drill passed; it did not restore real guest data or verify possession of the backed-up production encryption key. Preserve namespace identity and the key; independent archival backups remain outside the shipped app.
 
 ## Accessibility and localization contract
 
@@ -95,13 +97,15 @@ Manual follow-up remains appropriate for VoiceOver/Safari or NVDA/Firefox speech
 
 ```sh
 npm run check
-npm audit --audit-level=moderate
+npm run audit:dependencies
 npm run benchmark:availability -- --samples 30
 ```
 
 `check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. The booking and management pages load the timezone/slot-picker code only when a picker opens. Budgets count initial shared imports separately from lazy code, with all code still subject to the aggregate limit. Exact footprints are written to the quality artifact. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
 
 Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixture screenshots, quality metrics and the translation packet for 14 days. It never calls real calendars or sends invitations. The read-only availability benchmark collects sequential duration/status samples without event/guest bodies; its p95 is emitted only for 30 samples. It is not real-user LCP/INP/CLS or sustained-load evidence.
+
+`audit:dependencies` checks npm advisories and every registry Ruby package in `Gemfile.lock` through OSV. Failed, incomplete, malformed or paginated Ruby responses fail the gate; all reported Ruby advisories require disposition by updating the dependency. The audit-gate fixtures run inside `check`. Advisory queries run separately and in CI so offline local fixture success is not described as a current advisory result. The live isolated recovery runner is an explicit operational command, never an automatic CI deployment.
 
 SEO checks verify eight localized shells, exact public sitemap membership, reciprocal alternates, canonical origins, asset existence and private noindex. Management shells stay crawlable so bots can see noindex, following [Google's localized-page guidance](https://developers.google.com/search/docs/specialty/international/localized-versions) and the Store crawl policy. Search-engine indexing and actual social-card rendering are external outcomes, not guaranteed by a passing build.
 
