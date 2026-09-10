@@ -1,3 +1,6 @@
+import { headerLogoMarkup, safeHttps } from "../worker/src/branding";
+export { safeHttps };
+import { escapeHtml, localizedText } from "../worker/src/text";
 import { AdminApiClient } from "@dustwave/admin-shell/api-client";
 import { responsiveTurnstileSize } from "@dustwave/admin-shell/turnstile";
 import type { Settings, PublicBooking, Locale } from "../worker/src/model";
@@ -6,18 +9,14 @@ import { LOGO_MAX_BYTES, LOGO_MAX_DIMENSION } from "../worker/src/logo-policy";
 export const locale: Locale =
   document.documentElement.lang === "es" ? "es" : "en";
 export const t = (en: string, es: string) => (locale === "es" ? es : en);
-export const local = (v: { en: string; es: string }) =>
-  v[locale] || v.en || v.es;
-export const esc = (v: unknown) =>
-  String(v ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ]!,
-  );
+export const local = (value: { en: string; es: string }) =>
+  localizedText(value, locale);
+export const esc = escapeHtml;
 export const app = document.querySelector<HTMLElement>("#app")!;
-const defaultWordmark = document.querySelector(".wordmark")?.innerHTML || "";
+const defaultWordmark =
+  document.querySelector<HTMLTemplateElement>("#default-wordmark")?.innerHTML ||
+  document.querySelector(".wordmark")?.innerHTML ||
+  "";
 export const prefix = locale === "es" ? "/es" : "";
 export const bookingPath = document.body.dataset.bookingPath || "/";
 export const api = new AdminApiClient({
@@ -193,10 +192,16 @@ export function statusLabel(status: string) {
 export function summary(
   b: Pick<
     PublicBooking,
-    "typeName" | "start" | "end" | "timezone" | "location" | "mode"
+    | "typeName"
+    | "start"
+    | "end"
+    | "timezone"
+    | "location"
+    | "locationInstructions"
+    | "mode"
   >,
 ) {
-  return `<div class="booking-review"><strong>${esc(b.typeName)}</strong><p>${esc(dateLabel(b.start, b.timezone))}<br><span class="muted">${esc(zoneLabel(b.timezone))} · ${Math.round((b.end - b.start) / 60000)} ${t("minutes", "minutos")}</span></p><p>${esc(b.location || modeLabel(b.mode))}</p></div>`;
+  return `<div class="booking-review"><strong>${esc(b.typeName)}</strong><p>${esc(dateLabel(b.start, b.timezone))}<br><span class="muted">${esc(zoneLabel(b.timezone))} · ${Math.round((b.end - b.start) / 60000)} ${t("minutes", "minutos")}</span></p><p>${esc(b.location || modeLabel(b.mode))}</p>${b.locationInstructions ? `<p class="booking-instructions"><strong>${t("Arrival instructions", "Instrucciones de llegada")}</strong><br>${esc(b.locationInstructions)}</p>` : ""}</div>`;
 }
 export function applyBrand(settings: PublicSettings) {
   const languageLink = $<HTMLAnchorElement>("#language-link");
@@ -209,10 +214,22 @@ export function applyBrand(settings: PublicSettings) {
   }
   const mark = $<HTMLAnchorElement>(".wordmark");
   const logo = safeHttps(settings.brand.logoUrl);
-  if (mark)
-    mark.innerHTML = logo
-      ? `<img class="header-logo" width="120" height="52" decoding="async" src="${esc(logo)}" alt="${esc(settings.name)}">`
-      : defaultWordmark;
+  if (mark) {
+    const current = mark.querySelector<HTMLImageElement>(".header-logo");
+    if (logo) {
+      if (
+        current?.getAttribute("src") !== logo ||
+        current.alt !== (settings.brand.name || settings.name)
+      )
+        mark.innerHTML = headerLogoMarkup(settings);
+    } else {
+      if (current) mark.innerHTML = defaultWordmark;
+      const label = mark.querySelector("[data-brand-name]");
+      if (label && settings.brand.name) label.textContent = settings.brand.name;
+    }
+  }
+  const siteName = $<HTMLMetaElement>('meta[property="og:site_name"]');
+  if (siteName && settings.brand.name) siteName.content = settings.brand.name;
   if (/^#[0-9a-fA-F]{6}$/.test(settings.brand.primary)) {
     document.documentElement.style.setProperty(
       "--brand-primary",
@@ -232,14 +249,6 @@ export function applyBrand(settings: PublicSettings) {
 }
 export function managementUrl(id: string, token: string) {
   return `${prefix}/manage/#${new URLSearchParams({ id, token })}`;
-}
-export function safeHttps(url: string | undefined) {
-  try {
-    const u = new URL(url || "");
-    return u.protocol === "https:" ? u.href : "";
-  } catch {
-    return "";
-  }
 }
 export function syncLanguageLink() {
   const link = $<HTMLAnchorElement>("#language-link");

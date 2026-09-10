@@ -41,10 +41,8 @@
         class="wordmark"
         href="{% if page.lang == 'es' %}/es{% endif %}/{{ site.data.deployment.slug }}"
         aria-label="{% if page.lang == 'es' %}Inicio de reservas{% else %}Booking home{% endif %}"
-        ><svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true">
-          {% include scheduler-mark.svg %}</svg
-        ><span>{{ site.data.deployment.brand | escape }}<span class="wordmark-sub">SCHEDULER</span></span></a
-      >
+        >{% include wordmark.html %}</a>
+      <template id="default-wordmark">{% include wordmark.html %}</template>
       <nav
         class="site-tools"
         aria-label="{% if page.lang == 'es' %}Preferencias{% else %}Preferences{% endif %}"

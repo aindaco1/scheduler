@@ -1,3 +1,4 @@
+import { calendarDescription } from "../booking-location";
 import { fetchWithTimeout } from "@dustwave/worker-core/provider-fetch";
 import { Temporal } from "@js-temporal/polyfill";
 import {
@@ -206,7 +207,7 @@ export class GoogleCalendar {
       const body = {
         id: this.eventId(booking),
         summary: `${booking.typeName} · ${booking.name}`,
-        description: booking.topic,
+        description: calendarDescription(booking),
         start: {
           dateTime: new Date(booking.start).toISOString(),
           timeZone: booking.timezone,

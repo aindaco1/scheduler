@@ -230,3 +230,14 @@ Local verification: `npm run check` passed, including 135 Worker tests across 14
 - Five read-only calendar queries returned 200: 2,702 ms cold, then 266 / 262 / 312 / 281 ms; median 281 ms. This small sequential sample confirms the existing browse cache is still working; it is not sustained-load evidence.
 - Rendered desktop/mobile fixture checks and local/hosted tests passed. Live Helium dashboard inspection could not run because the Mac was locked. Spanish off/on was exercised in isolated browser/Worker fixtures; no live preferences, calendar events or invitations were changed for testing.
 - [Release evidence](research/preferences-release-2026-09-09.json) contains only versions, status, asset hashes and timings.
+
+
+## 2026-09-09 — Meeting details and live branding
+
+Simplified Gap (minutes) into an editable field in the left desktop column, populated from the appropriate video/in-person default. A different value is an override; entering the current default restores inheritance. Removed the Use default checkbox and changed the meeting-type enable label to Active. Browser tests caught and fixed a duplicate blur/change event that could replay a previous gap when the meeting mode changed. Added space beneath the booking-list Refresh toolbar.
+
+Separated each location’s full street address from optional arrival instructions. Google receives a clean venue/address Location and separately labeled Guest note and Arrival instructions sections in its description. Entry instructions are snapshotted with new bookings, included in private booking summaries and relevant emails, and omitted from anonymous configuration. Existing guest notes, location addresses and stored bookings remain intact. Provider payload tests check English/Spanish text, line breaks and HTML escaping without sending invitations.
+
+Brand name is now a Settings field, seeded from `BRAND_NAME`. The old flash came from Jekyll’s deployment-brand header being replaced only after client configuration loaded; Privacy never made that replacement. All page shells now receive the saved logo/name and site-name metadata in their initial response using the existing presentation read. A shared renderer reserves logo dimensions and retains matching images during hydration. Removing an uploaded logo restores the saved text brand. The blackout label and time inputs were confirmed to use `settings.timezone`, with a browser test switching to Asia/Tokyo.
+
+Local `npm run check` passed: 141 Worker tests, 309 paired UI messages, bundle/SEO/privacy gates, independent fork setup, browser booking/admin/manage flows, desktop/mobile screenshots, keyboard/axe checks, build and Worker dry run. Rendered gap, location and booking-list layouts were visually reviewed. Initial public booking/manage JavaScript stays below the existing 15 KB gzip limits. CI and live release verification follows below.

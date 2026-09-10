@@ -55,6 +55,7 @@ export const location = z
     id: identifier,
     name: localizedName,
     address: localized,
+    instructions: localized.optional(),
     hours: z.array(weekly).max(40),
     enabled: z.boolean(),
   })
@@ -112,6 +113,7 @@ export const settingsSchema = z
     requireIcloud: z.boolean(),
     brand: z
       .object({
+        name: z.string().trim().min(1).max(100).optional(),
         primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
         logoUrl: z
           .union([z.literal(""), z.string().url().max(2000)])
@@ -156,6 +158,7 @@ export interface Booking {
   mode: MeetingType["mode"];
   locationId: string;
   location: string;
+  locationInstructions?: string;
   start: number;
   end: number;
   gap: number;
@@ -193,6 +196,7 @@ export type PublicBooking = Pick<
   | "mode"
   | "locationId"
   | "location"
+  | "locationInstructions"
   | "start"
   | "end"
   | "status"
@@ -248,6 +252,7 @@ export interface IcloudConnection {
 export function defaultSettings(
   name = "Your name",
   timezone = "America/Denver",
+  brandName = "Your brand",
 ): Settings {
   return {
     name,
@@ -317,7 +322,7 @@ export function defaultSettings(
     googleCalendars: ["primary"],
     icloudCalendars: [],
     requireIcloud: true,
-    brand: { primary: "#101215", logoUrl: "" },
+    brand: { name: brandName, primary: "#101215", logoUrl: "" },
   };
 }
 

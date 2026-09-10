@@ -955,6 +955,15 @@ try {
     .locator('[data-setting="timezone"]')
     .selectOption("Asia/Tokyo");
   assert.equal(await travelEnd.inputValue(), "2026-11-03T16:00");
+  assert.equal(
+    await travelPage
+      .locator("#panel-availability .panel")
+      .last()
+      .locator("p strong")
+      .first()
+      .textContent(),
+    "Asia/Tokyo",
+  );
   await travelPage
     .locator('[data-setting="timezone"]')
     .selectOption("America/Denver");
@@ -1002,6 +1011,17 @@ try {
   await preferenceContext.close();
   await checkQuality(browser, base, apiFixture, bookingPath);
   await checkBookingWeeks(browser, base, apiFixture, settings, bookingPath);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(base + "/admin/");
+  await page.getByRole("tab", { name: "Bookings", exact: true }).click();
+  const refreshBox = await page
+    .locator("[data-refresh-bookings]")
+    .boundingBox();
+  const rowBox = await page.locator(".booking-row").first().boundingBox();
+  assert.ok(rowBox.y - refreshBox.y - refreshBox.height >= 16);
+  await page
+    .locator("#panel-bookings")
+    .screenshot({ path: "work/frontend/bookings-header-spacing.png" });
   await checkSettingsEnhancements(
     browser,
     base,

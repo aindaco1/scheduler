@@ -73,6 +73,51 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("snapshots location instructions without publishing them or overwriting guest notes", async () => {
+    const stub = await setup();
+    mockReads();
+    const current = await stub.getSettings();
+    current.settings.brand.name = "Fixture brand";
+    current.settings.locations = [
+      {
+        id: "studio",
+        name: { en: "Studio", es: "Estudio" },
+        address: {
+          en: "123 Example St, Town, NM 87102",
+          es: "123 Example St, Town, NM 87102",
+        },
+        instructions: { en: "Use the side door", es: "Usa la puerta lateral" },
+        enabled: true,
+        hours: current.settings.hours,
+      },
+    ];
+    current.settings.types[2].enabled = true;
+    current.settings.types[2].locationIds = ["studio"];
+    const saved = await stub.updateSettings(current.settings, current.revision);
+    expect(
+      (await stub.publicConfig()).settings.locations[0],
+    ).not.toHaveProperty("instructions");
+    const result = await stub.createBooking({
+      ...input(),
+      typeId: "in-person",
+      locationId: "studio",
+      topic: "I have a project to discuss",
+    });
+    expect(result.booking.locationInstructions).toBe("Use the side door");
+    expect(result.booking.topic).toBe("I have a project to discuss");
+    const olderDashboard = structuredClone(saved.settings);
+    Reflect.deleteProperty(olderDashboard.locations[0], "instructions");
+    Reflect.deleteProperty(olderDashboard.brand, "name");
+    const upgraded = await stub.updateSettings(olderDashboard, saved.revision);
+    expect(upgraded.settings.locations[0].instructions?.en).toBe(
+      "Use the side door",
+    );
+    expect(upgraded.settings.brand.name).toBe("Fixture brand");
+    await runInDurableObject(stub, (_instance, state) =>
+      state.storage.deleteAlarm(),
+    );
+  });
+
   it("persists preferences, preserves omitted upgrade fields, and snapshots resolved gaps and booking language", async () => {
     const stub = await setup();
     mockReads();

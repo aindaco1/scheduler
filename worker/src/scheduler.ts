@@ -1,3 +1,5 @@
+import { calendarLocation } from "./booking-location";
+import { localizedText } from "./text";
 import { meetingGap, normalizePreferences } from "./gap-policy";
 import { DurableObject } from "cloudflare:workers";
 import { prepareResendEmail } from "@dustwave/worker-core/email";
@@ -96,7 +98,11 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     );
     if (!this.read<StoredConfig>("settings"))
       this.write("settings", {
-        settings: defaultSettings(this.env.OWNER_NAME, this.env.OWNER_TIMEZONE),
+        settings: defaultSettings(
+          this.env.OWNER_NAME,
+          this.env.OWNER_TIMEZONE,
+          this.env.BRAND_NAME,
+        ),
         revision: 1,
       });
   }
@@ -116,6 +122,10 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
   getSettings(): StoredConfig {
     const current = this.read<StoredConfig>("settings")!;
     normalizePreferences(current.settings);
+    current.settings.brand.name ??= this.env.BRAND_NAME;
+    current.settings.locations.forEach((location) => {
+      location.instructions ??= { en: "", es: "" };
+    });
     current.settings.blockUsFederalHolidays ??= false;
     current.settings.reminderHours = reminderSchedule.parse(
       current.settings.reminderHours,
@@ -196,6 +206,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       mode,
       locationId,
       location,
+      locationInstructions,
       start,
       end,
       status,
@@ -214,6 +225,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       mode,
       locationId,
       location,
+      locationInstructions,
       start,
       end,
       status,
@@ -387,8 +399,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       issues.push("meeting_type_required");
     return issues;
   }
-  spanishEnabled() {
-    return this.getSettings().settings.spanishEnabled;
+  presentation() {
+    const { name, brand, spanishEnabled } = this.getSettings().settings;
+    return { name, brand, spanishEnabled };
   }
   publicConfig() {
     const s = this.getSettings().settings;
@@ -563,10 +576,15 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       throw new AppError("settings_changed", 409);
     // Older dashboards may omit the new preference; omission must not turn it off.
     settings.blockUsFederalHolidays ??= current.settings.blockUsFederalHolidays;
+    settings.brand.name ??= current.settings.brand.name;
     // Preserve preferences when a dashboard opened before this upgrade saves.
     for (const key of ["defaultGaps", "spanishEnabled"] as const)
       if (!Object.hasOwn(value as object, key))
         Object.assign(settings, { [key]: current.settings[key] });
+    for (const location of settings.locations)
+      location.instructions ??= current.settings.locations.find(
+        (item) => item.id === location.id,
+      )?.instructions ?? { en: "", es: "" };
     // Local availability edits must remain saveable during provider outages.
     // Validate live connections only when opening bookings or changing their
     // dependencies; listing, booking and rescheduling still check every time.
@@ -798,8 +816,9 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       typeName: type.name[bookingLocale] || type.name.en || type.name.es,
       mode: type.mode,
       locationId: input.locationId,
-      location: location
-        ? `${location.name[bookingLocale] || location.name.en || location.name.es} — ${location.address[bookingLocale] || location.address.en || location.address.es}`
+      location: location ? calendarLocation(location, bookingLocale) : "",
+      locationInstructions: location
+        ? localizedText(location.instructions, bookingLocale).trim()
         : "",
       start,
       end,

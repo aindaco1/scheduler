@@ -1,3 +1,5 @@
+import { escapeHtml } from "./text";
+import { headerLogoMarkup, type Presentation } from "./branding";
 // Only presentation shells need this preference. Hashed assets bypass the owner
 // entirely; the small SQLite read runs alongside the static asset fetch.
 export function isPresentationPath(path: string, slug: string): boolean {
@@ -9,16 +11,17 @@ export function isPresentationPath(path: string, slug: string): boolean {
 export async function localizedAsset(
   request: Request,
   assets: Fetcher,
-  enabled: PromiseLike<boolean>,
+  preferences: PromiseLike<Presentation>,
 ): Promise<Response> {
   // A shell's ETag cannot validate a different runtime language preference.
   const headers = new Headers(request.headers);
   headers.delete("If-None-Match");
   headers.delete("If-Modified-Since");
-  const [asset, spanishEnabled] = await Promise.all([
+  const [asset, presentation] = await Promise.all([
     assets.fetch(new Request(request, { headers })),
-    enabled,
+    preferences,
   ]);
+  const { spanishEnabled, brand } = presentation;
   const url = new URL(request.url);
   if (!spanishEnabled && url.pathname.startsWith("/es/")) {
     url.pathname = url.pathname.slice(3);
@@ -33,22 +36,37 @@ export async function localizedAsset(
   response.headers.set("Cache-Control", "private, no-store");
   response.headers.delete("ETag");
   response.headers.delete("Last-Modified");
-  if (
-    !spanishEnabled &&
-    response.headers.get("Content-Type")?.includes("text/html")
-  ) {
-    response = new HTMLRewriter()
-      .on("#language-link", {
+  if (response.headers.get("Content-Type")?.includes("text/html")) {
+    const logo = headerLogoMarkup(presentation);
+    const rewriter = new HTMLRewriter()
+      .on(".wordmark", {
         element(el) {
-          el.setAttribute("hidden", "");
+          if (logo) el.setInnerContent(logo, { html: true });
         },
       })
-      .on('link[rel="alternate"][hreflang="es"]', {
+      .on(".wordmark [data-brand-name]", {
         element(el) {
-          el.remove();
+          if (brand.name) el.setInnerContent(brand.name);
         },
       })
-      .transform(response);
+      .on('meta[property="og:site_name"]', {
+        element(el) {
+          if (brand.name) el.setAttribute("content", escapeHtml(brand.name));
+        },
+      });
+    if (!spanishEnabled)
+      rewriter
+        .on("#language-link", {
+          element(el) {
+            el.setAttribute("hidden", "");
+          },
+        })
+        .on('link[rel="alternate"][hreflang="es"]', {
+          element(el) {
+            el.remove();
+          },
+        });
+    response = rewriter.transform(response);
   } else if (
     !spanishEnabled &&
     url.pathname === "/sitemap.xml" &&

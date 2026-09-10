@@ -79,7 +79,7 @@ it("hides disabled Spanish before JavaScript and removes its search alternate", 
         headers: { "If-None-Match": '"static"' },
       }),
       assets(),
-      Promise.resolve(enabled),
+      Promise.resolve({ ...defaultSettings(), spanishEnabled: enabled }),
     );
     const output = await response.text();
     expect(output.includes('hreflang="es"')).toBe(enabled);
@@ -99,7 +99,7 @@ it("temporarily redirects Spanish pages without losing query state or replacing 
     const response = await localizedAsset(
       new Request("https://schedule.example" + path + "?type=conversation"),
       assets(),
-      Promise.resolve(false),
+      Promise.resolve({ ...defaultSettings(), spanishEnabled: false }),
     );
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe(
@@ -115,7 +115,7 @@ it("filters the sitemap and avoids preference lookups for hashed assets", async 
       "<urlset><url><loc>https://schedule.example/taylor</loc></url><url><loc>https://schedule.example/es/taylor</loc></url><url><loc>https://schedule.example/privacy/</loc></url><url><loc>https://schedule.example/es/privacy/</loc></url></urlset>",
       "application/xml",
     ),
-    Promise.resolve(false),
+    Promise.resolve({ ...defaultSettings(), spanishEnabled: false }),
   );
   const output = await response.text();
   expect(output).not.toContain("/es/");
@@ -134,4 +134,31 @@ it("filters the sitemap and avoids preference lookups for hashed assets", async 
     "/random",
   ])
     expect(isPresentationPath(path, "taylor")).toBe(false);
+});
+
+it("renders the saved brand and logo in initial HTML, including Privacy, with safe escaping", async () => {
+  const shell =
+    '<!doctype html><html><head><meta property="og:site_name" content="OLD BRAND"></head><body><a class="wordmark"><svg></svg><span data-brand-name>OLD BRAND</span></a></body></html>';
+  const settings = defaultSettings();
+  settings.brand.name = "New & <Studio>";
+  for (const logo of ["", "https://images.example/logo.png?a=1&b=2"]) {
+    settings.brand.logoUrl = logo;
+    for (const path of ["/taylor", "/privacy/", "/admin/", "/manage/"]) {
+      const response = await localizedAsset(
+        new Request("https://schedule.example" + path),
+        assets(shell),
+        Promise.resolve(settings),
+      );
+      const result = await response.text();
+      expect(result).not.toContain("OLD BRAND");
+      expect(result).toContain("New &amp; &lt;Studio&gt;");
+      expect(result).not.toContain("<Studio>");
+      if (logo) {
+        expect(result).toContain(
+          'src="https://images.example/logo.png?a=1&amp;b=2"',
+        );
+        expect(result).not.toContain("<svg>");
+      } else expect(result).toContain("<svg>");
+    }
+  }
 });

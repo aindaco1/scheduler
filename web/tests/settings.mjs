@@ -140,19 +140,30 @@ export async function checkSettingsEnhancements(
       .first()
       .screenshot({ path: "work/frontend/google-connection-desktop.png" });
     await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
-    assert.equal(
-      await page.locator('[data-default-gap="0"]').isChecked(),
-      true,
-    );
+    assert.equal(await page.locator("[data-default-gap]").count(), 0);
     assert.equal(
       await page.locator('[data-setting="types.0.gap"]').isDisabled(),
-      true,
+      false,
+    );
+    const gapBox = await page
+      .locator('[data-setting="types.0.gap"]')
+      .boundingBox();
+    const nameBox = await page
+      .locator('[data-setting="types.0.name.en"]')
+      .boundingBox();
+    assert.ok(Math.abs(gapBox.x - nameBox.x) < 2);
+    assert.equal(
+      await page
+        .locator("#panel-types .editor-card")
+        .first()
+        .getByRole("checkbox", { name: "Active", exact: true })
+        .count(),
+      1,
     );
     assert.equal(
       await page.locator('[data-setting="types.0.gap"]').inputValue(),
       "20",
     );
-    await page.locator('[data-default-gap="0"]').uncheck();
     await page.locator('[data-setting="types.0.gap"]').fill("35");
     await save();
     assert.equal(settings.types[0].gap, 35);
@@ -168,7 +179,7 @@ export async function checkSettingsEnhancements(
       await page.locator('[data-setting="types.1.gap"]').inputValue(),
       "25",
     );
-    await page.locator('[data-default-gap="0"]').check();
+    await page.locator('[data-setting="types.0.gap"]').fill("25");
     await page
       .locator('[data-setting="types.0.mode"]')
       .selectOption("in-person");
@@ -187,6 +198,41 @@ export async function checkSettingsEnhancements(
       .screenshot({ path: "work/frontend/gap-override-desktop.png" });
     await save();
     assert.equal(settings.types[0].gap, null);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="brand.name"]').fill("Fixture & Brand");
+    await save();
+    await reload();
+    assert.equal(settings.brand.name, "Fixture & Brand");
+    assert.equal(
+      await page.locator('[data-setting="brand.name"]').inputValue(),
+      "Fixture & Brand",
+    );
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").textContent(),
+      "Fixture & Brand",
+    );
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    await page
+      .locator('[data-setting="locations.0.instructions.en"]')
+      .fill("Use the side door.\nRing once.");
+    await page
+      .locator('[data-setting="locations.0.instructions.es"]')
+      .fill("Usa la puerta lateral.\nToca una vez.");
+    await save();
+    assert.equal(
+      settings.locations[0].instructions.en,
+      "Use the side door.\nRing once.",
+    );
+    assert.equal(
+      await page
+        .getByLabel("Full street address · English", { exact: true })
+        .inputValue(),
+      settings.locations[0].address.en,
+    );
+    await page
+      .locator("#panel-types .panel")
+      .last()
+      .screenshot({ path: "work/frontend/location-instructions-desktop.png" });
     await page.getByRole("tab", { name: "Settings", exact: true }).click();
     const intro = settings.intro.es;
     await page.locator('[data-setting="intro.es"]').fill(intro + " Traducido.");
@@ -372,6 +418,10 @@ export async function checkSettingsEnhancements(
       await page.locator("[data-remove-reminder]").first().click();
     await save();
     assert.equal(settings.brand.logoUrl, "");
+    assert.equal(
+      await page.locator(".wordmark [data-brand-name]").textContent(),
+      "Fixture & Brand",
+    );
     assert.deepEqual(settings.reminderHours, []);
     await reload();
     assert.equal(await page.locator(".reminder-row").count(), 0);
