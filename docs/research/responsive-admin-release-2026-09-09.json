@@ -1,0 +1,85 @@
+{
+  "source": "f78d26a4771e9f7400ec06e9e241adcc9690e0bf",
+  "workerVersion": "5fce6b99-2647-4bef-bf33-4bf06c92a863",
+  "checkedAt": "2026-09-10T04:57:37.208Z",
+  "liveAssetByteMatches": 9,
+  "liveRoutes": [
+    {
+      "path": "/alonso",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/admin/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/manage/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200,
+      "currentAssetsReferenced": true
+    }
+  ],
+  "bookingPageReady": true,
+  "privateSettingsWithoutAuthentication": 401,
+  "publicConfigurationExcludesPrivatePreferences": true,
+  "local": {
+    "fullCheckPassed": true,
+    "workerTests": 149,
+    "pairedUiMessages": 312,
+    "responsiveCases": 40,
+    "savedBarHeights": [
+      42
+    ],
+    "verifyButtonGaps": [
+      20
+    ]
+  },
+  "ciRun": "https://github.com/aindaco1/scheduler/actions/runs/34439731977",
+  "liveHeliumReview": {
+    "meetingTypeAndLocationSwitches": true,
+    "otherSectionPresent": true,
+    "cancelledBookingRetentionDays": 1,
+    "allChangesSaved": true,
+    "temporaryReviewTabClosed": true
+  },
+  "noLiveSettingsOrMeetingsChanged": true,
+  "testFixes": [
+    {
+      "commit": "6dec1fb853ed0635315a0a25b8c308a65091b53f",
+      "change": "Assert preserved redirect state while allowing the picker to add a timezone query."
+    },
+    {
+      "commit": "da0e3964e949a5393611c90739abb99682dbf87b",
+      "change": "Disarm fixture alarms and jobs before restoring request mocks."
+    }
+  ],
+  "ciCommit": "da0e3964e949a5393611c90739abb99682dbf87b",
+  "runtimeUnchangedByTestFixes": true,
+  "ciConclusion": "success"
+}
