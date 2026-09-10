@@ -312,7 +312,16 @@ export async function checkSettingsEnhancements(
     );
     const guest = await context.newPage();
     await guest.goto(base + "/es" + bookingPath + "?type=conversation#kept");
-    await guest.waitForURL(base + bookingPath + "?type=conversation#kept");
+    // The picker may already have added the browser's timezone by the time
+    // navigation completes. Verify preserved navigation state, not that race.
+    await guest.waitForURL(
+      (url) =>
+        url.origin === base &&
+        url.pathname === bookingPath &&
+        url.searchParams.get("type") === "conversation" &&
+        url.hash === "#kept",
+    );
+    await guest.locator("[data-zone]").waitFor();
     assert.equal(await guest.locator("#language-link").isVisible(), false);
     await guest.close();
     await page.getByRole("tab", { name: "Settings", exact: true }).click();

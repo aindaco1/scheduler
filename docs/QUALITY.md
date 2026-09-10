@@ -85,6 +85,8 @@ The compact `t(en, es)` convention remains the existing UI catalog, avoiding a s
 
 For a new locale, deliberately extend `Locale`, input schemas, formatting, route generation, email/static copy, translation catalog contract and language navigation. Do not merely add a route that silently serves English. Have a fluent speaker review the generated packet and actual rendered flows before declaring a locale complete.
 
+The admin browser suite also exercises all four tabs at 320, 390, 768, 1024 and 1280 pixels in both languages. It checks independent Active switches and card disclosures, normalized vertical gaps, connection-divider spacing, compact saved states and full-size unsaved actions. The cancelled-booking suite verifies elapsed-time cutoffs, old settings/data, email retry timestamps, filtering before the result limit and continued private access without deleting records.
+
 Manual follow-up remains appropriate for VoiceOver/Safari or NVDA/Firefox speech, mobile screen readers, and native-speaker Spanish review. The current evidence is Chromium keyboard/DOM/axe and high-zoom/reduced-motion testing, not an assistive-technology certification.
 
 ## Commands and evidence
