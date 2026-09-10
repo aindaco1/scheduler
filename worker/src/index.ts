@@ -230,7 +230,10 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
       ["GET", "HEAD"].includes(method) &&
       isPresentationPath(path, env.OWNER_SLUG)
     )
-      return localizedAsset(request, env.ASSETS, stub.presentation());
+      return localizedAsset(request, env.ASSETS, stub.presentation(), {
+        origin: env.PUBLIC_ORIGIN,
+        slug: env.OWNER_SLUG,
+      });
     return env.ASSETS.fetch(request);
   }
   if (method === "OPTIONS") return new Response(null, { status: 405 });

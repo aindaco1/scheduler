@@ -10,6 +10,7 @@ vendor/
 .env*
 !.env.example
 assets/build/
+assets/social/
 coverage/
 test-results/
 playwright-report/

@@ -7,6 +7,7 @@ import { parse } from "acorn";
 import { transform } from "esbuild";
 import assert from "node:assert/strict";
 import { readProject } from "./project-config.mjs";
+import sharp from "sharp";
 const { site } = await readProject();
 const manifest = JSON.parse(await readFile("_data/build.json", "utf8"));
 const budget = JSON.parse(
@@ -14,6 +15,17 @@ const budget = JSON.parse(
 );
 const meta = JSON.parse(await readFile("work/audit/bundle-meta.json", "utf8"));
 const metrics = { assets: {}, entries: {}, translations: 0, pages: 0 };
+for (const [file, width, height] of [
+  ["preview-v1.png", 1200, 630],
+  ["apple-touch-icon-v1.png", 180, 180],
+]) {
+  const body = await readFile("_site/assets/social/" + file);
+  const info = await sharp(body).metadata();
+  assert.equal(info.format, "png");
+  assert.equal(info.width, width);
+  assert.equal(info.height, height);
+  assert(body.length < 200_000, `${file}: preview image size budget`);
+}
 for (const file of Object.keys(meta.outputs)) {
   const body = await readFile(file);
   metrics.assets[file] = { bytes: body.length, gzip: gzipSync(body).length };

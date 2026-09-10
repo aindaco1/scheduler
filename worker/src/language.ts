@@ -1,5 +1,6 @@
 import { escapeHtml } from "./text";
 import { headerLogoMarkup, type Presentation } from "./branding";
+import { bookingPage, publicSitemap, type PublicIdentity } from "./public-page";
 // Only presentation shells need this preference. Hashed assets bypass the owner
 // entirely; the small SQLite read runs alongside the static asset fetch.
 export function isPresentationPath(path: string, slug: string): boolean {
@@ -12,6 +13,7 @@ export async function localizedAsset(
   request: Request,
   assets: Fetcher,
   preferences: PromiseLike<Presentation>,
+  identity?: PublicIdentity,
 ): Promise<Response> {
   // A shell's ETag cannot validate a different runtime language preference.
   const headers = new Headers(request.headers);
@@ -36,6 +38,18 @@ export async function localizedAsset(
   response.headers.set("Cache-Control", "private, no-store");
   response.headers.delete("ETag");
   response.headers.delete("Last-Modified");
+  if (
+    identity &&
+    presentation.booking &&
+    url.pathname === "/sitemap.xml" &&
+    asset.status === 200
+  ) {
+    response.headers.delete("Content-Length");
+    return new Response(
+      request.method === "HEAD" ? null : publicSitemap(presentation, identity),
+      response,
+    );
+  }
   if (response.headers.get("Content-Type")?.includes("text/html")) {
     const logo = headerLogoMarkup(presentation);
     const rewriter = new HTMLRewriter()
@@ -58,6 +72,49 @@ export async function localizedAsset(
             el.setAttribute("content", escapeHtml(brand.name || "Scheduler"));
         },
       });
+    const page =
+      identity && asset.status === 200
+        ? bookingPage(url, presentation, identity)
+        : undefined;
+    if (page) {
+      rewriter
+        .on(
+          'head title, head meta[name="description"], head meta[name="robots"], head meta[property^="og:"], head meta[name^="twitter:"], head link[rel="canonical"], head link[rel="alternate"][hreflang], head script[type="application/ld+json"]',
+          {
+            element(el) {
+              el.remove();
+            },
+          },
+        )
+        .on("head", {
+          element(el) {
+            el.append(page.head, { html: true });
+          },
+        })
+        .on("#app", {
+          element(el) {
+            el.setInnerContent(page.content, { html: true });
+            el.setAttribute("aria-busy", String(page.busy));
+          },
+        })
+        .on("noscript h1", {
+          element(el) {
+            el.remove();
+          },
+        })
+        .on("#language-link", {
+          element(el) {
+            el.setAttribute("href", escapeHtml(page.languageUrl));
+          },
+        });
+      if (page.missing) {
+        response = new Response(response.body, {
+          status: 404,
+          headers: response.headers,
+        });
+        response.headers.set("X-Robots-Tag", "noindex, nofollow");
+      }
+    }
     if (!spanishEnabled)
       rewriter
         .on("#language-link", {

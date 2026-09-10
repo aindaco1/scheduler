@@ -97,6 +97,10 @@ The same Block selector is available on dated periods, including a multi-day tri
 
 ## Branding, gaps and reminders
 
+Use **Meeting types → Copy link** to share a saved, active type. The control remains visible with the editor collapsed. Unsaved/new or inactive types must be saved and activated first; links for existing types use saved settings. The dashboard's language selects the shared locale, with English used when Spanish is disabled. If clipboard access is denied, a selected read-only URL is provided for manual copying.
+
+The initial HTML includes meeting-specific titles/descriptions, Open Graph/X cards and Schema.org WebPage/Person/Service data. The preview image and 180-pixel Apple touch icon are generated from the existing Scheduler mark by `npm run build`; generated files stay out of git. Main-page identity and meeting metadata come from the existing SQLite presentation read, with no calendar calls. Canonical URLs strip browsing state. Social apps cache previews independently, so previously sent bubbles may keep their old appearance even after settings change. Verify newly shared links and their actual recipient-side appearance separately from source checks; do not send unsolicited test messages or invitations.
+
 Settings is ordered Your booking page, Booking boundaries, Reminders, Automatic blackouts, Calendar connections, then Other. Set default video/in-person gaps under Booking boundaries; override a type's Gap (minutes) in Meeting types. The shared gap policy governs availability and reservations, while existing bookings retain their gap snapshots.
 
 Upload a PNG or JPEG logo under Your booking page. The maximum is 1,000,000 bytes and 2048 pixels per side; 512 × 512 is recommended. A transparent PNG works well across themes. The preview appears after upload; Save changes publishes it. Remove logo returns to the Scheduler icon after saving. Existing HTTPS logos remain usable and visible without re-uploading.

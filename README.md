@@ -14,6 +14,7 @@ An open-source, self-hosted meeting scheduler for one person. Guests choose a me
 - Lets you set booking notice, how far ahead guests can book, default video/in-person gaps, per-type gap overrides, daily limits and change deadlines.
 - Sends calendar invitations through Google and confirmations, changes and up to three reminders through Resend. Guests can cancel or reschedule; owners can include a message with a change.
 - Includes a private dashboard, logo upload, optional brand name, optional Spanish, system light/dark themes, and mobile/tablet layouts. Turnstile protects booking without an email-verification step.
+- Share individual meeting types from the dashboard with Copy link. Public pages include meeting-specific social previews and structured data in their initial HTML.
 
 Jekyll builds the pages; a Cloudflare Worker serves the app and API. One SQLite Durable Object holds the owner's data. There is no separate database server, Redis, D1 or KV to operate.
 

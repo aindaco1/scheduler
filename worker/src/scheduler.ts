@@ -403,8 +403,26 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     return issues;
   }
   presentation() {
-    const { name, brand, spanishEnabled } = this.getSettings().settings;
-    return { name, brand, spanishEnabled };
+    const { name, brand, spanishEnabled, intro, enabled, types } =
+      this.getSettings().settings;
+    return {
+      name,
+      brand,
+      spanishEnabled,
+      booking: {
+        intro,
+        enabled,
+        types: types
+          .filter((type) => type.enabled)
+          .map(({ id, name, description, duration, mode }) => ({
+            id,
+            name,
+            description,
+            duration,
+            mode,
+          })),
+      },
+    };
   }
   publicConfig() {
     const s = this.getSettings().settings;

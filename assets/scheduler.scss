@@ -1315,3 +1315,8 @@ legend {
     min-height: 52px;
   }
 }
+// Sharing stays reachable when a meeting editor is collapsed.
+.meeting-share {
+  margin-top: 1rem;
+  align-items: start;
+}

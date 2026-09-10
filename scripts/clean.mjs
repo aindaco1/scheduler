@@ -8,6 +8,7 @@ const root = new URL("../", import.meta.url);
 const outputs = [
   "_site",
   "assets/build",
+  "assets/social",
   "_data/build.json",
   "_data/deployment.json",
   ".jekyll-cache",

@@ -4,10 +4,12 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { readProject } from "./project-config.mjs";
 import { execFileSync } from "node:child_process";
+import { buildSocialAssets } from "./build-social-assets.mjs";
 
 await rm("assets/build", { recursive: true, force: true });
 await mkdir("assets/build", { recursive: true });
 const { site } = await readProject();
+await buildSocialAssets();
 await writeFile("_data/deployment.json", JSON.stringify(site));
 const manifest = {};
 const entries = ["booking", "manage", "admin", "privacy"].map(

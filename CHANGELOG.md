@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Copy link for saved, active meeting types, localized meeting-specific Open Graph/X metadata and WebPage/Person/Service JSON-LD, runtime canonical/language links and a sitemap of active types. Render public summaries before JavaScript, supply a raster preview and Apple touch icon, and show a noindex 404 for retired or ambiguous meeting links. Saved content changes update previews without a rebuild.
 - Organize maintainer guides around `docs/README.md`, move detailed contribution/security/license notices into `docs/`, and separate release evidence from research. Remove redundant root pointer files so each detailed guide has one home.
 - Add a roadmap for the planned 1.0.1 security audit and Phase 2, including two-way Google Calendar sync when a booked guest declines. These features and the audit are planned; this change adds documentation only.
 

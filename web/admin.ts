@@ -1,4 +1,5 @@
 import { streetAddress } from "../worker/src/text";
+import { meetingUrl } from "../worker/src/meeting-links";
 import { defaultMeetingGap } from "../worker/src/gap-policy";
 import { Temporal } from "@js-temporal/polyfill";
 import { mountAccessibleTabs } from "@dustwave/admin-shell/tabs";
@@ -137,6 +138,7 @@ function dirty() {
     "[data-logo-file], [data-remove-logo]",
     app,
   ).forEach((input) => (input.disabled = saving || logoUploading));
+  syncShareButtons();
   $("[data-save-state]", app).textContent = changed
     ? t("You have unsaved changes.", "Tienes cambios sin guardar.")
     : t("Your schedule is up to date.", "Tu agenda está al día.");
@@ -405,9 +407,68 @@ function syncContentLanguages() {
     node.hidden = !settings.spanishEnabled;
   });
 }
+function meetingShareControl(id: string) {
+  return `<div class="meeting-share stack" data-meeting-share><button class="button" type="button" data-copy-meeting="${esc(id)}">${t("Copy link", "Copiar enlace")}</button><span class="help-text" role="status" data-share-status></span><label class="field" hidden>${t("Meeting link", "Enlace de la reunión")}<input readonly data-share-url></label></div>`;
+}
+function syncShareButtons() {
+  if (!baseline) return;
+  const saved = JSON.parse(baseline) as Settings;
+  $$<HTMLButtonElement>("[data-copy-meeting]", app).forEach((button) => {
+    const id = button.dataset.copyMeeting;
+    const active =
+      saved.types.some((type) => type.id === id && type.enabled) &&
+      settings.types.some((type) => type.id === id && type.enabled);
+    button.disabled = !active || saving;
+    const root = button.closest<HTMLElement>("[data-meeting-share]")!;
+    const status = $("[data-share-status]", root);
+    if (!active) {
+      status.textContent = t(
+        "Save and activate this meeting to share it.",
+        "Guarda y activa esta reunión para compartirla.",
+      );
+      $<HTMLInputElement>("[data-share-url]", root).parentElement!.hidden =
+        true;
+    } else if (button.dataset.active !== "true") {
+      status.textContent = t(
+        "Links use your saved settings.",
+        "Los enlaces usan la configuración guardada.",
+      );
+    }
+    button.dataset.active = String(active);
+  });
+}
 function renderTypes() {
   $("#panel-types", app).innerHTML =
-    `<div class="admin-layout"><section class="panel"><div class="between"><h2>${t("Meeting types", "Tipos de reunión")}</h2><button class="button" type="button" data-add-type>+ ${t("New type", "Nuevo tipo")}</button></div><p>${t("Keep each invitation clear: a duration, a purpose, and a place to connect.", "Cada invitación debe ser clara: una duración, un propósito y un lugar para conectar.")}</p>${settings.types.map((type, i) => `<div class="editor-card">${activeToggle(`types.${i}.enabled`, `type-heading-${i}`)}<details ${i === 0 ? "open" : ""}><summary id="type-heading-${i}">${esc(local(type.name) || t("New meeting", "Nueva reunión"))} <span class="duration-label">· ${type.duration} min</span></summary><div class="stack">${bilingual(`types.${i}.name`, t("Name", "Nombre"))}${bilingual(`types.${i}.description`, t("Description", "Descripción"), true)}<div class="form-grid">${field(`types.${i}.duration`, t("Duration (minutes)", "Duración (minutos)"), { type: "number", min: 5, max: 240 })}<label class="field">${t("Meeting service", "Modalidad de reunión")}<select data-setting="types.${i}.mode"><option value="meet" ${type.mode === "meet" ? "selected" : ""}>Google Meet</option><option value="zoom" ${type.mode === "zoom" ? "selected" : ""}>Zoom</option><option value="in-person" ${type.mode === "in-person" ? "selected" : ""}>${t("In person", "Presencial")}</option></select></label></div><div data-gap-editor="${i}">${gapEditor(i)}</div><fieldset><legend>${t("Allowed in-person locations", "Lugares presenciales permitidos")}</legend>${settings.locations.length ? settings.locations.map((l) => `<label class="check"><input type="checkbox" data-type-location="${i}" value="${esc(l.id)}" ${type.locationIds.includes(l.id) ? "checked" : ""}>${esc(local(l.name))}</label>`).join("") : `<p class="help-text">${t("Add locations below to offer in-person meetings.", "Añade lugares a continuación para ofrecer reuniones presenciales.")}</p>`}</fieldset><div class="between"><small>${t("Link ID", "ID del enlace")}: ${esc(type.id)}</small><button class="button danger" type="button" data-remove="types" data-index="${i}" ${settings.types.length === 1 ? "disabled" : ""}>${t("Remove type", "Eliminar tipo")}</button></div></div></details></div>`).join("")}</section><section class="panel"><div class="between"><h2>${t("In-person locations", "Lugares presenciales")}</h2><button class="button" type="button" data-add-location>+ ${t("New location", "Nuevo lugar")}</button></div><p>${t("Each location has its own hours, inside your overall working hours. All hours use your schedule time zone.", "Cada lugar tiene su propio horario, dentro de tu horario general. Todos usan la zona horaria de tu agenda.")}</p>${settings.locations.map((l, i) => `<div class="editor-card">${activeToggle(`locations.${i}.enabled`, `location-heading-${i}`)}<details open><summary id="location-heading-${i}">${esc(local(l.name) || t("New location", "Nuevo lugar"))}</summary><div class="stack">${bilingual(`locations.${i}.name`, t("Location name", "Nombre del lugar"))}${field(`locations.${i}.address`, t("Full street address", "Dirección postal completa"), { value: streetAddress(l.address) })}<p class="help-text">${t("Include street, city, state or region, postal code and country. This goes in the calendar invitation’s Location field.", "Incluye calle, ciudad, estado o región, código postal y país. Se incluirá en el campo Ubicación de la invitación.")}</p>${bilingual(`locations.${i}.instructions`, t("Arrival instructions (optional)", "Instrucciones de llegada (opcionales)"), true)}<p class="help-text">${t("Entry, parking or other details for your guest. Included in the invitation and booking emails; not shown on the public booking page.", "Acceso, estacionamiento u otros detalles para tu invitado. Se incluyen en la invitación y los correos de reserva; no aparecen en la página pública.")}</p>${hours(`locations.${i}.hours`, l.hours, t("Location hours", "Horario del lugar"))}<button class="button danger" type="button" data-remove="locations" data-index="${i}">${t("Remove location", "Eliminar lugar")}</button></div></details></div>`).join("")}</section></div>`;
+    `<div class="admin-layout"><section class="panel"><div class="between"><h2>${t("Meeting types", "Tipos de reunión")}</h2><button class="button" type="button" data-add-type>+ ${t("New type", "Nuevo tipo")}</button></div><p>${t("Keep each invitation clear: a duration, a purpose, and a place to connect.", "Cada invitación debe ser clara: una duración, un propósito y un lugar para conectar.")}</p>${settings.types.map((type, i) => `<div class="editor-card">${activeToggle(`types.${i}.enabled`, `type-heading-${i}`)}<details ${i === 0 ? "open" : ""}><summary id="type-heading-${i}">${esc(local(type.name) || t("New meeting", "Nueva reunión"))} <span class="duration-label">· ${type.duration} min</span></summary><div class="stack">${bilingual(`types.${i}.name`, t("Name", "Nombre"))}${bilingual(`types.${i}.description`, t("Description", "Descripción"), true)}<div class="form-grid">${field(`types.${i}.duration`, t("Duration (minutes)", "Duración (minutos)"), { type: "number", min: 5, max: 240 })}<label class="field">${t("Meeting service", "Modalidad de reunión")}<select data-setting="types.${i}.mode"><option value="meet" ${type.mode === "meet" ? "selected" : ""}>Google Meet</option><option value="zoom" ${type.mode === "zoom" ? "selected" : ""}>Zoom</option><option value="in-person" ${type.mode === "in-person" ? "selected" : ""}>${t("In person", "Presencial")}</option></select></label></div><div data-gap-editor="${i}">${gapEditor(i)}</div><fieldset><legend>${t("Allowed in-person locations", "Lugares presenciales permitidos")}</legend>${settings.locations.length ? settings.locations.map((l) => `<label class="check"><input type="checkbox" data-type-location="${i}" value="${esc(l.id)}" ${type.locationIds.includes(l.id) ? "checked" : ""}>${esc(local(l.name))}</label>`).join("") : `<p class="help-text">${t("Add locations below to offer in-person meetings.", "Añade lugares a continuación para ofrecer reuniones presenciales.")}</p>`}</fieldset><div class="between"><small>${t("Link ID", "ID del enlace")}: ${esc(type.id)}</small><button class="button danger" type="button" data-remove="types" data-index="${i}" ${settings.types.length === 1 ? "disabled" : ""}>${t("Remove type", "Eliminar tipo")}</button></div></div></details>${meetingShareControl(type.id)}</div>`).join("")}</section><section class="panel"><div class="between"><h2>${t("In-person locations", "Lugares presenciales")}</h2><button class="button" type="button" data-add-location>+ ${t("New location", "Nuevo lugar")}</button></div><p>${t("Each location has its own hours, inside your overall working hours. All hours use your schedule time zone.", "Cada lugar tiene su propio horario, dentro de tu horario general. Todos usan la zona horaria de tu agenda.")}</p>${settings.locations.map((l, i) => `<div class="editor-card">${activeToggle(`locations.${i}.enabled`, `location-heading-${i}`)}<details open><summary id="location-heading-${i}">${esc(local(l.name) || t("New location", "Nuevo lugar"))}</summary><div class="stack">${bilingual(`locations.${i}.name`, t("Location name", "Nombre del lugar"))}${field(`locations.${i}.address`, t("Full street address", "Dirección postal completa"), { value: streetAddress(l.address) })}<p class="help-text">${t("Include street, city, state or region, postal code and country. This goes in the calendar invitation’s Location field.", "Incluye calle, ciudad, estado o región, código postal y país. Se incluirá en el campo Ubicación de la invitación.")}</p>${bilingual(`locations.${i}.instructions`, t("Arrival instructions (optional)", "Instrucciones de llegada (opcionales)"), true)}<p class="help-text">${t("Entry, parking or other details for your guest. Included in the invitation and booking emails; not shown on the public booking page.", "Acceso, estacionamiento u otros detalles para tu invitado. Se incluyen en la invitación y los correos de reserva; no aparecen en la página pública.")}</p>${hours(`locations.${i}.hours`, l.hours, t("Location hours", "Horario del lugar"))}<button class="button danger" type="button" data-remove="locations" data-index="${i}">${t("Remove location", "Eliminar lugar")}</button></div></details></div>`).join("")}</section></div>`;
+  $$<HTMLButtonElement>("[data-copy-meeting]", app).forEach((button) => {
+    button.addEventListener("click", async () => {
+      const root = button.closest<HTMLElement>("[data-meeting-share]")!;
+      const id = button.dataset.copyMeeting!;
+      const saved = JSON.parse(baseline) as Settings;
+      if (!saved.types.some((type) => type.id === id && type.enabled)) return;
+      const path = saved.spanishEnabled
+        ? bookingPath
+        : bookingPath.replace(/^\/es\//, "/");
+      const url = meetingUrl(location.origin, path, id);
+      const status = $("[data-share-status]", root);
+      const fallback = $<HTMLInputElement>("[data-share-url]", root);
+      try {
+        await navigator.clipboard.writeText(url);
+        status.textContent = t("Link copied.", "Enlace copiado.");
+        fallback.parentElement!.hidden = true;
+      } catch {
+        fallback.value = url;
+        fallback.parentElement!.hidden = false;
+        fallback.focus();
+        fallback.select();
+        status.textContent = t(
+          "Copy the selected link.",
+          "Copia el enlace seleccionado.",
+        );
+      }
+    });
+  });
+  syncShareButtons();
   $("[data-add-type]", app).addEventListener("click", () => {
     settings.types.push({
       id: `meeting-${crypto.randomUUID().slice(0, 8)}`,

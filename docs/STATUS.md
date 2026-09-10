@@ -10,6 +10,12 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
+### September 10 meeting-link preview upgrade
+
+Local `npm run check` passed on Node 24.20.0: 158 Worker tests in 16 files, type checks, Jekyll build, eight localized shell/asset/privacy gates, 321 paired browser messages, independent fork setup, complete booking/admin/browser accessibility flows, the new sharing fixtures, 40 admin and 84 public responsive states, and Wrangler dry deployment. The September 10 dependency audit reported zero known vulnerabilities. The new copy controls and generated 1200 × 630 preview were visually inspected.
+
+The native macOS LinkPresentation baseline reproduced the deployed issue: the Brief chat type link resolved to the main page, had the generic title, and supplied neither image nor icon. CI, deployment and native verification of the upgrade are pending at this checkpoint. No live invitations, bookings or messages were sent by these checks.
+
 The final local `npm run check` passed: 150 Worker tests in 15 files, TypeScript, eight localized page/asset/privacy gates, 312 paired messages, independent fork setup, complete browser flows and Wrangler dry deployment. The dependency audit reported zero known advisories on September 10.
 
 The responsive matrix passed 40 admin and 84 public states in English/Spanish, including 320/390-pixel phones, 768/1024-pixel tablets, a 1280-pixel admin baseline, system themes, keyboard dialogs and 200% text. Saved and unsaved controls are centered on mobile/tablet; location addresses clear the focus outline, management summaries have breathing room, and enlarged text keeps usable horizontal space. These are Chromium fixture and visual checks, not device/screen-reader certification.

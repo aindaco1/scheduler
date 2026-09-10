@@ -7,6 +7,7 @@ import { readFile, stat, mkdir } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
 import { checkQuality } from "./quality.mjs";
+import { checkSharing } from "./sharing.mjs";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
 import { checkResponsiveAdmin } from "./responsive-admin.mjs";
@@ -1031,6 +1032,7 @@ try {
     settings,
     bookingPath,
   );
+  await checkSharing(browser, base, apiFixture, settings, bookingPath);
   await checkResponsiveAdmin(browser, base, apiFixture, settings);
   await checkResponsivePublic(browser, base, apiFixture, settings, bookingPath);
   assert.deepEqual(errors, []);

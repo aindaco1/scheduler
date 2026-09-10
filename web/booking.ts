@@ -19,6 +19,7 @@ import {
   currentZone,
   summary,
   prefix,
+  bookingPath,
   safeHttps,
   syncLanguageLink,
   type Config,
@@ -251,7 +252,17 @@ async function boot() {
     applyBrand(config.settings);
     intro();
     const params = new URL(location.href).searchParams;
-    const id = params.get("type");
+    const ids = params.getAll("type");
+    const id = ids[0];
+    if (
+      ids.length > 0 &&
+      (ids.length !== 1 ||
+        !config.settings.types.some((type) => type.enabled && type.id === id))
+    ) {
+      app.innerHTML = `<section class="hero"><h1>${t("Meeting unavailable", "Reunión no disponible")}</h1><p>${t("This meeting type is no longer available. View all meetings to choose another.", "Este tipo de reunión ya no está disponible. Consulta todas las reuniones para elegir otra.")}</p><a class="button" href="${esc(bookingPath)}">${t("All meetings", "Todas las reuniones")}</a></section>`;
+      setBusy(false);
+      return;
+    }
     if (id && config.ready && config.settings.enabled) {
       selected = config.settings.types.find(
         (type) => type.enabled && type.id === id,

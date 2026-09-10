@@ -1,6 +1,16 @@
-import type { Settings } from "./model";
+import type { Settings, MeetingType } from "./model";
 import { escapeHtml } from "./text";
-export type Presentation = Pick<Settings, "name" | "brand" | "spanishEnabled">;
+export type Presentation = Pick<
+  Settings,
+  "name" | "brand" | "spanishEnabled"
+> & {
+  booking?: Pick<Settings, "intro" | "enabled"> & {
+    types: Pick<
+      MeetingType,
+      "id" | "name" | "description" | "duration" | "mode"
+    >[];
+  };
+};
 export function safeHttps(value: string | undefined): string {
   try {
     const url = new URL(value || "");
