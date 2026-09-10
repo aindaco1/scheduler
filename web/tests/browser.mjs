@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { checkQuality } from "./quality.mjs";
 import { checkBookingWeeks } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
+import { checkResponsiveAdmin } from "./responsive-admin.mjs";
 const root = resolve(".");
 const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
 const bookingPath = "/" + deployment.slug;
@@ -1029,6 +1030,7 @@ try {
     settings,
     bookingPath,
   );
+  await checkResponsiveAdmin(browser, base, apiFixture, settings);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

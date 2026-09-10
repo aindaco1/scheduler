@@ -11,6 +11,7 @@ import {
   bookingInput,
   changeMessageInput,
   defaultSettings,
+  DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS,
   settingsSchema,
   reminderSchedule,
   type Booking,
@@ -127,6 +128,8 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       location.instructions ??= { en: "", es: "" };
     });
     current.settings.blockUsFederalHolidays ??= false;
+    current.settings.cancelledBookingRetentionDays ??=
+      DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS;
     current.settings.reminderHours = reminderSchedule.parse(
       current.settings.reminderHours,
     );
@@ -578,7 +581,11 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     settings.blockUsFederalHolidays ??= current.settings.blockUsFederalHolidays;
     settings.brand.name ??= current.settings.brand.name;
     // Preserve preferences when a dashboard opened before this upgrade saves.
-    for (const key of ["defaultGaps", "spanishEnabled"] as const)
+    for (const key of [
+      "defaultGaps",
+      "spanishEnabled",
+      "cancelledBookingRetentionDays",
+    ] as const)
       if (!Object.hasOwn(value as object, key))
         Object.assign(settings, { [key]: current.settings[key] });
     for (const location of settings.locations)
@@ -864,11 +871,18 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     };
   }
   listBookings() {
+    const now = Date.now();
+    const days = this.getSettings().settings.cancelledBookingRetentionDays;
     return {
       bookings: this.ctx.storage.sql
         .exec<{ data: string }>(
-          "SELECT data FROM bookings WHERE end>? ORDER BY start LIMIT 200",
-          Date.now() - 30 * 86_400_000,
+          // Filter before LIMIT so hidden cancellations cannot displace meetings.
+          // Legacy cancellations predate cancelledAt; updated is their best
+          // available completion time. This only changes dashboard visibility.
+          "SELECT data FROM bookings WHERE (status!='cancelled' AND end>?) OR (status='cancelled' AND ?>0 AND coalesce(json_extract(data,'$.cancelledAt'),json_extract(data,'$.updated'),json_extract(data,'$.created'),0)>?) ORDER BY start LIMIT 200",
+          now - 30 * 86_400_000,
+          days,
+          now - days * 86_400_000,
         )
         .toArray()
         .map((r) => this.present(JSON.parse(r.data))),
@@ -1251,6 +1265,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       await google.cancel(b);
       if (b.mode === "zoom" && b.zoomId) await (await this.zoom()).cancel(b);
       b.status = "cancelled";
+      b.cancelledAt = Date.now();
       b.error = undefined;
       this.ctx.storage.transactionSync(() => {
         this.save(b);

@@ -690,7 +690,10 @@ select.field-control,
   font-size: 1.15rem;
 }
 .editor-card {
-  padding: 1.25rem;
+  --editor-padding: 1.25rem;
+  position: relative;
+  min-width: 0;
+  padding: var(--editor-padding);
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-top: 1rem;
@@ -699,9 +702,15 @@ select.field-control,
   font-weight: 650;
   cursor: pointer;
   min-height: 44px;
-  padding: 0.5rem 0;
+  padding: 0.5rem 7rem 0.5rem 0;
+  overflow-wrap: anywhere;
 }
-.editor-card[open] summary {
+.editor-card > .active-toggle {
+  position: absolute;
+  top: var(--editor-padding);
+  right: var(--editor-padding);
+}
+.editor-card details[open] > summary {
   margin-bottom: 1rem;
 }
 .rows {
@@ -927,10 +936,11 @@ select.field-control,
     grid-template-columns: 1fr 1fr;
   }
   .hours-row .field:first-child {
-    grid-column: 1/-1;
+    grid-column: 1;
   }
   .hours-row .button {
     grid-column: 2;
+    grid-row: 1;
     justify-self: end;
   }
   .blackout-row {
@@ -957,7 +967,7 @@ select.field-control,
     display: block;
   }
   .editor-card {
-    padding: 1rem;
+    --editor-padding: 1rem;
   }
   .form-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -1013,6 +1023,7 @@ select.field-control,
   .hours-row .button,
   .blackout-row .button {
     grid-column: 1;
+    grid-row: auto;
   }
   .booking-panel {
     padding: 1rem;
@@ -1219,5 +1230,77 @@ legend {
   }
   .active-toggle input:focus-visible + .switch-track {
     outline-color: Highlight;
+  }
+}
+
+// A stack supplies its own rhythm; child paragraph/row margins doubled it.
+.admin-layout .stack > :where(p, .rows) {
+  margin-block: 0;
+}
+.admin-layout fieldset {
+  min-inline-size: 0;
+}
+.admin-layout fieldset .check + .check {
+  margin-top: 0.65rem;
+}
+.connections-heading {
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 1024px) {
+  // Keep the status announcement for assistive technology without duplicating
+  // the visible saved label or wrapping the sticky bar into two rows.
+  .save-bar .save-state {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .save-bar {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+  }
+  .save-bar:not(.has-pending-changes) [data-save] {
+    min-height: 24px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 500;
+    opacity: 1;
+  }
+  .admin-layout .between > h2 {
+    margin-bottom: 0;
+  }
+  .admin-layout .panel > .between {
+    margin-bottom: 1rem;
+  }
+}
+// Leave room when keyboard navigation scrolls a field above the sticky controls.
+#admin-tabs :is(input, select, textarea, button, summary) {
+  scroll-margin-block: 1rem 5rem;
+}
+
+.duration-label {
+  white-space: nowrap;
+}
+[data-reminder-settings] > .help-text {
+  margin-top: 0.65rem;
+}
+@media (max-width: 420px) {
+  .editor-card > .active-toggle {
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.8rem;
+  }
+  .editor-card summary {
+    padding-inline-end: 4rem;
+    min-height: 52px;
   }
 }

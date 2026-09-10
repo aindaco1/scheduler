@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { DEFAULT_GAPS } from "./gap-policy";
 
+export const DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS = 1;
+
 export const localized = z
   .object({ en: z.string().max(2000), es: z.string().max(2000) })
   .strict();
@@ -87,6 +89,12 @@ export const settingsSchema = z
     noticeHours: z.number().int().min(0).max(720),
     horizonDays: z.number().int().min(1).max(180),
     cancelHours: z.number().int().min(0).max(720),
+    cancelledBookingRetentionDays: z
+      .number()
+      .int()
+      .min(0)
+      .max(365)
+      .default(DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS),
     dailyLimit: z.number().int().min(0).max(100),
     reminderHours: reminderSchedule,
     hours: z.array(weekly).max(40),
@@ -176,6 +184,8 @@ export interface Booking {
     | "rescheduling";
   created: number;
   updated: number;
+  // Successful provider cancellation time, independent of later mail retries.
+  cancelledAt?: number;
   eventId?: string;
   zoomId?: string;
   joinUrl?: string;
@@ -267,6 +277,7 @@ export function defaultSettings(
     noticeHours: 24,
     horizonDays: 30,
     cancelHours: 24,
+    cancelledBookingRetentionDays: DEFAULT_CANCELLED_BOOKING_RETENTION_DAYS,
     dailyLimit: 0,
     reminderHours: [24],
     hours: [1, 2, 3, 4, 5].map((day) => ({

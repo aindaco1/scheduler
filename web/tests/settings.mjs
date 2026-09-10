@@ -86,6 +86,7 @@ export async function checkSettingsEnhancements(
         "Reminders",
         "Automatic blackouts",
         "Calendar connections",
+        "Other",
       ],
     );
     await page.locator('[data-setting="defaultGaps.video"]').fill("20");
@@ -156,7 +157,7 @@ export async function checkSettingsEnhancements(
       await page
         .locator("#panel-types .editor-card")
         .first()
-        .getByRole("checkbox", { name: "Active", exact: true })
+        .getByRole("switch", { name: "Active", exact: true })
         .count(),
       1,
     );
@@ -406,6 +407,7 @@ export async function checkSettingsEnhancements(
         "Recordatorios",
         "Bloqueos automáticos",
         "Conexiones de calendario",
+        "Otros",
       ],
     );
     await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
@@ -487,7 +489,9 @@ export async function checkSettingsEnhancements(
     const heading = await page
       .locator(".booking-page-heading h2")
       .boundingBox();
-    const toggle = await page.locator(".active-toggle").boundingBox();
+    const toggle = await page
+      .locator("[data-booking-page] .active-toggle")
+      .boundingBox();
     assert.ok(toggle.x > heading.x + heading.width);
     assert.ok(
       Math.abs(toggle.y + toggle.height / 2 - heading.y - heading.height / 2) <
