@@ -9,11 +9,25 @@ import {
 import { defaultSettings, type Booking } from "../src/model";
 import { sha256Hex } from "../src/security";
 
+type Stub = ReturnType<typeof env.SCHEDULER.getByName>;
+const fixtureStubs = new Set<Stub>();
+
 beforeEach(() => {
   fetchMock.activate();
   fetchMock.disableNetConnect();
 });
-afterEach(() => fetchMock.deactivate());
+afterEach(async () => {
+  // Pending fixture jobs must not wake under another test's global fetch spy.
+  // Keep this test's provider mocks installed until all of its work is disarmed.
+  for (const stub of fixtureStubs)
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec("DELETE FROM jobs");
+      await state.storage.deleteAlarm();
+    });
+  fixtureStubs.clear();
+  vi.restoreAllMocks();
+  fetchMock.deactivate();
+});
 const expectRpc = (promise: PromiseLike<unknown>) =>
   expect(Promise.resolve(promise));
 const origin = "https://scheduler.example";
@@ -36,6 +50,7 @@ function mockReads(events: object[] = []) {
 }
 async function setup(name = crypto.randomUUID()) {
   const stub = env.SCHEDULER.getByName(name);
+  fixtureStubs.add(stub);
   await stub.putConnection("google", {
     refreshToken: "refresh",
     email: "owner@example.com",
