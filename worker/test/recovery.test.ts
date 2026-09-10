@@ -26,12 +26,20 @@ const day = 86_400_000;
 const googleOrigin = "https://www.googleapis.com";
 const eventPath = (id: string) =>
   "/calendar/v3/calendars/primary/events/s" + id.replaceAll("-", "");
+const fixtureStubs = new Set<Stub>();
 
 beforeEach(() => {
   fetchMock.activate();
   fetchMock.disableNetConnect();
 });
-afterEach(() => {
+afterEach(async () => {
+  // Unsent fixture mail must not wake under the next test's global provider mock.
+  for (const stub of fixtureStubs)
+    await runInDurableObject(stub, async (_instance, state) => {
+      await state.storage.deleteAlarm();
+      state.storage.sql.exec("DELETE FROM jobs");
+    });
+  fixtureStubs.clear();
   vi.restoreAllMocks();
   fetchMock.deactivate();
 });
@@ -58,6 +66,7 @@ async function setup(reminderHours = [24]) {
     }))
     .persist();
   const stub = env.SCHEDULER.getByName(crypto.randomUUID());
+  fixtureStubs.add(stub);
   await stub.putConnection("google", {
     refreshToken: "fixture-refresh",
     email: "owner@example.test",
@@ -619,13 +628,13 @@ describe("Coordinator recovery after overlapping actions and partial provider re
 
   it("holds permanent Resend rejections without repeating delivery attempts", async () => {
     const { stub, created } = await confirmAndQueueMail();
-    await retainAndRunNow(stub, "confirmed");
+    const expectedKey = await retainAndRunNow(stub, "confirmed");
     const sent = vi.fn();
     fetchMock
       .get("https://api.resend.com")
       .intercept({ path: "/emails", method: "POST" })
-      .reply(() => {
-        sent();
+      .reply(({ headers }) => {
+        sent(headers["idempotency-key"]);
         return { statusCode: 422, data: { message: "Invalid recipient" } };
       })
       .persist();
@@ -641,6 +650,7 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     await retainAndRunNow(stub, "confirmed");
     await runDurableObjectAlarm(stub);
     expect(sent).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveBeenCalledWith(expectedKey);
   });
 
   it("honors Resend Retry-After before another attempt", async () => {
