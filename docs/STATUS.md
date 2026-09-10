@@ -151,3 +151,9 @@ Local verification passed: all 110 Workers tests, TypeScript, template checks, b
 Deployment: source commit `5f667dc` is live in Worker version `11d4f114-b26b-4aa1-964f-30fcf8ac1b40`. The booking script and stylesheet matched the verified build byte for byte, as did the article content of both privacy pages. English/Spanish booking and privacy routes and health returned HTTP 200; unauthenticated private settings remained HTTP 401. A separate Helium tab confirmed the revised privacy text and the loaded homepage without the three removed lines. No production settings or bookings were changed.
 
 [GitHub CI for `5f667dc`](https://github.com/aindaco1/scheduler/actions/runs/34424876242) passed the complete check workflow.
+
+## Privacy service links
+
+The English and Spanish privacy pages now link the named services to their official product sites: Google Calendar, Google Meet, Zoom, Resend, Cloudflare, Turnstile and iCloud. The seven destinations were opened and verified. URLs live once in `_data/services.yml` and are shared by both pages; the existing prose is unchanged.
+
+Local verification passed: the complete check workflow, including 110 Workers tests, TypeScript, template checks, production build, browser/accessibility acceptance and Wrangler dry run. Each rendered article contains eight service links covering the seven destinations, with all Liquid references resolved. No live settings, booking, calendar or email writes were made. CI and deployment evidence follows below.

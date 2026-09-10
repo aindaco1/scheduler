@@ -21,24 +21,33 @@ permalink: /privacy/
     <p>
       To arrange and manage your meeting, Scheduler uses your name, email
       address and any topic you choose to share, along with the meeting type,
-      location, time, time zone and language. Booking records stay in the private
-      scheduler and aren't automatically deleted.
+      location, time, time zone and language. Booking records stay in the
+      private scheduler and aren't automatically deleted.
     </p>
   </section>
   <section>
     <h2>The services involved</h2>
     <p>
-      Google Calendar gets the meeting and guest details so it can create the
-      event and send your invitation. For video meetings, Google Meet or Zoom
-      provides the link, depending on the service selected. Resend sends
-      confirmations and reminders. Cloudflare hosts Scheduler and helps keep it
-      secure, including Turnstile to protect against spam.
+      <a href="{{ site.data.services.google_calendar }}">Google Calendar</a>
+      gets the meeting and guest details so it can create the event and send
+      your invitation. For video meetings,
+      <a href="{{ site.data.services.google_meet }}">Google Meet</a> or
+      <a href="{{ site.data.services.zoom }}">Zoom</a> provides the link,
+      depending on the service selected.
+      <a href="{{ site.data.services.resend }}">Resend</a> sends confirmations
+      and reminders.
+      <a href="{{ site.data.services.cloudflare }}">Cloudflare</a> hosts
+      Scheduler and helps keep it secure, including
+      <a href="{{ site.data.services.turnstile }}">Turnstile</a> to protect
+      against spam.
     </p>
   </section>
   <section>
     <h2>Availability stays private</h2>
     <p>
-      Scheduler checks the organizer’s selected Google and iCloud calendars for
+      Scheduler checks the organizer’s selected
+      <a href="{{ site.data.services.google_calendar }}">Google</a> and
+      <a href="{{ site.data.services.icloud }}">iCloud</a> calendars for
       conflicts. You’ll see the times you can book, but not the details of
       events already on those calendars.
     </p>

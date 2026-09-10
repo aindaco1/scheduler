@@ -28,17 +28,26 @@ permalink: /es/privacy/
   <section>
     <h2>Los servicios que intervienen</h2>
     <p>
-      Google Calendar recibe los datos de la reunión y del invitado para crear
-      el evento y enviarte la invitación. Si la reunión es por video, Google
-      Meet o Zoom proporciona el enlace, según el servicio elegido. Resend envía
-      las confirmaciones y los recordatorios. Cloudflare aloja Scheduler y ayuda
-      a protegerlo, con Turnstile para frenar el spam.
+      <a href="{{ site.data.services.google_calendar }}">Google Calendar</a>
+      recibe los datos de la reunión y del invitado para crear el evento y
+      enviarte la invitación. Si la reunión es por video,
+      <a href="{{ site.data.services.google_meet }}">Google Meet</a> o
+      <a href="{{ site.data.services.zoom }}">Zoom</a> proporciona el enlace,
+      según el servicio elegido.
+      <a href="{{ site.data.services.resend }}">Resend</a> envía las
+      confirmaciones y los recordatorios.
+      <a href="{{ site.data.services.cloudflare }}">Cloudflare</a> aloja
+      Scheduler y ayuda a protegerlo, con
+      <a href="{{ site.data.services.turnstile }}">Turnstile</a> para frenar el
+      spam.
     </p>
   </section>
   <section>
     <h2>La disponibilidad es privada</h2>
     <p>
-      Scheduler consulta los calendarios de Google e iCloud seleccionados por la
+      Scheduler consulta los calendarios de
+      <a href="{{ site.data.services.google_calendar }}">Google</a> e
+      <a href="{{ site.data.services.icloud }}">iCloud</a> seleccionados por la
       persona organizadora para comprobar si hay cruces de horario. Quien
       reserva solo ve los horarios disponibles, no los detalles de los eventos
       que ya están en esos calendarios.
