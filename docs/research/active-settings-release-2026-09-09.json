@@ -1,0 +1,77 @@
+{
+  "source": "6cd9187fed362440440ebaa8cb4949010df1df0c",
+  "workerVersion": "717d686d-2270-4992-b6de-5a46e672eb21",
+  "checkedAt": "2026-09-10T04:43:39.564Z",
+  "assetByteMatches": 9,
+  "routes": [
+    {
+      "path": "/alonso",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/admin/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/manage/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200,
+      "initialLogo": true,
+      "currentAssetsReferenced": true
+    }
+  ],
+  "unauthenticatedSettingsStatus": 401,
+  "livePageStillActive": true,
+  "liveBrandSettingsPreserved": true,
+  "publicArrivalInstructionsOmitted": true,
+  "sharedPublicAddress": true,
+  "local": {
+    "workerTests": 146,
+    "pairedMessages": 311,
+    "fullCheckPassed": true,
+    "fixturesOnly": true
+  },
+  "ciRun": "https://github.com/aindaco1/scheduler/actions/runs/34438230750",
+  "ciConclusion": "success",
+  "liveHeliumReview": {
+    "activeSwitchChecked": true,
+    "topRightLayoutReviewed": true,
+    "brandHelpUpdated": true,
+    "allChangesSaved": true,
+    "ownTemporaryTabClosed": true
+  },
+  "noLiveSettingsOrBookingsChanged": true
+}
