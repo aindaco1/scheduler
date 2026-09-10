@@ -161,3 +161,11 @@ Local verification passed: the complete check workflow, including 110 Workers te
 Deployment: source commit `38ee36c` is live in Worker version `c759730b-c813-47e0-9c6b-b3dd02900fba`. Both privacy routes returned HTTP 200, and each live article matched the verified build with eight links covering all seven services.
 
 [GitHub CI for `38ee36c`](https://github.com/aindaco1/scheduler/actions/runs/34425445331) passed the complete check workflow.
+
+## Booking settings, tab restoration and meeting heading
+
+Minimum notice and booking window now appear at the top of Settings under Booking boundaries, together with the guest change deadline and daily cap. Availability retains hours and blackouts. All controls reuse the existing saved settings and validation. The audit confirmed that slot listing, booking, guest rescheduling, public week navigation and applicable policy copy already read the saved values; 24 hours and 30 days are initial defaults, not fixed runtime rules. Unrelated provider retry limits, calendar-day arithmetic and booking-history lookback are separate concerns.
+
+Admin reuses the shared accessible tab component to restore the selected section across refreshes and language changes in the same browser tab. Only the section name is stored in session storage. Invalid stored names fall back to Bookings, and unavailable storage does not prevent navigation. The English/Spanish homepage now has one Choose a meeting / Elige una reunión heading, replacing the old question and removing the duplicate caption.
+
+Local verification passed: all 113 Workers tests, TypeScript, template checks, production build, browser/accessibility acceptance and Wrangler dry run. Coverage includes configurable notice/horizon boundaries (including zero notice), a 48-hour/45-day settings save through failure and revision-conflict recovery, saved-value reload, all four desktop tabs, mobile tab refresh, language switching, invalid/blocked storage, and public policy text/week navigation using the saved custom values. Desktop light and Spanish mobile dark screenshots were visually reviewed. All setting mutations used isolated fixtures; no live settings, bookings, calendar events or emails were changed. CI and deployment evidence follows below.

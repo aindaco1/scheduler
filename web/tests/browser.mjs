@@ -286,6 +286,20 @@ async function axe(name) {
 try {
   await page.goto(base + "/alonso");
   await page.getByRole("heading", { name: "Meet with Alonso." }).waitFor();
+  assert.equal(
+    await page.getByText("Choose a meeting", { exact: true }).count(),
+    1,
+  );
+  assert.equal(
+    await page
+      .getByRole("heading", { name: "Choose a meeting", exact: true })
+      .count(),
+    1,
+  );
+  assert.equal(
+    await page.getByText("What brings you here?", { exact: true }).count(),
+    0,
+  );
   await axe("public home");
   await page.getByRole("button", { name: /A conversation/ }).click();
   await page.locator("[data-slot]").first().waitFor();
@@ -370,6 +384,16 @@ try {
   assert.equal(new URL(page.url()).searchParams.get("location"), "studio");
   await page.goto(base + "/es/alonso");
   await page.getByRole("heading", { name: "Reserva con Alonso." }).waitFor();
+  assert.equal(
+    await page.getByText("Elige una reunión", { exact: true }).count(),
+    1,
+  );
+  assert.equal(
+    await page
+      .getByRole("heading", { name: "Elige una reunión", exact: true })
+      .count(),
+    1,
+  );
   await page.setViewportSize({ width: 360, height: 800 });
   await page.emulateMedia({ colorScheme: "dark" });
   await axe("Spanish dark mobile");
@@ -589,7 +613,10 @@ try {
     await page.locator('[data-setting="blackouts.2.end"]').inputValue(),
     "2026-09-26T00:00",
   );
+  await page.getByRole("tab", { name: "Settings", exact: true }).click();
   await page.getByLabel("Minimum notice (hours)", { exact: true }).fill("48");
+  await page.getByLabel("Booking window (days)", { exact: true }).fill("45");
+  await page.getByRole("tab", { name: "Availability", exact: true }).click();
   settingsUnavailable = true;
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page
@@ -611,6 +638,7 @@ try {
     .getByRole("button", { name: "All changes saved", exact: true })
     .waitFor();
   assert.equal(saved.settings.noticeHours, 48);
+  assert.equal(saved.settings.horizonDays, 45);
   assert.equal(saved.settings.hours[0].end, "24:00");
   assert.equal(saved.settings.recurringBlackouts[0].end, "13:30");
   assert.equal(saved.settings.blackouts[0].scope, "in-person");
@@ -681,6 +709,38 @@ try {
     () => document.querySelector("input[name=password]")?.value === "",
   );
   assert.equal(credentialWrites, 1);
+  // All desktop tabs survive refresh; saved rules are loaded from the API.
+  for (const [name, id] of [
+    ["Bookings", "bookings"],
+    ["Availability", "availability"],
+    ["Meeting types", "types"],
+    ["Settings", "settings"],
+  ]) {
+    await page.getByRole("tab", { name, exact: true }).click();
+    await page.reload();
+    await page.locator(`#panel-${id}`).waitFor({ state: "visible" });
+    assert.equal(
+      await page
+        .getByRole("tab", { name, exact: true })
+        .getAttribute("aria-selected"),
+      "true",
+    );
+  }
+  assert.equal(
+    await page
+      .getByLabel("Minimum notice (hours)", { exact: true })
+      .inputValue(),
+    "48",
+  );
+  assert.equal(
+    await page
+      .getByLabel("Booking window (days)", { exact: true })
+      .inputValue(),
+    "45",
+  );
+  await page
+    .locator("[data-booking-rules]")
+    .screenshot({ path: "work/frontend/booking-rules-desktop.png" });
   await axe("admin settings");
   await page.screenshot({
     path: "work/frontend/admin-settings-desktop.png",
@@ -690,6 +750,12 @@ try {
   await page
     .getByLabel("Dashboard section", { exact: true })
     .selectOption("availability");
+  await page.reload();
+  await page.locator("#panel-availability").waitFor({ state: "visible" });
+  assert.equal(
+    await page.getByLabel("Dashboard section", { exact: true }).inputValue(),
+    "availability",
+  );
   assert.equal(await page.locator("#panel-availability").isVisible(), true);
   assert.equal(
     await page.evaluate(
@@ -716,9 +782,29 @@ try {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto(base + "/es/admin/");
+  await page.locator("#panel-availability").waitFor({ state: "visible" });
+  assert.equal(
+    await page.getByLabel("Sección del panel", { exact: true }).inputValue(),
+    "availability",
+  );
   await page
     .getByLabel("Sección del panel", { exact: true })
     .selectOption("settings");
+  assert.equal(
+    await page
+      .getByLabel("Antelación mínima (horas)", { exact: true })
+      .inputValue(),
+    "48",
+  );
+  assert.equal(
+    await page
+      .getByLabel("Plazo de reserva (días)", { exact: true })
+      .inputValue(),
+    "45",
+  );
+  await page
+    .locator("[data-booking-rules]")
+    .screenshot({ path: "work/frontend/booking-rules-es-mobile-dark.png" });
   const spanishHolidaySetting = page.getByRole("checkbox", {
     name: "Bloquear los feriados federales de EE. UU.",
     exact: true,
@@ -872,7 +958,32 @@ try {
     /does not exist/,
   );
   await travelContext.close();
-  await checkBookingWeeks(browser, base, apiFixture);
+  // An obsolete preference or disabled browser storage cannot break admin.
+  const preferenceContext = await browser.newContext();
+  await preferenceContext.route("**/api/**", apiFixture);
+  const preferencePage = await preferenceContext.newPage();
+  preferencePage.on("pageerror", (error) => errors.push(error.message));
+  await preferencePage.goto(base + "/admin/");
+  await preferencePage.evaluate(() =>
+    sessionStorage.setItem("scheduler:admin-tab", "removed-tab"),
+  );
+  await preferencePage.reload();
+  await preferencePage.locator("#panel-bookings").waitFor({ state: "visible" });
+  await preferencePage.addInitScript(() => {
+    Object.defineProperty(window, "sessionStorage", {
+      get() {
+        throw new DOMException("Storage unavailable", "SecurityError");
+      },
+    });
+  });
+  await preferencePage.reload();
+  await preferencePage.locator("#panel-bookings").waitFor({ state: "visible" });
+  await preferencePage
+    .getByRole("tab", { name: "Settings", exact: true })
+    .click();
+  await preferencePage.locator("#panel-settings").waitFor({ state: "visible" });
+  await preferenceContext.close();
+  await checkBookingWeeks(browser, base, apiFixture, settings);
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

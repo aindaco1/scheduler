@@ -32,7 +32,7 @@ declare module "@dustwave/admin-shell/tabs" {
         selectClass?: string;
       };
       storageKey?: string;
-      storage?: Storage;
+      storage?: Pick<Storage, "getItem" | "setItem">;
       onSelect?: (name: string, tab: HTMLElement) => void;
     },
   ): {

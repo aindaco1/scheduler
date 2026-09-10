@@ -174,16 +174,46 @@ describe("availability rules", () => {
     ).toBe(false);
   });
 
-  it("enforces exact 24 elapsed hours and the horizon", () => {
-    const s = defaultSettings(),
-      type = s.types[0],
-      now = iso("2026-09-09T16:00:00Z");
-    expect(canBook(s, type, "", now + 24 * 3600_000, [], now)).toBe(true);
-    expect(
-      canBook(s, type, "", now + 24 * 3600_000 - 15 * 60_000, [], now),
-    ).toBe(false);
-    expect(canBook(s, type, "", now + 31 * 86400_000, [], now)).toBe(false);
-  });
+  it.each([
+    [0, 1],
+    [24, 30],
+    [48, 45],
+    [72, 7],
+  ])(
+    "enforces %i hours notice and a %i day horizon from settings",
+    (noticeHours, horizonDays) => {
+      const s = defaultSettings(),
+        type = s.types[0],
+        now = iso("2026-09-09T16:00:00Z");
+      Object.assign(s, { noticeHours, horizonDays });
+      s.hours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
+        day,
+        start: "00:00",
+        end: "24:00",
+      }));
+      const earliest = now + noticeHours * 3600_000;
+      const latest = now + horizonDays * 86400_000 - type.duration * 60_000;
+      for (const [start, allowed] of [
+        [earliest - 15 * 60_000, false],
+        [earliest, true],
+        [latest, true],
+        [latest + 15 * 60_000, false],
+      ] as const) {
+        expect(canBook(s, type, "", start, [], now)).toBe(allowed);
+        expect(
+          availableSlots(
+            s,
+            type.id,
+            "",
+            start,
+            start + 15 * 60_000,
+            [],
+            now,
+          ).includes(new Date(start).toISOString()),
+        ).toBe(allowed);
+      }
+    },
+  );
   it("uses the larger mixed meeting gap without adding gaps", () => {
     const s = defaultSettings(),
       t = s.types[0],

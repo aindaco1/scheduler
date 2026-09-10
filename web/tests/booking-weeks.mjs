@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-export async function checkBookingWeeks(browser, base, apiFixture) {
+export async function checkBookingWeeks(browser, base, apiFixture, settings) {
   const context = await browser.newContext({
     timezoneId: "America/Denver",
     viewport: { width: 1280, height: 900 },
@@ -49,6 +49,14 @@ export async function checkBookingWeeks(browser, base, apiFixture) {
   try {
     await open("2026-09-09T18:00:00Z");
     assert.equal(
+      await page
+        .getByText(`At least ${settings.noticeHours} hours ahead`, {
+          exact: true,
+        })
+        .count(),
+      1,
+    );
+    assert.equal(
       await page.locator("[data-week]").textContent(),
       "Sep 7 – Sep 14",
     );
@@ -92,16 +100,25 @@ export async function checkBookingWeeks(browser, base, apiFixture) {
     );
 
     await open("2026-09-13T18:00:00Z");
-    for (let i = 0; i < 5; i++)
+    for (
+      let i = 0;
+      i < 27 && !(await page.locator("[data-next]").isDisabled());
+      i++
+    )
       await loaded(() => page.locator("[data-next]").click());
     assert.equal(await page.locator("[data-next]").isDisabled(), true);
-    assert.equal(
-      await page.locator("[data-week]").textContent(),
-      "Oct 12 – Oct 19",
-    );
-    assert.equal(requests.at(-1).to, now + 30 * 86400000);
+    assert.equal(requests.at(-1).to, now + settings.horizonDays * 86400000);
+    assert.ok(requests.at(-1).from < requests.at(-1).to);
 
     await open("2026-10-28T18:00:00Z", true);
+    assert.equal(
+      await page
+        .getByText(`Al menos ${settings.noticeHours} horas de antelación`, {
+          exact: true,
+        })
+        .count(),
+      1,
+    );
     assert.equal(requests.at(-1).to - requests.at(-1).from, 169 * 3600000);
     const previous = requests.at(-1);
     await loaded(() =>
