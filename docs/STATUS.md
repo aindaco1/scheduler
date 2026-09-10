@@ -276,3 +276,8 @@ Local verification: `npm run check` passed all 149 Workers tests across 15 files
 Deployment: runtime source `f78d26a` is live in Worker version `5fce6b99-2647-4bef-bf33-4bf06c92a863`. All nine build assets matched the locally verified files, and eight English/Spanish shells returned HTTP 200 with the current assets. The public page remains active and ready; private settings return HTTP 401 without authentication, and anonymous configuration omits the new private visibility preference and arrival instructions. A read-only Helium review confirmed the meeting-type/location switches, Other section and one-day default, with All changes saved. No live settings, meetings or messages were changed.
 
 CI exposed two pre-existing test timing/isolation issues: an exact redirect URL check could miss the picker's added timezone, and old fixture alarms could make requests during the next test's global outage spy. Commits `6dec1fb` and `da0e396` correct the assertions and fixture teardown without changing the production runtime or weakening the settings-save guarantee. The corrected browser suite and all 149 backend tests passed locally. [Final GitHub CI for `da0e396`](https://github.com/aindaco1/scheduler/actions/runs/34439731977) passed the complete workflow. Structured evidence is retained in [responsive-admin-release-2026-09-09.json](research/responsive-admin-release-2026-09-09.json).
+
+
+## Sign-in page copy cleanup
+
+Removed “A space for your schedule” and its Spanish counterpart from the owner sign-in page, including the paragraph wrapper. The production build and existing quality checks passed (311 paired messages). This is a copy-only change; authentication behavior is unchanged. Deployment and CI verification follow below.

@@ -949,7 +949,7 @@ async function logout() {
   await login();
 }
 async function login() {
-  app.innerHTML = `<section class="login-wrap"><p class="eyebrow">${t("A space for your schedule", "Un espacio para tu agenda")}</p><h1>${t("Welcome back.", "Te damos la bienvenida.")}</h1><p class="muted">${t("Sign in with your owner email. We’ll send a private, single-use sign-in link.", "Inicia sesión con tu correo de administración. Te enviaremos un enlace privado de un solo uso.")}</p><form class="panel stack" data-login><label class="field">${t("Email address", "Correo electrónico")}<input type="email" name="email" autocomplete="email" maxlength="254" required></label><div data-turnstile class="turnstile"></div><div data-login-status></div><button class="button primary" type="submit" data-login-button disabled>${t("Send sign-in link", "Enviar enlace de acceso")}</button></form></section>`;
+  app.innerHTML = `<section class="login-wrap"><h1>${t("Welcome back.", "Te damos la bienvenida.")}</h1><p class="muted">${t("Sign in with your owner email. We’ll send a private, single-use sign-in link.", "Inicia sesión con tu correo de administración. Te enviaremos un enlace privado de un solo uso.")}</p><form class="panel stack" data-login><label class="field">${t("Email address", "Correo electrónico")}<input type="email" name="email" autocomplete="email" maxlength="254" required></label><div data-turnstile class="turnstile"></div><div data-login-status></div><button class="button primary" type="submit" data-login-button disabled>${t("Send sign-in link", "Enviar enlace de acceso")}</button></form></section>`;
   setBusy(false);
   config ||= (await api.request("/config")) as Config;
   applyBrand(config.settings);
