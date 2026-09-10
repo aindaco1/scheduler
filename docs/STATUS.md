@@ -42,6 +42,6 @@ Proton currently blocks time through its Google subscription and inherits that r
 
 ## Documentation follow-up
 
-The maintainer index and full contribution, security and third-party guides now live in `docs/`, with release metrics in `docs/release-evidence/`. Root and component entry points remain available. The roadmap records the next audit and Phase 2 plans separately from verified 1.0 behaviour. This follow-up changes documentation only; the deployed 1.0.0 source and release tag above remain unchanged.
+The maintainer index and full contribution, security and third-party guides now live in `docs/`, with release metrics in `docs/release-evidence/`. The root keeps README, LICENSE, AGENTS and CHANGELOG; the redundant contribution, security and third-party pointer files were removed. Component READMEs stay beside their code. The roadmap records the next audit and Phase 2 plans separately from verified 1.0 behaviour. This follow-up changes documentation only; the deployed 1.0.0 source and release tag above remain unchanged.
 
-Documentation validation passed: local links and heading anchors across 24 Markdown files, six byte-identical moved evidence records, the Jekyll build and quality gates for eight localized pages/312 paired messages. All nine generated assets match the published 1.0.0 hashes. No application code, deployment configuration, package version or production state changed.
+Documentation validation passed: local links and heading anchors across 21 Markdown files, six byte-identical moved evidence records, the Jekyll build and quality gates for eight localized pages/312 paired messages. All nine generated assets match the published 1.0.0 hashes. No application code, deployment configuration, package version or production state changed.
