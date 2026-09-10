@@ -219,8 +219,8 @@ export function defaultSettings(): Settings {
   return {
     name: "Alonso",
     intro: {
-      en: "A little time to connect. Choose a meeting below and find a time that works for you.",
-      es: "Un momento para conectar. Elige una reunión y encuentra un horario que te convenga.",
+      en: "Choose a meeting below and find a time that works for you.",
+      es: "Elige una reunión y encuentra un horario que te convenga.",
     },
     timezone: "America/Denver",
     enabled: false,

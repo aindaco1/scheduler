@@ -444,6 +444,25 @@ select.field-control {
   min-height: 110px;
   resize: vertical;
 }
+// Keep native select interaction while giving every arrow a deliberate inset.
+.field select,
+select.field-control,
+.theme-control select {
+  appearance: none;
+  background-image: url("/assets/chevron-down.svg");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-inline-end: 2.5rem;
+}
+@media (forced-colors: active) {
+  .field select,
+  select.field-control,
+  .theme-control select {
+    appearance: auto;
+    background-image: none;
+  }
+}
 .field small {
   font-weight: 400;
 }

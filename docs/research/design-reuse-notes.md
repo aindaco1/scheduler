@@ -109,3 +109,11 @@ Source snapshots inspected:
 | [film](https://github.com/aindaco1/film/tree/35768e6dea7b9b88db487b6e55d1b787afc0b0b6) | `35768e6` | `apps/web/public/theme.css`, `appearance.js` |
 
 Before UI completion, verify both themes and system switching; keyboard/focus and screen-reader states; narrow/mobile/tablet/desktop layouts; long meeting names and translated labels; timezone/DST display; loading, no-availability, disconnected-calendar, retry, and cancellation-cutoff states. Source review and the inspected reference pages do not substitute for testing the new scheduler.
+
+## Scheduler icon and copy refinement
+
+The September 9 follow-up replaces the decorative star with a monochrome clock ring and a detached square marking a chosen time. References inspected directly: CutNotes `assets/AppIconSource.png` for bold geometry, Auto Subtitle `resources/app-icon/auto-subtitle-1024.png` for a marked choice, and MKV Magic `Assets/AppIcon/MKVMagic.iconset/icon_512x512.png` for a clear centered silhouette. The final icon uses flat shapes and no lettering, shading or glow so it remains legible at browser-tab size.
+
+The built-in image-generation tool explored this prompt: "A bold white clock face on a flat near-black rounded-square tile, with an open upper-right ring, one solid square marking the chosen time, and simple up/right hands; generous negative space, monochrome geometry, no text or decorative effects." The production SVG is defined once in `_includes/scheduler-mark.svg` and included in both the theme-aware header and `assets/icon.svg`. The raster concept is a visual reference, not a runtime asset or dependency.
+
+Public/admin hero taglines are removed in English and Spanish, the footer reads **SCHEDULER**, and starter introduction/description copy omits the removed phrase. Existing customized introductions are preserved. Native dropdown controls share a small inset chevron and reserved text padding; forced-color modes retain the system arrow.

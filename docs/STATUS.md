@@ -127,3 +127,11 @@ Local verification passed: all 110 Workers tests, TypeScript, template checks, p
 Deployment: source commit `a8b6429` is live in Worker version `baff586b-18ec-4272-9f6c-5c49b6dd68b3`. The live admin script matched the verified local build byte for byte. English/Spanish booking and admin pages and health returned HTTP 200; unauthenticated private settings remained HTTP 401. A separate authenticated Helium tab confirmed the new checkbox under Settings, unchecked with no unsaved changes. The preference was not enabled during verification, and no live booking, calendar event or email was created or changed.
 
 [GitHub CI for `a8b6429`](https://github.com/aindaco1/scheduler/actions/runs/34417628470) passed the complete check workflow.
+
+## Dropdown spacing and Scheduler identity
+
+Native dropdowns now use a shared inset chevron with reserved text padding across booking, management, settings and appearance controls. High-contrast forced-color modes keep the system arrow. English/Spanish public and admin hero taglines are removed; the footer reads **SCHEDULER**. Starter introduction and metadata copy also omit the removed phrase. The live customized introduction was inspected and does not contain it, so saved settings require no update.
+
+The new monochrome clock-and-selected-time icon draws on the inspected CutNotes, Auto Subtitle and MKV Magic icons. One SVG mark feeds both the theme-aware header and favicon. The favicon URL is versioned to refresh browser caches. Design rationale and concept-generation notes are in [design reuse](research/design-reuse-notes.md#scheduler-icon-and-copy-refinement).
+
+Local verification passed: all 110 Workers tests, TypeScript, template checks, production build, existing browser/accessibility acceptance and Wrangler dry run. Additional isolated visual checks covered English/Spanish, light/dark, and 320/360/1280-pixel widths with no horizontal overflow. Desktop and mobile booking views, admin dropdowns, explicit theme override, forced colors and the final SVG icon were visually reviewed. Verification used fixtures and made no production settings, booking, calendar or email writes. CI and deployment evidence follows below.

@@ -7,13 +7,13 @@
     <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="{% if page.description %}{{ page.description | escape }}{% else %}{% if page.lang == 'es' %}Reserva un momento para conversar con Alonso.{% else %}Book a little time to connect with Alonso.{% endif %}{% endif %}"
+      content="{% if page.description %}{{ page.description | escape }}{% else %}{% if page.lang == 'es' %}Reserva una reunión con Alonso.{% else %}Book a meeting with Alonso.{% endif %}{% endif %}"
     />
     {% if page.app != 'booking' and page.app != 'privacy' %}
     <meta name="robots" content="noindex, nofollow" />
     {% endif %}
     <title>{{ page.title }} · Scheduler</title>
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/icon.svg?v=2" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/build/scheduler.css" />
     <script type="module" src="/assets/build/{{ page.app }}.js"></script>
   </head>
@@ -27,13 +27,8 @@
         class="wordmark"
         href="{% if page.lang == 'es' %}/es{% endif %}/alonso"
         aria-label="{% if page.lang == 'es' %}Inicio de reservas{% else %}Booking home{% endif %}"
-        ><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
-          <path
-            d="M16 2v28M2 16h28M6.1 6.1l19.8 19.8M6.1 25.9L25.9 6.1"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          /></svg
+        ><svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true">
+          {% include scheduler-mark.svg %}</svg
         ><span>DUST WAVE<span class="wordmark-sub">SCHEDULER</span></span></a
       >
       <nav
@@ -86,10 +81,7 @@
       {% endif %}
     </main>
     <footer class="site-footer wrap">
-      <span
-        >{% if page.lang == 'es' %}Un poco de tiempo. Nuevas posibilidades.{%
-        else %}A little time. New possibilities.{% endif %}</span
-      >
+      <span>SCHEDULER</span>
       <nav
         class="cluster"
         aria-label="{% if page.lang == 'es' %}Enlaces del sitio{% else %}Site links{% endif %}"

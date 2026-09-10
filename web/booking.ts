@@ -66,7 +66,7 @@ function intro() {
   selected = undefined;
   const s = config.settings;
   const available = config.ready && s.enabled;
-  app.innerHTML = `<section class="hero"><p class="eyebrow">${t("A little time to connect", "Un momento para conectar")}</p><h1>${t("Meet with", "Reserva con")} ${esc(s.name)}.</h1><p class="intro">${esc(local(s.intro))}</p></section>${
+  app.innerHTML = `<section class="hero"><h1>${t("Meet with", "Reserva con")} ${esc(s.name)}.</h1><p class="intro">${esc(local(s.intro))}</p></section>${
     !available
       ? `<section class="panel"><h2>${t("Bookings will open soon", "Pronto podrás reservar")}</h2><p class="muted">${t("The calendar is taking a little pause. Please check back soon.", "La agenda está en pausa. Vuelve a consultar pronto.")}</p></section>`
       : `<section aria-labelledby="meeting-choices"><div class="section-heading"><h2 id="meeting-choices">${t("What brings you here?", "¿Qué te trae por aquí?")}</h2><span class="meta">${t("Choose a meeting", "Elige una reunión")}</span></div><div class="choice-grid">${s.types
