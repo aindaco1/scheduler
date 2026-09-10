@@ -464,6 +464,14 @@ export default {
         console.error(
           JSON.stringify({ event: "request_failed", code: "internal_error" }),
         );
+      if (
+        application &&
+        Number(remote.status) === 503 &&
+        new URL(request.url).pathname === "/api/availability"
+      )
+        console.warn(
+          JSON.stringify({ event: "availability_failed", code: remote.code }),
+        );
       return secure(
         json(
           {

@@ -17,22 +17,23 @@ export async function checkBookingWeeks(
     requests = [];
   page.on("pageerror", (error) => errors.push(error.message));
   let now,
-    failNext = false;
+    failNext = 0,
+    failureCode = "google_unavailable";
   await page.route("**/api/availability?*", async (route) => {
     const params = new URL(route.request().url()).searchParams;
     const from = Date.parse(params.get("from")),
       to = Date.parse(params.get("to"));
     const location = params.get("location");
     requests.push({ from, to, ...(location ? { location } : {}) });
-    const fail = failNext;
-    failNext = false;
+    const fail = failNext > 0;
+    if (fail) failNext--;
     const slot = Math.max(now + 3 * 86400000, from + 12 * 3600000);
     await route.fulfill({
       status: fail ? 503 : 200,
       contentType: "application/json",
       body: JSON.stringify(
         fail
-          ? { error: "google_unavailable" }
+          ? { error: failureCode }
           : {
               slots:
                 location !== "cafe" && slot < to
@@ -85,12 +86,14 @@ export async function checkBookingWeeks(
     await page
       .locator("[data-picker]")
       .screenshot({ path: "work/frontend/monday-week-desktop.png" });
-    failNext = true;
+    failNext = 2;
+    const beforeFailure = requests.length;
     await page.getByRole("button", { name: "Next week", exact: true }).click();
     await page
       .getByRole("button", { name: "Try again", exact: true })
       .waitFor();
     assert.equal(await page.locator("[data-slot]").count(), 0);
+    assert.equal(requests.length - beforeFailure, 2);
     const failed = requests.at(-1);
     await loaded(() =>
       page.getByRole("button", { name: "Try again", exact: true }).click(),
@@ -204,7 +207,11 @@ export async function checkBookingWeeks(
       assert.deepEqual(requests.at(-1), { ...expected, location: "studio" });
       assert.equal(await page.locator("[data-slot]").count(), 1);
       await page.locator("[data-location]").focus();
+      failNext = 1;
+      failureCode = spanish ? "icloud_unavailable" : "google_unavailable";
+      const beforeRecovery = requests.length;
       await loaded(() => page.locator("[data-location]").selectOption("cafe"));
+      assert.equal(requests.length - beforeRecovery, 2);
       assert.deepEqual(requests.at(-1), { ...expected, location: "cafe" });
       assert.equal(await page.locator("[data-week]").textContent(), weekLabel);
       assert.equal(
@@ -253,6 +260,28 @@ export async function checkBookingWeeks(
       await loaded(() => page.locator("[data-prev]").click());
       assert.equal(requests.at(-1).to, expected.from);
     }
+    // A real configuration issue is not retried, and leaving the picker cancels a pending retry.
+    failureCode = "google_reconnect_required";
+    failNext = 1;
+    const beforeReconnect = requests.length;
+    await page.locator("[data-location]").selectOption("cafe");
+    await page.locator("[data-retry]").waitFor();
+    assert.equal(requests.length - beforeReconnect, 1);
+    await loaded(() => page.locator("[data-location]").selectOption("studio"));
+    failureCode = "icloud_unavailable";
+    failNext = 1;
+    await page.locator("[data-location]").selectOption("cafe");
+    await page
+      .getByText(
+        "Se interrumpió la consulta del calendario. Volviendo a intentar…",
+        { exact: true },
+      )
+      .waitFor();
+    const beforeLeaving = requests.length;
+    await page.locator("[data-back]").click();
+    await page.waitForTimeout(700);
+    assert.equal(requests.length, beforeLeaving);
+    assert.equal((await page.locator("[data-type]").count()) > 0, true);
     assert.deepEqual(errors, []);
   } finally {
     await context.close();

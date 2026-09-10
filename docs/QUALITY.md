@@ -55,7 +55,7 @@ The Durable Object remains the source of truth for local bookings. The cache nev
 | Explicit verification | Discards cached connection metadata and performs fresh discovery/conflict checks |
 | Emergency switch | Set Worker var `CALENDAR_CACHE_ENABLED` to string `"false"` and redeploy to bypass busy snapshots; no data migration or purge required |
 
-Cold starts and expired snapshots still wait for the providers. A fresh booking may be slower than browsing because it rechecks conflicts. Other calendar clients can change events between a provider read and write; Google/iCloud do not supply a cross-provider atomic reservation transaction. The scheduler serializes its own reservations, but cannot promise atomic exclusion against unrelated calendar clients.
+Cold starts and expired snapshots still wait for the providers. The picker retries transient read failures once after 500 ms; it keeps the same selection, cancels obsolete retries, and shows the error if the retry fails. It never serves stale slots during recovery. Known availability errors emit only their bounded classification to Worker observability. A fresh booking may be slower than browsing because it rechecks conflicts. Other calendar clients can change events between a provider read and write; Google/iCloud do not supply a cross-provider atomic reservation transaction. The scheduler serializes its own reservations, but cannot promise atomic exclusion against unrelated calendar clients.
 
 A Proton subscription visible through Google inherits Google's subscription refresh delay. A “fresh Google read” is not proof of a fresh direct Proton read. Direct Proton integration remains phase 2.
 

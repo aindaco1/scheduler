@@ -299,3 +299,12 @@ Switching in-person locations now refreshes the existing time picker instead of 
 Local verification: `npm run check` passed all 149 Workers tests, template/type/build checks, 311 paired UI messages, asset budgets, independent fork setup, browser/keyboard acceptance, axe scans and Wrangler dry run. Regression checks cover a later week with a non-default time zone, an empty venue, clearing/reselecting a venue and continued week navigation in English desktop and Spanish mobile views. Both rendered views were inspected. No live settings, bookings or messages were changed. Deployment and CI evidence follow below.
 
 Deployment: source `090f9be` is live in Worker version `df51856f-8648-4082-a1d1-5c6eae0b6af7`. The served booking bundle matches the local build byte for byte. After reloading to replace an older cached shell, a read-only Helium check confirmed that switching from Bow & Arrow to Dust Wave Studio kept September 21–28 and America/Denver while updating the address. [GitHub CI](https://github.com/aindaco1/scheduler/actions/runs/34452283405) passed the complete workflow. No live settings, meetings or emails were changed.
+
+
+## Recover intermittent calendar-check failures
+
+The reported location-picker 503 was no longer reproducible during investigation: all three live locations returned successful availability responses for the pictured week. The exact original provider/error code was not captured by the prior logging, so the cause remains unconfirmed.
+
+The shared picker now retries temporary read failures once after 500 ms, retaining the week, venue and time zone and withholding old slots. Persistent errors retain Try again; reconnection errors are not automatically retried. A selection change or leaving the picker invalidates its pending retry. Known availability failures now log only a bounded event/code classification for future diagnosis.
+
+Local verification: `npm run check` passed 150 Workers tests, template/type/build checks, 312 paired messages, asset budgets, independent fork setup, browser acceptance/axe and Wrangler dry run. Regression cases cover recovery from one Google/iCloud 503, stopping after two failed reads, no automatic retry for reconnection errors, preserving location/week/zone, and cancelling a retry on leaving. A Worker test confirms logs omit private request and provider data. No live bookings, messages or settings were changed. Deployment and CI evidence follow below.
