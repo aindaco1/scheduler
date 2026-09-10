@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Organize maintainer guides around `docs/README.md`, move detailed contribution/security/license notices into `docs/`, and separate release evidence from research.
+- Add a roadmap for the planned 1.0.1 security audit and Phase 2, including two-way Google Calendar sync when a booked guest declines. These features and the audit are planned; this change adds documentation only.
+
 ## 1.0.0 — 2026-09-10
 
 First stable, MIT-licensed release for a single owner's self-hosted scheduling page.

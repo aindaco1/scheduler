@@ -37,4 +37,4 @@ details do not enter localStorage. Fixture screenshots are written under
 
 These checks verify the browser against the API contract. They do not verify
 live OAuth, Turnstile provider acceptance, calendar synchronization, invitations,
-or recipient email delivery. Those are tracked in the project status document.
+or recipient email delivery. Those are tracked in [release status](../docs/STATUS.md). See the [documentation index](../docs/README.md) for the API, quality and contribution guides.

@@ -4,7 +4,7 @@ Updated September 10, 2026. This is the current release summary. The [pre-1.0 hi
 
 ## Scope and license
 
-Version 1.0.0 is the first stable release for one owner, under the [MIT license](../LICENSE). The [README](../README.md#installation-and-setup) and [fork guide](FORKING.md) describe installation, account provisioning and upgrades. The [changelog](../CHANGELOG.md) lists the release features. Profiles, pay-what-you-can bookings and direct Proton integration remain phase 2.
+Version 1.0.0 is the first stable release for one owner, under the [MIT license](../LICENSE). The [README](../README.md#installation-and-setup) and [fork guide](FORKING.md) describe installation, account provisioning and upgrades. The [changelog](../CHANGELOG.md) lists the release features. The [roadmap](ROADMAP.md) owns the planned 1.0.1 security audit and Phase 2 profiles, pay-what-you-can bookings, direct Proton integration and two-way Google Calendar sync. These are prospective work; 1.0.1 has not been released or audited.
 
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
@@ -18,7 +18,7 @@ The responsive matrix passed 40 admin and 84 public states in English/Spanish, i
 
 Production deployment verified September 10 from source `10487b0b6433e08cc075c4b57e739c4f7c4de526`, following [successful CI](https://github.com/aindaco1/scheduler/actions/runs/34461926796) on Node **24.20.0**. Cloudflare Worker version: `1f930a09-d255-453d-85da-e05fe54e0e35`. All eight localized routes and nine built assets matched; unauthenticated private API reads returned 401. Public settings remained enabled/ready. Read-only availability for the September 28 week returned 58, 46 and 16 slots across the three locations (one cold read of 2.38 seconds, then 0.42 and 0.34 seconds; these three samples are not a performance percentile).
 
-See the [published 1.0.0 release](https://github.com/aindaco1/scheduler/releases/tag/v1.0.0) for the exact tested source, successful CI and production Worker identifiers. The [launch evidence](research/launch-1.0.0.json) contains fixture counts and asset metrics without private data.
+See the [published 1.0.0 release](https://github.com/aindaco1/scheduler/releases/tag/v1.0.0) for the exact tested source, successful CI and production Worker identifiers. The [launch evidence](release-evidence/launch-1.0.0.json) contains fixture counts and asset metrics without private data.
 
 ## Checkout cleanup
 
@@ -39,3 +39,9 @@ The 1.0 release review does not send new invitations or change production settin
 The app is self-hosted per owner, not a multi-tenant SaaS. Upstream Google OAuth is in production mode for the personal deployment, but the app is not verified for public multi-user distribution. Zoom uses the owner's private local-test app rather than a public Marketplace listing. New forks supply their own credentials and approval setup.
 
 Proton currently blocks time through its Google subscription and inherits that refresh delay. Direct Proton remains a separate phase 2 feasibility task. External calendar edits can race a booking across providers; fresh final reads reduce but cannot eliminate that risk. Formal screen-reader/native-speaker approval, independent penetration testing and a recovery drill are not claimed; see [quality boundaries](QUALITY.md).
+
+## Documentation follow-up
+
+The maintainer index and full contribution, security and third-party guides now live in `docs/`, with release metrics in `docs/release-evidence/`. Root and component entry points remain available. The roadmap records the next audit and Phase 2 plans separately from verified 1.0 behaviour. This follow-up changes documentation only; the deployed 1.0.0 source and release tag above remain unchanged.
+
+Documentation validation passed: local links and heading anchors across 24 Markdown files, six byte-identical moved evidence records, the Jekyll build and quality gates for eight localized pages/312 paired messages. All nine generated assets match the published 1.0.0 hashes. No application code, deployment configuration, package version or production state changed.

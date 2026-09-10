@@ -61,7 +61,7 @@ You'll need Git, Node.js 24 or later, Ruby 3.1 or later with Bundler, a Cloudfla
 
 5. **Open `/admin/` on your domain.** Sign in using the configured owner email. Connect Google, optionally connect iCloud/Zoom, choose blocking calendars, and review your hours, locations, meeting types and reminders. If you do not use iCloud, turn off **Require iCloud**. New installations start paused. Use **Verify connections**, then turn on **Your booking page → Active** and save. Confirm your first booking and email delivery with a consenting test recipient.
 
-The [complete setup guide](docs/FORKING.md) covers production secrets, local development, upgrades and troubleshooting. This is a single-owner deployment; public multi-owner onboarding, paid/sliding-scale bookings, profiles and direct Proton integration are planned for phase 2.
+The [complete setup guide](docs/FORKING.md) covers production secrets, local development, upgrades and troubleshooting. This is a single-owner deployment. The [roadmap](docs/ROADMAP.md) covers the planned 1.0.1 security audit and Phase 2 payments, profiles, direct Proton integration and two-way Google Calendar sync.
 
 ## Local development and testing
 
@@ -82,18 +82,14 @@ Open `http://localhost:8787/your-name` (or `/alonso` in the unchanged upstream c
 | `npm run clean -- --dry-run` | List disposable generated output |
 | `npm run clean` | Remove generated output; retain dependencies, secrets and local database state |
 
-Use the project build command rather than bare `jekyll build`. See [operations](docs/OPERATIONS.md) for maintenance and [contributing](CONTRIBUTING.md) for development conventions.
+Use the project build command rather than bare `jekyll build`. See [operations](docs/OPERATIONS.md) for maintenance and [contributing](docs/CONTRIBUTING.md) for development conventions.
 
 ## Documentation
 
-- [Current release and verification](docs/STATUS.md)
-- [Installation, credentials and upgrades](docs/FORKING.md)
-- [Operations and troubleshooting](docs/OPERATIONS.md)
-- [Security, accessibility, performance, SEO and localization](docs/QUALITY.md)
-- [API contract](docs/API.md) and [product decisions](docs/decisions/phase-1.md)
-- [Original research](docs/research/scheduler-research-and-scope.md), [design references](docs/research/design-reuse-notes.md) and [phase 2 Proton research](docs/research/proton-integration-notes.md)
-- [Security reporting](SECURITY.md)
+Start with the [documentation index](docs/README.md), organized by task. It links to setup, operations, contribution, API, security and quality guides, plus research and release evidence.
+
+See the [roadmap](docs/ROADMAP.md) for future work, the [changelog](CHANGELOG.md) for completed changes, and [release status](docs/STATUS.md) for current deployment verification.
 
 ## License
 
-Scheduler is [MIT licensed](LICENSE). Keep its copyright and license notice when copying or modifying it. Bundled dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). The included Inter font is OFL licensed. Proprietary fonts and demo-owner branding are not required to run your own instance.
+Scheduler is [MIT licensed](LICENSE). Keep its copyright and license notice when copying or modifying it. Bundled dependencies retain their own licenses; see [third-party notices](docs/THIRD_PARTY_NOTICES.md). The included Inter font is OFL licensed. Proprietary fonts and demo-owner branding are not required to run your own instance.

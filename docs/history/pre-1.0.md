@@ -216,7 +216,7 @@ The first deployed audit candidate passed CI but its mobile lab run exposed CLS 
 - Live English/Spanish booking/privacy/admin/manage routes, sitemap and robots returned 200; unsigned admin API returned 401. Private headers/noindex and public HTML no-transform were verified. Cloudflare's automatic analytics/JSD injections were absent, with explicit Turnstile still part of the application.
 - Every deployed JavaScript asset matched the final local build byte-for-byte. Initial booking/management JavaScript totals **8,909 / 8,301 bytes gzip** including eager shared imports; all generated JS totals 240,647 bytes (about 59% less than the original duplicated entry bundles).
 - Helium confirmed the real lazy picker loaded, Monday weeks changed from Sep 7–14 to Sep 14–21, 104 available times were announced, and keyboard focus remained on Next week. Temporary verification tabs were closed; no live booking, settings change or test invitation was made during this audit.
-- [Metrics-only evidence](../research/quality-evidence-2026-09-09.json) records versions, samples and budgets. Formal screen-reader/native-speaker review, independent penetration testing and an operational restore drill are not claimed; the specific limits and follow-ups are in [QUALITY.md](../QUALITY.md).
+- [Metrics-only evidence](../release-evidence/quality-evidence-2026-09-09.json) records versions, samples and budgets. Formal screen-reader/native-speaker review, independent penetration testing and an operational restore drill are not claimed; the specific limits and follow-ups are in [QUALITY.md](../QUALITY.md).
 
 
 ## 2026-09-09 — Default gaps, optional Spanish and compact settings
@@ -233,7 +233,7 @@ Local verification: `npm run check` passed, including 135 Worker tests across 14
 - Live configuration still has Spanish enabled and effective gaps of 15 / 15 / 30 minutes. All eight English/Spanish application routes and sitemap returned 200; unsigned settings API returned 401. Nine deployed build assets matched the local build exactly, with immutable caching intact. Live HTML had no unexpected Cloudflare script injection.
 - Five read-only calendar queries returned 200: 2,702 ms cold, then 266 / 262 / 312 / 281 ms; median 281 ms. This small sequential sample confirms the existing browse cache is still working; it is not sustained-load evidence.
 - Rendered desktop/mobile fixture checks and local/hosted tests passed. Live Helium dashboard inspection could not run because the Mac was locked. Spanish off/on was exercised in isolated browser/Worker fixtures; no live preferences, calendar events or invitations were changed for testing.
-- [Release evidence](../research/preferences-release-2026-09-09.json) contains only versions, status, asset hashes and timings.
+- [Release evidence](../release-evidence/preferences-release-2026-09-09.json) contains only versions, status, asset hashes and timings.
 
 
 ## 2026-09-09 — Meeting details and live branding
@@ -251,7 +251,7 @@ Local `npm run check` passed: 141 Worker tests, 309 paired UI messages, bundle/S
 - Source `cda9b9dc356b556c02e103af0b1f96c67f527918` deployed as Worker `27dfb602-995b-4067-913b-b3aa5bd07e76`; [CI passed](https://github.com/aindaco1/scheduler/actions/runs/34436105552).
 - Live Helium review confirmed the Brand name setting (current value DUST WAVE), editable 15-minute video gap in the left column, Active label, and separate address/arrival-instruction fields. Privacy and Admin show the same saved logo. Temporary review tabs were closed without changing live settings or bookings.
 - All eight English/Spanish page responses returned 200 with the saved logo already in initial HTML and without the old visible text fallback. Public instruction data remains omitted, unsigned admin API returns 401, and all nine deployed JS/CSS assets match the checked build. No automatic Cloudflare script injection appeared.
-- Provider/email behavior was verified with isolated fixtures; no live invitation or test email was sent. [Release evidence](../research/meeting-details-release-2026-09-09.json) records the source, Worker, CI and read-only live checks.
+- Provider/email behavior was verified with isolated fixtures; no live invitation or test email was sent. [Release evidence](../release-evidence/meeting-details-release-2026-09-09.json) records the source, Worker, CI and read-only live checks.
 
 
 ## Booking activation, shared addresses and optional branding
@@ -265,7 +265,7 @@ Local verification: `npm run check` passed all 146 Workers tests, type/build/tem
 
 Deployment: source commit `6cd9187` is live in Cloudflare Worker version `717d686d-2270-4992-b6de-5a46e672eb21`. All nine build assets matched the verified local files byte for byte; all eight English/Spanish shells returned HTTP 200, referenced the current assets and included the saved logo in their initial HTML. Private settings remained HTTP 401 without authentication. Public configuration kept the live page active and ready, retained its brand/logo, shared the same address across languages, and omitted arrival instructions. A read-only Helium review confirmed the checked Active switch at the top right, updated brand help and All changes saved. No live settings, meetings or emails were changed.
 
-[GitHub CI for `6cd9187`](https://github.com/aindaco1/scheduler/actions/runs/34438230750) passed. Structured release evidence is retained in [active-settings-release-2026-09-09.json](../research/active-settings-release-2026-09-09.json).
+[GitHub CI for `6cd9187`](https://github.com/aindaco1/scheduler/actions/runs/34438230750) passed. Structured release evidence is retained in [active-settings-release-2026-09-09.json](../release-evidence/active-settings-release-2026-09-09.json).
 
 
 ## Card activation, cancelled-booking visibility and responsive admin review
@@ -279,7 +279,7 @@ Local verification: `npm run check` passed all 149 Workers tests across 15 files
 
 Deployment: runtime source `f78d26a` is live in Worker version `5fce6b99-2647-4bef-bf33-4bf06c92a863`. All nine build assets matched the locally verified files, and eight English/Spanish shells returned HTTP 200 with the current assets. The public page remains active and ready; private settings return HTTP 401 without authentication, and anonymous configuration omits the new private visibility preference and arrival instructions. A read-only Helium review confirmed the meeting-type/location switches, Other section and one-day default, with All changes saved. No live settings, meetings or messages were changed.
 
-CI exposed two pre-existing test timing/isolation issues: an exact redirect URL check could miss the picker's added timezone, and old fixture alarms could make requests during the next test's global outage spy. Commits `6dec1fb` and `da0e396` correct the assertions and fixture teardown without changing the production runtime or weakening the settings-save guarantee. The corrected browser suite and all 149 backend tests passed locally. [Final GitHub CI for `da0e396`](https://github.com/aindaco1/scheduler/actions/runs/34439731977) passed the complete workflow. Structured evidence is retained in [responsive-admin-release-2026-09-09.json](../research/responsive-admin-release-2026-09-09.json).
+CI exposed two pre-existing test timing/isolation issues: an exact redirect URL check could miss the picker's added timezone, and old fixture alarms could make requests during the next test's global outage spy. Commits `6dec1fb` and `da0e396` correct the assertions and fixture teardown without changing the production runtime or weakening the settings-save guarantee. The corrected browser suite and all 149 backend tests passed locally. [Final GitHub CI for `da0e396`](https://github.com/aindaco1/scheduler/actions/runs/34439731977) passed the complete workflow. Structured evidence is retained in [responsive-admin-release-2026-09-09.json](../release-evidence/responsive-admin-release-2026-09-09.json).
 
 
 ## Sign-in page copy cleanup

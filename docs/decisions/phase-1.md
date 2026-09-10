@@ -40,4 +40,4 @@ Meeting durations, reminder timing, and the absence of a daily cap remain editab
 
 ## Phase 2 boundary
 
-Dust Wave/Volver profiles share the same owner's collision boundary. Prices may be pay-what-you-can, including zero. Direct Proton read/write/invitations require the separate research milestone. Phase 1 does not implement charging, profiles in the public flow, or a Proton bridge.
+Dust Wave/Volver profiles share the same owner's collision boundary. Prices may be pay-what-you-can, including zero. Direct Proton read/write/invitations require the separate research milestone. Phase 1 does not implement charging, profiles in the public flow, a Proton bridge, or reconciliation of Calendar RSVPs into Scheduler cancellation state. The [roadmap](../ROADMAP.md) owns Phase 2 scope, including two-way Google Calendar sync and cancellation when the booked guest declines.

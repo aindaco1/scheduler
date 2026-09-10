@@ -1,6 +1,6 @@
 # Scheduler
 
-Read README.md and docs/decisions/phase-1.md before changing behavior.
+Read README.md, docs/README.md and docs/decisions/phase-1.md before changing behavior.
 
 - Jekyll builds the public/admin shells; one Worker and one SQLite Durable Object per owner hold runtime state.
 - The same availability rules must govern listing, booking, and rescheduling. Never treat a provider failure as free time.
@@ -12,3 +12,4 @@ Read README.md and docs/decisions/phase-1.md before changing behavior.
 - Run npm run check for functional changes. Add meaningful tests for scheduling, authorization, provider failure and concurrency cases.
 - Record local, CI, deployed and actual provider/recipient verification separately in docs/STATUS.md. Do not call phase 1 complete while required integrations remain unverified.
 - Preserve unrelated changes and avoid changes to sibling repositories or submodule contents.
+- Follow docs/README.md for documentation ownership. Prospective work belongs in docs/ROADMAP.md; completed changes in CHANGELOG.md; dated verification in docs/STATUS.md and docs/release-evidence/. Keep research and historical evidence distinct, and update links when moving files.

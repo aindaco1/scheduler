@@ -107,4 +107,4 @@ SEO checks verify eight localized shells, exact public sitemap membership, recip
 
 Cloudflare documents `no-transform` for preventing automatic [Web Analytics injection](https://developers.cloudflare.com/web-analytics/faq/) and [JavaScript Detections injection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/). Scheduler's explicit Turnstile and server verification remain required. Do not add a zone rule that requires a JSD-passed signal for these no-transform pages; the signal is intentionally absent. No zone-wide settings were changed.
 
-Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [the pre-1.0 verification history](history/pre-1.0.md#final-quality-release-verification), with a [metrics-only evidence file](research/quality-evidence-2026-09-09.json).
+Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [the pre-1.0 verification history](history/pre-1.0.md#final-quality-release-verification), with a [metrics-only evidence file](release-evidence/quality-evidence-2026-09-09.json).
