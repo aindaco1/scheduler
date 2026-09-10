@@ -1,0 +1,196 @@
+{
+  "checkedAt": "2026-09-10T13:27:11.716490+00:00",
+  "source": "9057a738362d88aca1a4b0cd8885a5a5a1b3da3c",
+  "local": {
+    "npmRunCheck": "passed",
+    "node": "24.20.0",
+    "workerTests": 158,
+    "workerTestFiles": 16,
+    "localizedShells": 8,
+    "pairedBrowserMessages": 321,
+    "responsiveAdminStates": 40,
+    "responsivePublicStates": 84,
+    "dependencyAuditKnownVulnerabilities": 0
+  },
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/34482088793",
+    "result": "success"
+  },
+  "deployment": {
+    "workerVersion": "a8fa6c88-eed4-4440-82c7-882150471331"
+  },
+  "live": {
+    "checkedAt": "2026-09-10T13:24:31.686932+00:00",
+    "pages": [
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso",
+        "title": "Meet with Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso",
+        "bytes": 5937,
+        "schemaTypes": [
+          "Person",
+          "WebPage"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+        "title": "Brief chat · 30 min · Zoom · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+        "bytes": 6024,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=zoom",
+        "title": "Catch-up on Zoom · 60 min · Zoom · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=zoom",
+        "bytes": 6050,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=in-person",
+        "title": "Meet in person · 60 min · In person · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=in-person",
+        "bytes": 6517,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso",
+        "title": "Reserva con Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso",
+        "bytes": 6078,
+        "schemaTypes": [
+          "Person",
+          "WebPage"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=conversation",
+        "title": "Charla breve · 30 min · Zoom · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=conversation",
+        "bytes": 6230,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=zoom",
+        "title": "Charla por Zoom · 60 min · Zoom · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=zoom",
+        "bytes": 6154,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=in-person",
+        "title": "Reunión presencial · 60 min · Presencial · Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=in-person",
+        "bytes": 6443,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      }
+    ],
+    "sitemapUrls": 10,
+    "assets": [
+      {
+        "path": "/assets/social/preview-v1.png",
+        "bytes": 29330,
+        "sha256": "cbb1b4d61b0daf048b016cf9ff625d4e7b0a5a15496d16a43d443c61727a8594"
+      },
+      {
+        "path": "/assets/social/apple-touch-icon-v1.png",
+        "bytes": 5487,
+        "sha256": "0abc2e0a91ce91ef9aba29a866cb30f46871a27c25bd9010c5c753a84e5d1a6e"
+      }
+    ],
+    "invalidTypeGetAndHead": 404
+  },
+  "nativeAppleBefore": [
+    {
+      "iconProvider": false,
+      "imageProvider": false,
+      "resolvedURL": "https://scheduler.dustwave.xyz/alonso",
+      "title": "Book with Alonso · Scheduler",
+      "url": "https://scheduler.dustwave.xyz/alonso?type=conversation"
+    }
+  ],
+  "nativeAppleAfter": [
+    {
+      "iconProvider": true,
+      "imageDimensions": {
+        "height": 537,
+        "width": 1024
+      },
+      "imageProvider": true,
+      "resolvedURL": "https://scheduler.dustwave.xyz/alonso",
+      "title": "Meet with Alonso Indacochea",
+      "url": "https://scheduler.dustwave.xyz/alonso"
+    },
+    {
+      "iconProvider": true,
+      "imageDimensions": {
+        "height": 537,
+        "width": 1024
+      },
+      "imageProvider": true,
+      "resolvedURL": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+      "title": "Brief chat · 30 min · Zoom · Alonso Indacochea",
+      "url": "https://scheduler.dustwave.xyz/alonso?type=conversation"
+    },
+    {
+      "iconProvider": true,
+      "imageDimensions": {
+        "height": 537,
+        "width": 1024
+      },
+      "imageProvider": true,
+      "resolvedURL": "https://scheduler.dustwave.xyz/es/alonso?type=conversation",
+      "title": "Charla breve · 30 min · Zoom · Alonso Indacochea",
+      "url": "https://scheduler.dustwave.xyz/es/alonso?type=conversation"
+    }
+  ],
+  "messagesDraft": {
+    "platform": "macOS",
+    "url": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+    "observedTitle": "Brief chat · 30 min · Zoom · Alonso Indacochea",
+    "imageCaption": "Scheduler clock symbol",
+    "imageCount": 1,
+    "recipientEntered": false,
+    "messageSent": false,
+    "draftRemoved": true,
+    "originalConversationRestored": true
+  },
+  "liveAvailability": {
+    "type": "conversation",
+    "weekStarting": "2026-09-14",
+    "timezone": "America/Denver",
+    "availableTimesLoaded": true,
+    "bookingSubmitted": false
+  },
+  "boundaries": [
+    "No guest data or calendar event contents retained.",
+    "No live booking, invitation or message sent.",
+    "macOS Messages draft rendering verified; recipient delivery and iPhone rendering not tested.",
+    "Existing social previews may retain provider caches.",
+    "No new version tag or security-audit release created."
+  ]
+}

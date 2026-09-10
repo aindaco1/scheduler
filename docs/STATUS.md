@@ -14,7 +14,13 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 Local `npm run check` passed on Node 24.20.0: 158 Worker tests in 16 files, type checks, Jekyll build, eight localized shell/asset/privacy gates, 321 paired browser messages, independent fork setup, complete booking/admin/browser accessibility flows, the new sharing fixtures, 40 admin and 84 public responsive states, and Wrangler dry deployment. The September 10 dependency audit reported zero known vulnerabilities. The new copy controls and generated 1200 × 630 preview were visually inspected.
 
-The native macOS LinkPresentation baseline reproduced the deployed issue: the Brief chat type link resolved to the main page, had the generic title, and supplied neither image nor icon. CI, deployment and native verification of the upgrade are pending at this checkpoint. No live invitations, bookings or messages were sent by these checks.
+The native macOS LinkPresentation baseline reproduced the old deployed issue: the Brief chat type link resolved to the main page, had the generic title, and supplied neither image nor icon.
+
+[CI passed](https://github.com/aindaco1/scheduler/actions/runs/34482088793) for source `9057a738362d88aca1a4b0cd8885a5a5a1b3da3c`. That source is deployed as Worker `a8fa6c88-eed4-4440-82c7-882150471331`. Live verification passed for the main page and all three meeting types in English/Spanish: eight initial HTML responses with correct titles, canonicals, images and parsed JSON-LD; ten public sitemap entries; both raster assets matching local hashes; and retired-type GET/HEAD returning 404. The live Brief chat link opened its picker and loaded available times for the September 14 week.
+
+Native Apple LinkPresentation now returns the exact main/type URL, correct localized title, preview image and icon for the main page and the English/Spanish Brief chat links. In Messages itself, pasting the Brief chat URL into a new draft with no recipient produced an attached rich link titled **Brief chat · 30 min · Zoom · Alonso Indacochea**, with **Scheduler clock symbol** image caption and one image. The unsent attachment/draft was removed and the original conversation view restored. This verifies the macOS Messages draft preview; no recipient-delivery or iPhone-device claim is made. No live invitations, bookings or messages were sent. See [the public-facts-only evidence](release-evidence/meeting-sharing-2026-09-10.json).
+
+### Version 1.0.0 launch verification
 
 The final local `npm run check` passed: 150 Worker tests in 15 files, TypeScript, eight localized page/asset/privacy gates, 312 paired messages, independent fork setup, complete browser flows and Wrangler dry deployment. The dependency audit reported zero known advisories on September 10.
 
