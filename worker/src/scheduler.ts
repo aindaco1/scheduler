@@ -1,3 +1,4 @@
+import { meetingGap, normalizePreferences } from "./gap-policy";
 import { DurableObject } from "cloudflare:workers";
 import { prepareResendEmail } from "@dustwave/worker-core/email";
 import { Temporal } from "@js-temporal/polyfill";
@@ -114,6 +115,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
   }
   getSettings(): StoredConfig {
     const current = this.read<StoredConfig>("settings")!;
+    normalizePreferences(current.settings);
     current.settings.blockUsFederalHolidays ??= false;
     current.settings.reminderHours = reminderSchedule.parse(
       current.settings.reminderHours,
@@ -385,18 +387,24 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       issues.push("meeting_type_required");
     return issues;
   }
+  spanishEnabled() {
+    return this.getSettings().settings.spanishEnabled;
+  }
   publicConfig() {
     const s = this.getSettings().settings;
     const settings = {
       name: s.name,
       intro: s.intro,
+      spanishEnabled: s.spanishEnabled,
       timezone: s.timezone,
       enabled: s.enabled,
       noticeHours: s.noticeHours,
       horizonDays: s.horizonDays,
       cancelHours: s.cancelHours,
       brand: s.brand,
-      types: s.types.filter((t) => t.enabled),
+      types: s.types
+        .filter((t) => t.enabled)
+        .map((type) => ({ ...type, gap: meetingGap(s, type) })),
       locations: s.locations
         .filter((l) => l.enabled)
         .map(({ id, name, address, enabled }) => ({
@@ -555,6 +563,10 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       throw new AppError("settings_changed", 409);
     // Older dashboards may omit the new preference; omission must not turn it off.
     settings.blockUsFederalHolidays ??= current.settings.blockUsFederalHolidays;
+    // Preserve preferences when a dashboard opened before this upgrade saves.
+    for (const key of ["defaultGaps", "spanishEnabled"] as const)
+      if (!Object.hasOwn(value as object, key))
+        Object.assign(settings, { [key]: current.settings[key] });
     // Local availability edits must remain saveable during provider outages.
     // Validate live connections only when opening bookings or changing their
     // dependencies; listing, booking and rescheduling still check every time.
@@ -778,15 +790,16 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       )
     )
       throw new AppError("slot_unavailable", 409);
+    const bookingLocale = s.spanishEnabled ? input.locale : "en";
     const b: Booking = {
       id,
       requestId: input.requestId,
       typeId: type.id,
-      typeName: type.name[input.locale],
+      typeName: type.name[bookingLocale] || type.name.en || type.name.es,
       mode: type.mode,
       locationId: input.locationId,
       location: location
-        ? `${location.name[input.locale]} — ${location.address[input.locale]}`
+        ? `${location.name[bookingLocale] || location.name.en || location.name.es} — ${location.address[bookingLocale] || location.address.en || location.address.es}`
         : "",
       start,
       end,
@@ -794,7 +807,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       name: input.name,
       email: input.email,
       topic: input.topic,
-      locale: input.locale,
+      locale: bookingLocale,
       timezone: input.timezone,
       status: "pending",
       created: Date.now(),

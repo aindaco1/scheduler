@@ -5,6 +5,7 @@ export async function checkSettingsEnhancements(
   base,
   apiFixture,
   settings,
+  bookingPath,
 ) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
@@ -87,8 +88,8 @@ export async function checkSettingsEnhancements(
         "Calendar connections",
       ],
     );
-    await page.locator('[data-setting="types.0.gap"]').fill("20");
-    await page.locator('[data-setting="types.2.gap"]').fill("45");
+    await page.locator('[data-setting="defaultGaps.video"]').fill("20");
+    await page.locator('[data-setting="defaultGaps.inPerson"]').fill("45");
     await page
       .getByRole("button", { name: "Add reminder", exact: false })
       .click();
@@ -114,11 +115,11 @@ export async function checkSettingsEnhancements(
         .fill(String(hours));
     await save();
     assert.deepEqual(settings.reminderHours, [48, 24, 1]);
-    assert.equal(settings.types[0].gap, 20);
-    assert.equal(settings.types[2].gap, 45);
+    assert.equal(settings.defaultGaps.video, 20);
+    assert.equal(settings.defaultGaps.inPerson, 45);
     await reload();
     assert.equal(
-      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      await page.locator('[data-setting="defaultGaps.video"]').inputValue(),
       "20",
     );
     assert.equal(await page.locator(".reminder-row").count(), 3);
@@ -128,6 +129,127 @@ export async function checkSettingsEnhancements(
     await page
       .locator("[data-reminder-settings]")
       .screenshot({ path: "work/frontend/reminders-desktop.png" });
+    const email = page.locator(".connection-email");
+    assert.equal(await email.textContent(), "owner@example.test");
+    assert.equal(
+      await page.locator(".connection-card p").first().textContent(),
+      "New meetings are added automatically to your main Google calendar.",
+    );
+    await page
+      .locator(".connection-card")
+      .first()
+      .screenshot({ path: "work/frontend/google-connection-desktop.png" });
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(
+      await page.locator('[data-default-gap="0"]').isChecked(),
+      true,
+    );
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').isDisabled(),
+      true,
+    );
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "20",
+    );
+    await page.locator('[data-default-gap="0"]').uncheck();
+    await page.locator('[data-setting="types.0.gap"]').fill("35");
+    await save();
+    assert.equal(settings.types[0].gap, 35);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="defaultGaps.video"]').fill("25");
+    await save();
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "35",
+    );
+    assert.equal(
+      await page.locator('[data-setting="types.1.gap"]').inputValue(),
+      "25",
+    );
+    await page.locator('[data-default-gap="0"]').check();
+    await page
+      .locator('[data-setting="types.0.mode"]')
+      .selectOption("in-person");
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "45",
+    );
+    await page.locator('[data-setting="types.0.mode"]').selectOption("meet");
+    assert.equal(
+      await page.locator('[data-setting="types.0.gap"]').inputValue(),
+      "25",
+    );
+    await page
+      .locator("#panel-types .editor-card")
+      .first()
+      .screenshot({ path: "work/frontend/gap-override-desktop.png" });
+    await save();
+    assert.equal(settings.types[0].gap, null);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    const intro = settings.intro.es;
+    await page.locator('[data-setting="intro.es"]').fill(intro + " Traducido.");
+    await page.locator('[data-setting="spanishEnabled"]').uncheck();
+    assert.equal(
+      await page.locator('[data-setting="intro.es"]').isVisible(),
+      false,
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="spanishEnabled"]')
+        .evaluate((el) => el === document.activeElement),
+      true,
+    );
+    const fullWidth = await page
+      .locator('[data-setting="intro.en"]')
+      .evaluate(
+        (el) =>
+          Math.abs(
+            el.getBoundingClientRect().width -
+              el.closest(".bilingual-fields").getBoundingClientRect().width,
+          ) < 2,
+      );
+    assert.equal(fullWidth, true);
+    await save();
+    await reload();
+    assert.equal(settings.spanishEnabled, false);
+    assert.equal(settings.intro.es, intro + " Traducido.");
+    assert.equal(await page.locator("#language-link").isVisible(), false);
+    await page.getByRole("tab", { name: "Meeting types", exact: true }).click();
+    assert.equal(
+      await page.locator('[data-setting="types.0.name.es"]').isVisible(),
+      false,
+    );
+    assert.equal(
+      await page.locator('[data-setting="locations.0.address.es"]').isVisible(),
+      false,
+    );
+    assert.equal(
+      await page
+        .locator('[data-setting="types.0.name.en"]')
+        .evaluate(
+          (el) =>
+            Math.abs(
+              el.getBoundingClientRect().width -
+                el.closest(".bilingual-fields").getBoundingClientRect().width,
+            ) < 2,
+        ),
+      true,
+    );
+    const guest = await context.newPage();
+    await guest.goto(base + "/es" + bookingPath + "?type=conversation#kept");
+    await guest.waitForURL(base + bookingPath + "?type=conversation#kept");
+    assert.equal(await guest.locator("#language-link").isVisible(), false);
+    await guest.close();
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await page.locator('[data-setting="spanishEnabled"]').check();
+    assert.equal(
+      await page.locator('[data-setting="intro.es"]').inputValue(),
+      intro + " Traducido.",
+    );
+    await save();
+    assert.equal(await page.locator("#language-link").isVisible(), true);
     const png = await page.evaluate(() => {
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = 512;
@@ -196,6 +318,10 @@ export async function checkSettingsEnhancements(
     await page
       .locator("[data-logo-editor]")
       .screenshot({ path: "work/frontend/logo-upload-desktop.png" });
+    const previewBox = await page.locator(".logo-visual").boundingBox(),
+      controlsBox = await page.locator(".logo-controls").boundingBox();
+    assert.ok(previewBox.x > controlsBox.x + controlsBox.width);
+    assert.ok(Math.abs(previewBox.y - controlsBox.y) < 2);
     await page.setViewportSize({ width: 320, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto(base + "/es/admin/");

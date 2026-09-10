@@ -211,7 +211,9 @@ small,
   gap: 1rem;
   font-size: 0.82rem;
 }
-.theme-control { max-width: 100%; }
+.theme-control {
+  max-width: 100%;
+}
 .theme-control select {
   width: auto;
   max-width: 100%;
@@ -1076,5 +1078,61 @@ legend {
   section p {
     line-height: 1.75;
     color: var(--muted);
+  }
+}
+
+/* Keep related controls compact without narrowing editors on small screens. */
+.bilingual-fields.single-language {
+  grid-template-columns: minmax(0, 1fr);
+}
+.gap-editor {
+  align-items: center;
+}
+.logo-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: 1.5rem;
+  align-items: start;
+}
+.logo-controls,
+.logo-visual {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.logo-controls p {
+  margin: 0;
+}
+.logo-controls [data-logo-status]:empty,
+.logo-controls [data-logo-error]:empty {
+  display: none;
+}
+.logo-visual .logo-preview {
+  width: 100%;
+}
+.logo-visual .button {
+  justify-self: start;
+}
+.connection-status {
+  display: grid;
+  justify-items: end;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.connection-email {
+  color: var(--success);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .logo-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .logo-visual {
+    grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+    align-items: center;
+  }
+  .connection-status {
+    justify-items: start;
   }
 }

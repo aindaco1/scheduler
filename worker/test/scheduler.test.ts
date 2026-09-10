@@ -73,6 +73,38 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
   };
 }
 describe("Durable booking coordinator", () => {
+  it("persists preferences, preserves omitted upgrade fields, and snapshots resolved gaps and booking language", async () => {
+    const stub = await setup();
+    mockReads();
+    const current = await stub.getSettings();
+    current.settings.defaultGaps.video = 45;
+    current.settings.spanishEnabled = false;
+    const saved = await stub.updateSettings(current.settings, current.revision);
+    expect((await stub.publicConfig()).settings.types[0].gap).toBe(45);
+    expect((await stub.publicConfig()).settings.spanishEnabled).toBe(false);
+    const legacyPayload = structuredClone(saved.settings);
+    Reflect.deleteProperty(legacyPayload, "defaultGaps");
+    Reflect.deleteProperty(legacyPayload, "spanishEnabled");
+    const upgraded = await stub.updateSettings(legacyPayload, saved.revision);
+    expect(upgraded.settings.defaultGaps.video).toBe(45);
+    expect(upgraded.settings.spanishEnabled).toBe(false);
+    const result = await stub.createBooking({ ...input(), locale: "es" });
+    expect(result.booking.locale).toBe("en");
+    const changed = await stub.getSettings();
+    changed.settings.defaultGaps.video = 0;
+    await stub.updateSettings(changed.settings, changed.revision);
+    await runInDurableObject(stub, (_instance, state) => {
+      const row = state.storage.sql
+        .exec<{ data: string }>(
+          "SELECT data FROM bookings WHERE id=?",
+          result.booking.id,
+        )
+        .one();
+      expect(JSON.parse(row.data).gap).toBe(45);
+      return state.storage.deleteAlarm();
+    });
+  });
+
   it("reuses browsing snapshots but rejects a new provider conflict at booking", async () => {
     const stub = await setup();
     let reads = 0;

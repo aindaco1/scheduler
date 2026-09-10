@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_GAPS } from "./gap-policy";
 
 export const localized = z
   .object({ en: z.string().max(2000), es: z.string().max(2000) })
@@ -43,7 +44,7 @@ export const meetingType = z
     name: localizedName,
     description: localized,
     duration: z.number().int().min(5).max(240),
-    gap: z.number().int().min(0).max(240),
+    gap: z.number().int().min(0).max(240).nullable(),
     mode: z.enum(["meet", "zoom", "in-person"]),
     enabled: z.boolean(),
     locationIds: z.array(identifier).max(20),
@@ -62,6 +63,14 @@ export const settingsSchema = z
   .object({
     name: z.string().min(1).max(100),
     intro: localized,
+    spanishEnabled: z.boolean().default(true),
+    defaultGaps: z
+      .object({
+        video: z.number().int().min(0).max(240),
+        inPerson: z.number().int().min(0).max(240),
+      })
+      .strict()
+      .default(() => ({ ...DEFAULT_GAPS })),
     timezone: z
       .string()
       .max(100)
@@ -248,6 +257,8 @@ export function defaultSettings(
     },
     timezone,
     enabled: false,
+    spanishEnabled: true,
+    defaultGaps: { ...DEFAULT_GAPS },
     noticeHours: 24,
     horizonDays: 30,
     cancelHours: 24,
@@ -270,7 +281,7 @@ export function defaultSettings(
           es: "Ideas, proyectos o una oportunidad para ponernos al día.",
         },
         duration: 30,
-        gap: 15,
+        gap: null,
         mode: "meet",
         enabled: true,
         locationIds: [],
@@ -283,7 +294,7 @@ export function defaultSettings(
           es: "Una conversación por videollamada en Zoom.",
         },
         duration: 30,
-        gap: 15,
+        gap: null,
         mode: "zoom",
         enabled: false,
         locationIds: [],
@@ -296,7 +307,7 @@ export function defaultSettings(
           es: "Reservemos un momento para conversar en persona.",
         },
         duration: 60,
-        gap: 30,
+        gap: null,
         mode: "in-person",
         enabled: false,
         locationIds: [],

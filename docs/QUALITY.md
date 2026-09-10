@@ -79,7 +79,7 @@ Residual considerations:
 
 ## Accessibility and localization contract
 
-All public booking, management, admin and privacy routes ship in English and Spanish. Native controls, labels, dialogs, skip links and focus styles remain the default. Dates use `Intl`/Temporal with IANA zones; the browser selects its reported timezone and guests can override it. Monday-week and DST boundaries are covered separately. Owner calendar names and authored content are not automatically translated.
+All public booking, management, admin and privacy routes ship in English and Spanish, with Spanish enabled by default and an owner setting to turn it off. Disabled Spanish routes temporarily redirect to English; runtime language links, alternates and sitemap entries follow the preference. Translations and existing booking email languages are preserved. Native controls, labels, dialogs, skip links and focus styles remain the default. Dates use `Intl`/Temporal with IANA zones; the browser selects its reported timezone and guests can override it. Monday-week and DST boundaries are covered separately. Owner calendar names and authored content are not automatically translated.
 
 The compact `t(en, es)` convention remains the existing UI catalog, avoiding a second translation framework. The quality script parses TypeScript compiled to JavaScript, rejects missing/empty paired literal translations and mismatched template placeholders, and exports a review packet. This validates the paired calls; it cannot detect every newly hardcoded string or judge translation quality. Email and static privacy copy are reviewed alongside their paired language sources and tested in their existing flows.
 

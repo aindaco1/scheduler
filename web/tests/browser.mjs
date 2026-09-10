@@ -1002,7 +1002,13 @@ try {
   await preferenceContext.close();
   await checkQuality(browser, base, apiFixture, bookingPath);
   await checkBookingWeeks(browser, base, apiFixture, settings, bookingPath);
-  await checkSettingsEnhancements(browser, base, apiFixture, settings);
+  await checkSettingsEnhancements(
+    browser,
+    base,
+    apiFixture,
+    settings,
+    bookingPath,
+  );
   assert.deepEqual(errors, []);
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",

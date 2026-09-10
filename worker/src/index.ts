@@ -1,3 +1,4 @@
+import { isPresentationPath, localizedAsset } from "./language";
 import { z } from "zod";
 import {
   readJsonObject,
@@ -225,6 +226,11 @@ async function route(request: Request, env: RuntimeEnv): Promise<Response> {
   if (!path.startsWith("/api/")) {
     if (path === "/")
       return Response.redirect(url.origin + "/" + env.OWNER_SLUG, 302);
+    if (
+      ["GET", "HEAD"].includes(method) &&
+      isPresentationPath(path, env.OWNER_SLUG)
+    )
+      return localizedAsset(request, env.ASSETS, stub.spanishEnabled());
     return env.ASSETS.fetch(request);
   }
   if (method === "OPTIONS") return new Response(null, { status: 405 });

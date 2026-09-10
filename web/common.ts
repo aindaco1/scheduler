@@ -28,6 +28,7 @@ export type PublicSettings = Pick<
   Settings,
   | "name"
   | "intro"
+  | "spanishEnabled"
   | "timezone"
   | "enabled"
   | "noticeHours"
@@ -198,6 +199,14 @@ export function summary(
   return `<div class="booking-review"><strong>${esc(b.typeName)}</strong><p>${esc(dateLabel(b.start, b.timezone))}<br><span class="muted">${esc(zoneLabel(b.timezone))} · ${Math.round((b.end - b.start) / 60000)} ${t("minutes", "minutos")}</span></p><p>${esc(b.location || modeLabel(b.mode))}</p></div>`;
 }
 export function applyBrand(settings: PublicSettings) {
+  const languageLink = $<HTMLAnchorElement>("#language-link");
+  if (languageLink) languageLink.hidden = settings.spanishEnabled === false;
+  // Also handle a page left open while the owner changes the setting.
+  if (settings.spanishEnabled === false && locale === "es") {
+    const english = new URL(location.href);
+    english.pathname = english.pathname.replace(/^\/es(?=\/)/, "");
+    location.replace(english.href);
+  }
   const mark = $<HTMLAnchorElement>(".wordmark");
   const logo = safeHttps(settings.brand.logoUrl);
   if (mark)
@@ -234,6 +243,7 @@ export function safeHttps(url: string | undefined) {
 }
 export function syncLanguageLink() {
   const link = $<HTMLAnchorElement>("#language-link");
+  if (!link) return;
   const u = new URL(link.href);
   u.search = location.search;
   u.hash = location.hash;
