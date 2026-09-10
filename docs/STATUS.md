@@ -18,7 +18,9 @@ Local `npm run check` passed on Node 24.20.0: 176 Worker tests in 17 files, two 
 
 The actual Cloudflare recovery drill passed on an isolated temporary Worker: all six SQL tables, KV, encrypted credentials/management/email payloads and the alarm matched their saved state after PITR and restart. Restored-state quarantine invalidated sessions, held jobs, paused bookings and removed the alarm. Temporary resources were deleted successfully. No production namespace or real provider credentials were supplied.
 
-CI, production deployment and read-only live verification are pending for the candidate. No live bookings, provider writes, invitations or recipient messages were used in the audit. See [the release evidence](release-evidence/security-1.0.1.json) for separated outcomes.
+[CI passed](https://github.com/aindaco1/scheduler/actions/runs/34499812594) for application source `401ff059415f93179672964737156cbcb750bd11`, deployed as Worker `f44ec8f7-54cd-4d07-8960-8ca5f2487c3e`. Read-only production checks passed for eight localized shells, two unauthenticated owner APIs (401), an invalid private booking (404), nine matching built assets, eight main/type preview pages, ten sitemap entries, two matching preview assets, and retired-type GET/HEAD (404). Booking remained enabled/ready. September 14-week availability returned 104 and 81 slots for the two video types and 24, 18 and 0 for the three in-person locations, all with successful provider reads. A zero count is a successful no-openings result.
+
+No live bookings, provider writes, invitations or recipient messages were used in the audit. The [1.0.1 release](https://github.com/aindaco1/scheduler/releases/tag/v1.0.1) includes the tested application and the final documentation/evidence update; that update changes no deployed runtime or assets. See [the release evidence](release-evidence/security-1.0.1.json) for separated outcomes and probe limits.
 
 ### September 10 meeting-link preview upgrade
 
@@ -44,7 +46,7 @@ See the [published 1.0.0 release](https://github.com/aindaco1/scheduler/releases
 
 ## Checkout cleanup
 
-After publication, reproducible site/bundle/manifests, caches and test reports were removed with `npm run clean`. Old scratch work and provisioning backups were moved to a private recoverable archive outside the checkout. Dependencies, source fixtures, pinned submodules and any local database state are retained; TypeScript checks still pass after cleanup. The merged Dependabot branch and temporary review worktree were removed. Only `main` remains, with no open pull requests at launch.
+For 1.0.1, reproducible site/bundle/manifests, caches and test reports were removed with `npm run clean`. Remaining one-off release logs, screenshots/helpers and isolated-drill scratch files were moved to a private recoverable archive outside the checkout. Dependencies, source fixtures, pinned submodules, secrets and any local database state are retained; TypeScript passes after cleanup. Remote references were pruned; only `main` remains locally and on origin, with no extra worktrees or open pull requests. There were no stale branches to delete.
 
 ## Provider and recipient acceptance
 

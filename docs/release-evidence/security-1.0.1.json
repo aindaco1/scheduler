@@ -56,10 +56,17 @@
     "restoredStateQuarantined": true
   },
   "ci": {
-    "status": "pending"
+    "conclusion": "success",
+    "headSha": "401ff059415f93179672964737156cbcb750bd11",
+    "status": "completed",
+    "updatedAt": "2026-09-10T16:07:06Z",
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/34499812594"
   },
   "deployment": {
-    "status": "pending"
+    "status": "deployed",
+    "workerVersion": "f44ec8f7-54cd-4d07-8960-8ca5f2487c3e",
+    "applicationSource": "401ff059415f93179672964737156cbcb750bd11",
+    "origin": "https://scheduler.dustwave.xyz"
   },
   "providerRecipient": {
     "liveBookingWrites": 0,
@@ -72,5 +79,284 @@
     "No production data restore or independent archival backup",
     "Production encryption-key backup custody not inspected",
     "No new provider invitation or recipient acceptance"
-  ]
+  ],
+  "applicationSource": "401ff059415f93179672964737156cbcb750bd11",
+  "live": {
+    "checkedAt": "2026-09-10T16:09:43.072043+00:00",
+    "routes": [
+      {
+        "path": "/alonso",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": false
+      },
+      {
+        "path": "/es/alonso",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": false
+      },
+      {
+        "path": "/privacy/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": false
+      },
+      {
+        "path": "/es/privacy/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": false
+      },
+      {
+        "path": "/admin/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/es/admin/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/manage/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/es/manage/",
+        "status": 200,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/api/admin/settings",
+        "status": 401,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/api/admin/bookings",
+        "status": 401,
+        "securityHeaders": true,
+        "privateNoStore": true
+      },
+      {
+        "path": "/api/bookings/11111111-2222-4333-8444-555555555555",
+        "status": 404,
+        "securityHeaders": true,
+        "privateNoStore": true
+      }
+    ],
+    "publicReady": true,
+    "availability": [
+      {
+        "type": "conversation",
+        "location": "",
+        "status": 200,
+        "slotCount": 104
+      },
+      {
+        "type": "zoom",
+        "location": "",
+        "status": 200,
+        "slotCount": 81
+      },
+      {
+        "type": "in-person",
+        "location": "place-ade1e5d6",
+        "status": 200,
+        "slotCount": 24
+      },
+      {
+        "type": "in-person",
+        "location": "place-aad76bc7",
+        "status": 200,
+        "slotCount": 18
+      },
+      {
+        "type": "in-person",
+        "location": "place-02c658ba",
+        "status": 200,
+        "slotCount": 0
+      }
+    ],
+    "builtAssets": [
+      {
+        "path": "/assets/build/admin-UEUAP6AT.js",
+        "sha256": "8483dbe56173f3dd899899206d77b17c44481459b031407e1c757223de45336a"
+      },
+      {
+        "path": "/assets/build/booking-CX3QTUUB.js",
+        "sha256": "e7ccc444ca12ed8d35578e63c1505f3a44a4b5b84f39665875f4815f3c72b1f3"
+      },
+      {
+        "path": "/assets/build/manage-CZPOKXJK.js",
+        "sha256": "6287b9500bc42c1c56a94ee58510dd79f797af60c2195b8c93aa433f2811f8f2"
+      },
+      {
+        "path": "/assets/build/privacy-DIVN25YF.js",
+        "sha256": "ace124af47bef87aa5ee715227dea2210566b6be1853c4fb09edde663ef3b2c2"
+      },
+      {
+        "path": "/assets/build/scheduler-e6b049deb74d.css",
+        "sha256": "e6b049deb74d978472aa37b9344f4286198fa7fa62315dc37d70997a186bb609"
+      },
+      {
+        "path": "/assets/build/shared-3V44XEB7.js",
+        "sha256": "e7bca58bed8f36e46356997f2d0707ee5b91f1c395584bd259b002010460ef29"
+      },
+      {
+        "path": "/assets/build/shared-73VL62MH.js",
+        "sha256": "4f8b77b5ec6c4b1b8bbc836c56da8b02ea5bd20249efeb6af7623a52e6f4d0e7"
+      },
+      {
+        "path": "/assets/build/shared-J7IVGWSB.js",
+        "sha256": "e5d26492ab1ebce36032042e8fa38cc22a27ee43eb19f3b762af73f889160990"
+      },
+      {
+        "path": "/assets/build/shared-MMYUMTA2.js",
+        "sha256": "8331da443a2d4ba9f9c1471ef09fed6d8e77daeda18f9e513c544596480173b6"
+      }
+    ],
+    "writes": 0
+  },
+  "sharing": {
+    "checkedAt": "2026-09-10T16:08:36.547771+00:00",
+    "pages": [
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso",
+        "title": "Meet with Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso",
+        "bytes": 5937,
+        "schemaTypes": [
+          "Person",
+          "WebPage"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+        "title": "Brief chat \u00b7 30 min \u00b7 Zoom \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=conversation",
+        "bytes": 6024,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=zoom",
+        "title": "Catch-up on Zoom \u00b7 60 min \u00b7 Zoom \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=zoom",
+        "bytes": 6050,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/alonso?type=in-person",
+        "title": "Meet in person \u00b7 60 min \u00b7 In person \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/alonso?type=in-person",
+        "bytes": 6517,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso",
+        "title": "Reserva con Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso",
+        "bytes": 6078,
+        "schemaTypes": [
+          "Person",
+          "WebPage"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=conversation",
+        "title": "Charla breve \u00b7 30 min \u00b7 Zoom \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=conversation",
+        "bytes": 6230,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=zoom",
+        "title": "Charla por Zoom \u00b7 60 min \u00b7 Zoom \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=zoom",
+        "bytes": 6154,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      },
+      {
+        "url": "https://scheduler.dustwave.xyz/es/alonso?type=in-person",
+        "title": "Reuni\u00f3n presencial \u00b7 60 min \u00b7 Presencial \u00b7 Alonso Indacochea",
+        "canonical": "https://scheduler.dustwave.xyz/es/alonso?type=in-person",
+        "bytes": 6443,
+        "schemaTypes": [
+          "Person",
+          "WebPage",
+          "Service"
+        ]
+      }
+    ],
+    "sitemapUrls": 10,
+    "assets": [
+      {
+        "path": "/assets/social/preview-v1.png",
+        "bytes": 29330,
+        "sha256": "cbb1b4d61b0daf048b016cf9ff625d4e7b0a5a15496d16a43d443c61727a8594"
+      },
+      {
+        "path": "/assets/social/apple-touch-icon-v1.png",
+        "bytes": 5487,
+        "sha256": "0abc2e0a91ce91ef9aba29a866cb30f46871a27c25bd9010c5c753a84e5d1a6e"
+      }
+    ],
+    "invalidTypeGetAndHead": 404
+  },
+  "probeNotes": [
+    "An initial urllib public-page request returned 403; the curl-based route, asset, metadata and availability checks all passed. The client-specific difference was not isolated."
+  ],
+  "repositorySecurity": {
+    "privateVulnerabilityReporting": true,
+    "secretScanning": true,
+    "pushProtection": true,
+    "workflowDefaultPermissions": "read",
+    "workflowCanApprovePullRequests": false,
+    "checkoutPersistsCredentials": false,
+    "requiredWorkerSecretNamesPresent": true,
+    "secretValuesReviewed": false
+  },
+  "cleanup": {
+    "generatedOutputsRemoved": true,
+    "scratchArchived": true,
+    "dependenciesRetained": true,
+    "sourceTestsRetained": true,
+    "localDatabaseUntouched": true,
+    "localBranches": [
+      "main"
+    ],
+    "remoteBranches": [
+      "main"
+    ],
+    "extraWorktrees": 0,
+    "openPullRequests": 0,
+    "staleBranchesDeleted": 0,
+    "typecheckAfterCleanupPassed": true
+  }
 }
