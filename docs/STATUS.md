@@ -157,3 +157,7 @@ Deployment: source commit `5f667dc` is live in Worker version `11d4f114-b26b-4aa
 The English and Spanish privacy pages now link the named services to their official product sites: Google Calendar, Google Meet, Zoom, Resend, Cloudflare, Turnstile and iCloud. The seven destinations were opened and verified. URLs live once in `_data/services.yml` and are shared by both pages; the existing prose is unchanged.
 
 Local verification passed: the complete check workflow, including 110 Workers tests, TypeScript, template checks, production build, browser/accessibility acceptance and Wrangler dry run. Each rendered article contains eight service links covering the seven destinations, with all Liquid references resolved. No live settings, booking, calendar or email writes were made. CI and deployment evidence follows below.
+
+Deployment: source commit `38ee36c` is live in Worker version `c759730b-c813-47e0-9c6b-b3dd02900fba`. Both privacy routes returned HTTP 200, and each live article matched the verified build with eight links covering all seven services.
+
+[GitHub CI for `38ee36c`](https://github.com/aindaco1/scheduler/actions/runs/34425445331) passed the complete check workflow.
