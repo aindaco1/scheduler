@@ -1,0 +1,64 @@
+{
+  "dateUTC": "2026-09-14",
+  "sourceCommit": "f8f5bce9ffd5efae01d2b3075c3eebe0f0681593",
+  "mergedCommit": "7a0287a224c70796f80ecf89bbc798ffaf5cb3e7",
+  "platformCommit": "30b1cf9c1154b6f38e3da34fc7b2ed3b6d312088",
+  "ci": "https://github.com/aindaco1/scheduler/actions/runs/34803846422",
+  "versions": {
+    "previous": [
+      {
+        "version_id": "f44ec8f7-54cd-4d07-8960-8ca5f2487c3e",
+        "percentage": 100
+      }
+    ],
+    "current": [
+      {
+        "version_id": "ae6665e9-4e79-452e-875c-ec22cc5e7b93",
+        "percentage": 100
+      }
+    ],
+    "deployedAt": "2026-09-14T03:48:49.638021Z",
+    "changed": true
+  },
+  "publicChecks": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "bytes": 11
+    },
+    {
+      "path": "/alonso",
+      "status": 200,
+      "bytes": 5937
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200,
+      "bytes": 6078
+    },
+    {
+      "path": "/admin/",
+      "status": 200,
+      "bytes": 3428
+    },
+    {
+      "asset": "/assets/build/admin-UEUAP6AT.js",
+      "sha256": "8483dbe56173f3dd899899206d77b17c44481459b031407e1c757223de45336a",
+      "matches": true
+    },
+    {
+      "asset": "/assets/build/booking-CX3QTUUB.js",
+      "sha256": "e7ccc444ca12ed8d35578e63c1505f3a44a4b5b84f39665875f4815f3c72b1f3",
+      "matches": true
+    },
+    {
+      "asset": "/assets/build/scheduler-e6b049deb74d.css",
+      "sha256": "e6b049deb74d978472aa37b9344f4286198fa7fa62315dc37d70997a186bb609",
+      "matches": true
+    }
+  ],
+  "limitations": [
+    "No new booking, provider-write or recipient-delivery acceptance was performed.",
+    "No settings, secrets or schema migrations changed."
+  ]
+}

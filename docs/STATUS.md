@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 10, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 14, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,12 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Platform 0.37.0 reuse rollout — September 14 UTC
+
+[PR #2](https://github.com/aindaco1/scheduler/pull/2) merged the characterized migration and removed the duplicate browser declarations. Platform is pinned at `30b1cf9c1154b6f38e3da34fc7b2ed3b6d312088`. Local `npm run check` passed, and [main CI passed](https://github.com/aindaco1/scheduler/actions/runs/34803846422) for merge `7a0287a224c70796f80ecf89bbc798ffaf5cb3e7`.
+
+The tested source `f8f5bce9ffd5efae01d2b3075c3eebe0f0681593` is deployed as Worker `ae6665e9-4e79-452e-875c-ec22cc5e7b93`. Public health, English/Spanish booking shells and the admin shell returned HTTP 200; all three referenced CSS/JavaScript assets matched the tested build. The previous Worker `f44ec8f7-54cd-4d07-8960-8ca5f2487c3e` is the code rollback target. No settings, secrets or schema migrations changed, and no new bookings, provider writes or messages were used for verification. See the [release record](release-evidence/platform-reuse-2026-09-14.json) and [migration/rollback rehearsal](platform-reuse-2026-09-14.md).
 
 ### Version 1.0.1 security and sharing release
 
