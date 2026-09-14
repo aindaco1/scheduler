@@ -94,7 +94,7 @@ The dashboard preserves unrelated edits if another tab connects a calendar or ch
 
 ## Email delivery and held failures
 
-Worker Core 0.13.0 supplies content-preserving delivery defaults. `EMAIL_REPLY_TO` is optional and falls back to the configured owner `ADMIN_EMAIL`. Both owner sign-in and booking emails include a monitored reply destination and `Auto-Submitted: auto-generated`. Replies do not automatically cancel or reschedule a booking; the existing management link owns those actions.
+Worker Core 0.14.0 supplies content-preserving delivery defaults. `EMAIL_REPLY_TO` is optional and falls back to the configured owner `ADMIN_EMAIL`. Both owner sign-in and booking emails include a monitored reply destination and `Auto-Submitted: auto-generated`. Replies do not automatically cancel or reschedule a booking; the existing management link owns those actions.
 
 The outbox freezes the message, sender, reply address and headers before the first provider call. Retries keep the same idempotency key and exact body even after settings change. Provider `Retry-After` delays take precedence over normal backoff. Permanent Resend rejections stop automatic attempts and leave an encrypted held job; the booking shows `email_needs_attention`. Uncertain delivery also stops before Resend's 24-hour deduplication window expires. Inspect Resend history before any manual resend. A held message does not invalidate a confirmed calendar event.
 

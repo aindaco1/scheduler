@@ -56,3 +56,5 @@ Following Pool's structure, keep detailed maintainer guides here and use the roo
 Roadmap owns prospective work. Changelog records completed changes; Status and `release-evidence/` preserve dated verification. Keep original investigations in `research/` and older narrative records in `history/`. Historical evidence is not a statement that a setting or provider status is still current.
 
 README, LICENSE, AGENTS and CHANGELOG remain at the repository root, as in Pool. Contribution, security and third-party notice guides live only here in `docs/`; there are no duplicate root pointer files. Component READMEs stay beside their code. Preserve links and heading anchors when moving material. These maintainer documents remain excluded from the public Jekyll build.
+
+- [Platform reuse migration](platform-reuse-2026-09-14.md): source candidate, characterization, validation limits and independent rollback.
