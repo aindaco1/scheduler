@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Detect variable-length GitHub App installation tokens in the source audit, including dots, underscores, and hyphens, while keeping credential values out of diagnostics.
+
 ## 1.0.1 — 2026-09-10
 
 Security audit, recovery verification and meeting sharing. Existing installations need no schema migration or provider reconnection; preserve the namespace and encryption key.
