@@ -24,7 +24,7 @@
     "benchmark:availability": "node scripts/benchmark-availability.mjs",
     "clean": "node scripts/clean.mjs",
     "audit:dependencies": "npm audit --audit-level=moderate && node scripts/audit-ruby.mjs",
-    "test:audit": "node --test scripts/audit-ruby.test.mjs",
+    "test:audit": "node --test scripts/audit-ruby.test.mjs scripts/credential-signatures.test.mjs",
     "test:platform": "node --test scripts/platform-pin.test.mjs"
   },
   "dependencies": {

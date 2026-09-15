@@ -8,6 +8,7 @@ import { transform } from "esbuild";
 import assert from "node:assert/strict";
 import { readProject } from "./project-config.mjs";
 import sharp from "sharp";
+import { hasCredentialSignature } from "./credential-signatures.mjs";
 const { site } = await readProject();
 const manifest = JSON.parse(await readFile("_data/build.json", "utf8"));
 const budget = JSON.parse(
@@ -209,9 +210,7 @@ for (const file of tracked) {
   if (!(await stat(file)).isFile()) continue;
   const text = await readFile(file, "utf8");
   assert(
-    !/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\bsk_live_[A-Za-z0-9]{20,}|\bgh[pousr]_[A-Za-z0-9]{30,}/.test(
-      text,
-    ),
+    !hasCredentialSignature(text),
     `${file}: possible credential; inspect privately`,
   );
 }
