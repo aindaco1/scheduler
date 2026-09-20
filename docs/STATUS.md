@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 14, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 20, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,14 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Dependency PR validation — September 20 UTC
+
+[PR #4](https://github.com/aindaco1/scheduler/pull/4), [PR #5](https://github.com/aindaco1/scheduler/pull/5), and [PR #6](https://github.com/aindaco1/scheduler/pull/6) update the SHA-pinned Ruby setup action, development tooling, and Zod. The combined source passed `npm ci`, `npm run check` (176 Worker tests, browser/axe flows, 40 admin and 84 public responsive checks, and Wrangler dry deployment), and `npm run audit:dependencies` (zero npm advisories and no findings across 34 Ruby packages). A separate isolated Wrangler local-server smoke returned healthy/public responses and denied unauthenticated owner settings. Vitest 4, the workerd override, both submodule pins, and application source are unchanged.
+
+Each original PR's hosted Check passed on September 17; the combined branch's hosted verification is tracked in [PR #6 checks](https://github.com/aindaco1/scheduler/pull/6/checks). Local validation used Node 24.21.0 and the installed Ruby 3.0.0; the supported Ruby 3.3 environment is covered by CI. See the [dependency review record](release-evidence/dependencies-2026-09-20.md) for revisions, upstream review, and validation limits.
+
+This maintenance validation does not deploy a Worker or repeat live provider/recipient acceptance. The most recent recorded production deployment remains the September 14 Platform rollout below. No live bookings, calendar writes, invitations, or email were used.
 
 ### Platform 0.37.0 reuse rollout — September 14 UTC
 
