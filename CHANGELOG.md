@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update Zod to 4.6.5, Wrangler to 4.131.2, Sass to 1.104.1, Node types to 26.5.1, and the SHA-pinned Ruby setup action to 1.322.0. Retain the Cloudflare-compatible Vitest 4 and workerd pins; verify the combined updates with the full check and dependency audits.
 - Detect variable-length GitHub App installation tokens in the source audit, including dots, underscores, and hyphens, while keeping credential values out of diagnostics.
 
 ## 1.0.1 — 2026-09-10
