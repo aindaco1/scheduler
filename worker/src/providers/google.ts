@@ -201,13 +201,27 @@ export class GoogleCalendar {
   async create(
     booking: Booking,
     owner: string,
+    host: { name: string; email: string },
   ): Promise<{ eventId: string; joinUrl?: string }> {
     let event = await this.get(booking);
     if (!event) {
+      const hostName = host.name.trim() || host.email;
+      // Google derives the organizer from the primary calendar. Also list that
+      // account as a participant so guests can see who will attend.
+      const attendees = [
+        {
+          email: host.email,
+          displayName: hostName,
+          responseStatus: "accepted",
+        },
+        ...(booking.email.toLowerCase() === host.email.toLowerCase()
+          ? []
+          : [{ email: booking.email, displayName: booking.name }]),
+      ];
       const body = {
         id: this.eventId(booking),
-        summary: `${booking.typeName} · ${booking.name}`,
-        description: calendarDescription(booking),
+        summary: `${booking.typeName} · ${hostName} & ${booking.name}`,
+        description: calendarDescription(booking, hostName),
         start: {
           dateTime: new Date(booking.start).toISOString(),
           timeZone: booking.timezone,
@@ -216,7 +230,7 @@ export class GoogleCalendar {
           dateTime: new Date(booking.end).toISOString(),
           timeZone: booking.timezone,
         },
-        attendees: [{ email: booking.email, displayName: booking.name }],
+        attendees,
         location: booking.joinUrl || booking.location,
         guestsCanModify: false,
         guestsCanInviteOthers: false,

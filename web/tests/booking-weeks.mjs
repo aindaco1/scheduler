@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-export async function checkBookingWeeks(
+export async function checkAvailableDates(
   browser,
   base,
   apiFixture,
@@ -19,28 +19,61 @@ export async function checkBookingWeeks(
   let now,
     failNext = 0,
     failureCode = "google_unavailable";
+  const localSettings = structuredClone(settings);
+  localSettings.noticeHours = 24;
+  localSettings.horizonDays = 30;
+  await page.route("**/api/config", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ settings: localSettings, ready: true }),
+    }),
+  );
   await page.route("**/api/availability?*", async (route) => {
     const params = new URL(route.request().url()).searchParams;
     const from = Date.parse(params.get("from")),
       to = Date.parse(params.get("to"));
     const location = params.get("location");
-    requests.push({ from, to, ...(location ? { location } : {}) });
+    requests.push({
+      from,
+      to,
+      location,
+      booking: params.get("booking"),
+      authorization: route.request().headers().authorization,
+    });
     const fail = failNext > 0;
     if (fail) failNext--;
-    const slot = Math.max(now + 3 * 86400000, from + 12 * 3600000);
+    const slots = [];
+    // Weekdays only, with two initial blackout dates and multiple times per date.
+    for (
+      let day = Math.floor(from / 86400000) * 86400000;
+      day < to;
+      day += 86400000
+    ) {
+      const weekday = new Date(day).getUTCDay();
+      if (
+        !weekday ||
+        weekday === 6 ||
+        ["2026-09-10", "2026-09-11"].includes(
+          new Date(day).toISOString().slice(0, 10),
+        )
+      )
+        continue;
+      for (const hour of [18, 19]) {
+        const slot = day + hour * 3600000;
+        if (
+          location !== "cafe" &&
+          slot >= from &&
+          slot < to &&
+          slot >= now + localSettings.noticeHours * 3600000 &&
+          slot + 1800000 <= now + localSettings.horizonDays * 86400000
+        )
+          slots.push(new Date(slot).toISOString());
+      }
+    }
     await route.fulfill({
       status: fail ? 503 : 200,
       contentType: "application/json",
-      body: JSON.stringify(
-        fail
-          ? { error: failureCode }
-          : {
-              slots:
-                location !== "cafe" && slot < to
-                  ? [new Date(slot).toISOString()]
-                  : [],
-            },
-      ),
+      body: JSON.stringify(fail ? { error: failureCode } : { slots }),
     });
   });
   const loaded = async (action) => {
@@ -49,9 +82,7 @@ export async function checkBookingWeeks(
     );
     await action();
     await response;
-    await page.waitForFunction(
-      () => !!document.querySelector("[data-slot-status] .sr-only"),
-    );
+    await page.locator("[data-slot-status] .sr-only").waitFor();
   };
   const open = async (date, spanish = false) => {
     now = Date.parse(date);
@@ -59,11 +90,12 @@ export async function checkBookingWeeks(
     await page.goto(base + (spanish ? "/es" : "") + bookingPath);
     await loaded(() => page.locator('[data-type="conversation"]').click());
   };
+  const shownDates = async () => page.locator(".slot-day h3").allTextContents();
   try {
     await open("2026-09-09T18:00:00Z");
     assert.equal(
       await page
-        .getByText(`At least ${settings.noticeHours} hours ahead`, {
+        .getByText(`At least ${localSettings.noticeHours} hours ahead`, {
           exact: true,
         })
         .count(),
@@ -71,80 +103,101 @@ export async function checkBookingWeeks(
     );
     assert.equal(
       await page.locator("[data-week]").textContent(),
-      "Sep 7 – Sep 14",
+      "Sep 14 – Sep 22",
     );
+    assert.equal((await shownDates()).length, 7);
+    assert.equal(await page.locator("[data-slot]").count(), 14);
     assert.equal(
       await page
-        .getByRole("button", { name: "Previous week", exact: true })
+        .getByRole("button", {
+          name: "Previous 7 available dates",
+          exact: true,
+        })
         .isDisabled(),
       true,
     );
-    assert.deepEqual(requests.at(-1), {
-      from: Date.parse("2026-09-07T06:00:00Z"),
-      to: Date.parse("2026-09-14T06:00:00Z"),
-    });
+    assert.equal(requests[0].from, Date.parse("2026-09-10T06:00:00Z"));
+    assert.equal(requests[0].to, Date.parse("2026-09-17T06:00:00Z"));
+    assert.equal(requests[1].from, requests[0].to);
+    const firstDates = await shownDates();
     await page
       .locator("[data-picker]")
-      .screenshot({ path: "work/frontend/monday-week-desktop.png" });
+      .screenshot({ path: "work/frontend/available-dates-desktop.png" });
+
     failNext = 2;
     const beforeFailure = requests.length;
-    await page.getByRole("button", { name: "Next week", exact: true }).click();
     await page
-      .getByRole("button", { name: "Try again", exact: true })
-      .waitFor();
+      .getByRole("button", { name: "Next 7 available dates", exact: true })
+      .click();
+    await page.locator("[data-retry]").waitFor();
     assert.equal(await page.locator("[data-slot]").count(), 0);
+    assert.equal(await page.locator("[data-next]").isDisabled(), true);
     assert.equal(requests.length - beforeFailure, 2);
     const failed = requests.at(-1);
-    await loaded(() =>
-      page.getByRole("button", { name: "Try again", exact: true }).click(),
-    );
-    assert.deepEqual(requests.at(-1), failed);
-    assert.equal(failed.from, Date.parse("2026-09-14T06:00:00Z"));
-    await loaded(() =>
-      page.getByRole("button", { name: "Previous week", exact: true }).click(),
-    );
-    assert.equal(requests.at(-1).to, failed.from);
-    await loaded(() => page.locator("[data-zone]").selectOption("Asia/Tokyo"));
-    assert.deepEqual(requests.at(-1), {
-      from: Date.parse("2026-09-06T15:00:00Z"),
-      to: Date.parse("2026-09-13T15:00:00Z"),
-    });
+    const beforeRetry = requests.length;
+    await loaded(() => page.locator("[data-retry]").click());
+    assert.deepEqual(requests[beforeRetry], failed);
+    assert.equal(failed.from, Date.parse("2026-09-23T06:00:00Z"));
     assert.equal(
       await page.locator("[data-week]").textContent(),
-      "Sep 7 – Sep 14",
+      "Sep 23 – Oct 1",
     );
+    const secondDates = await shownDates();
+    assert.equal(new Set([...firstDates, ...secondDates]).size, 14);
+    await loaded(() => page.locator("[data-prev]").click());
+    assert.deepEqual(await shownDates(), firstDates);
+    await loaded(() => page.locator("[data-zone]").selectOption("Asia/Tokyo"));
+    assert.equal(
+      await page.locator("[data-week]").textContent(),
+      "Sep 15 – Sep 23",
+    );
+    assert.equal((await shownDates()).length, 7);
 
-    await open("2026-09-13T18:00:00Z");
+    await open("2026-09-09T18:00:00Z");
+    const allDates = [...(await shownDates())];
     for (
       let i = 0;
       i < 27 && !(await page.locator("[data-next]").isDisabled());
       i++
-    )
+    ) {
       await loaded(() => page.locator("[data-next]").click());
+      const nextDates = await shownDates();
+      assert.ok(nextDates.length <= 7);
+      allDates.push(...nextDates);
+    }
     assert.equal(await page.locator("[data-next]").isDisabled(), true);
-    assert.equal(requests.at(-1).to, now + settings.horizonDays * 86400000);
-    assert.ok(requests.at(-1).from < requests.at(-1).to);
+    assert.equal(new Set(allDates).size, allDates.length);
+    assert.equal((await shownDates()).length, 5);
+    assert.equal(
+      await page.locator("[data-week]").textContent(),
+      "Oct 2 – Oct 8",
+    );
+    assert.equal(
+      requests.at(-1).to,
+      now + localSettings.horizonDays * 86400000,
+    );
 
+    const beforeDst = requests.length;
     await open("2026-10-28T18:00:00Z", true);
     assert.equal(
-      await page
-        .getByText(`Al menos ${settings.noticeHours} horas de antelación`, {
+      requests[beforeDst].to - requests[beforeDst].from,
+      169 * 3600000,
+    );
+    assert.equal((await shownDates()).length, 7);
+    await loaded(() =>
+      page
+        .getByRole("button", {
+          name: "7 fechas disponibles siguientes",
           exact: true,
         })
-        .count(),
-      1,
-    );
-    assert.equal(requests.at(-1).to - requests.at(-1).from, 169 * 3600000);
-    const previous = requests.at(-1);
-    await loaded(() =>
-      page
-        .getByRole("button", { name: "Semana siguiente", exact: true })
         .click(),
     );
-    assert.equal(requests.at(-1).from, previous.to);
     await loaded(() =>
       page
-        .getByRole("button", { name: "Semana anterior", exact: true })
+        .getByRole("button", {
+          name: "7 fechas disponibles anteriores",
+          exact: true,
+        })
         .click(),
     );
     await page.setViewportSize({ width: 320, height: 800 });
@@ -157,15 +210,52 @@ export async function checkBookingWeeks(
     );
     await page
       .locator("[data-picker]")
-      .screenshot({ path: "work/frontend/monday-week-es-mobile-dark.png" });
-    // A different venue must refresh availability without moving the week or zone.
-    const locationSettings = structuredClone(settings);
-    const inPerson = locationSettings.types.find(
+      .screenshot({ path: "work/frontend/available-dates-es-mobile-dark.png" });
+
+    // Every scan for rescheduling carries the private booking authorization.
+    const fixtureBooking = {
+      id: "available-dates-fixture",
+      typeId: "conversation",
+      typeName: "A conversation",
+      mode: "meet",
+      locationId: "",
+      location: "Google Meet",
+      start: now + 10 * 86400000,
+      end: now + 10 * 86400000 + 1800000,
+      status: "confirmed",
+      locale: "en",
+      timezone: "America/Denver",
+      name: "Fixture guest",
+      email: "guest@example.test",
+      topic: "",
+      cancelUntil: now + 9 * 86400000,
+    };
+    await page.route("**/api/bookings/available-dates-fixture", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ booking: fixtureBooking }),
+      }),
+    );
+    await page.goto(
+      base + "/manage/#id=available-dates-fixture&token=fixture-private-token",
+    );
+    const beforeManage = requests.length;
+    await loaded(() =>
+      page.getByRole("button", { name: "Reschedule", exact: true }).click(),
+    );
+    assert.equal((await shownDates()).length, 7);
+    await loaded(() => page.locator("[data-next]").click());
+    for (const request of requests.slice(beforeManage)) {
+      assert.equal(request.booking, fixtureBooking.id);
+      assert.equal(request.authorization, "Bearer fixture-private-token");
+    }
+
+    const inPerson = localSettings.types.find(
       (type) => type.mode === "in-person",
     );
     inPerson.enabled = true;
     inPerson.locationIds = ["studio", "cafe"];
-    locationSettings.locations = [
+    localSettings.locations = [
       {
         id: "studio",
         name: { en: "Studio", es: "Estudio" },
@@ -179,12 +269,6 @@ export async function checkBookingWeeks(
         enabled: true,
       },
     ];
-    await page.route("**/api/config", (route) =>
-      route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({ settings: locationSettings, ready: true }),
-      }),
-    );
     for (const spanish of [false, true]) {
       now = Date.parse("2026-09-09T18:00:00Z");
       await page.clock.setFixedTime(now);
@@ -196,36 +280,32 @@ export async function checkBookingWeeks(
       );
       await loaded(() => page.locator("[data-next]").click());
       await loaded(() => page.locator("[data-next]").click());
+      const beforeZone = requests.length;
       await loaded(() =>
         page.locator("[data-zone]").selectOption("Asia/Tokyo"),
       );
-      const weekLabel = await page.locator("[data-week]").textContent();
-      const expected = {
-        from: Date.parse("2026-09-20T15:00:00Z"),
-        to: Date.parse("2026-09-27T15:00:00Z"),
-      };
-      assert.deepEqual(requests.at(-1), { ...expected, location: "studio" });
-      assert.equal(await page.locator("[data-slot]").count(), 1);
+      const startingDate = requests[beforeZone].from;
+      const dateLabel = await page.locator("[data-week]").textContent();
       await page.locator("[data-location]").focus();
       failNext = 1;
       failureCode = spanish ? "icloud_unavailable" : "google_unavailable";
-      const beforeRecovery = requests.length;
+      const beforeCafe = requests.length;
       await loaded(() => page.locator("[data-location]").selectOption("cafe"));
-      assert.equal(requests.length - beforeRecovery, 2);
-      assert.deepEqual(requests.at(-1), { ...expected, location: "cafe" });
-      assert.equal(await page.locator("[data-week]").textContent(), weekLabel);
+      assert.equal(requests[beforeCafe].from, startingDate);
+      assert.equal(requests[beforeCafe + 1].from, startingDate);
       assert.equal(
-        await page.locator("[data-zone]").inputValue(),
-        "Asia/Tokyo",
+        requests.at(-1).to,
+        now + localSettings.horizonDays * 86400000,
       );
       assert.equal(await page.locator("[data-slot]").count(), 0);
+      assert.equal(await page.locator("[data-next]").isDisabled(), true);
       assert.equal(
         await page.locator("[data-slots] .empty-state").isVisible(),
         true,
       );
       assert.equal(
-        await page.locator("[data-address]").textContent(),
-        "456 Coffee Street",
+        await page.locator("[data-zone]").inputValue(),
+        "Asia/Tokyo",
       );
       assert.equal(
         await page
@@ -233,34 +313,29 @@ export async function checkBookingWeeks(
           .evaluate((el) => el === document.activeElement),
         true,
       );
-      assert.equal(new URL(page.url()).searchParams.get("location"), "cafe");
-      // Clearing and reselecting also keeps the existing browsing context.
+      assert.equal(
+        await page.locator("[data-address]").textContent(),
+        "456 Coffee Street",
+      );
       const count = requests.length;
       await page.locator("[data-location]").selectOption("");
       assert.equal(await page.locator("[data-picker]").isVisible(), false);
-      assert.equal(await page.locator("[data-place-prompt]").isVisible(), true);
       assert.equal(requests.length, count);
       await loaded(() =>
         page.locator("[data-location]").selectOption("studio"),
       );
-      assert.deepEqual(requests.at(-1), { ...expected, location: "studio" });
-      assert.equal(await page.locator("[data-week]").textContent(), weekLabel);
+      assert.equal(requests[count].from, startingDate);
+      assert.equal(await page.locator("[data-week]").textContent(), dateLabel);
       assert.equal(
         await page.locator("[data-zone]").inputValue(),
         "Asia/Tokyo",
       );
-      assert.equal(await page.locator("[data-slot]").count(), 1);
-      assert.equal(
-        await page.locator("[data-address]").textContent(),
-        "123 Studio Street",
-      );
       await page.locator(".booking-panel").screenshot({
-        path: `work/frontend/location-week-${spanish ? "es-mobile" : "en-desktop"}.png`,
+        path: `work/frontend/location-dates-${spanish ? "es-mobile" : "en-desktop"}.png`,
       });
       await loaded(() => page.locator("[data-prev]").click());
-      assert.equal(requests.at(-1).to, expected.from);
+      assert.ok(requests.at(-1).from < startingDate);
     }
-    // A real configuration issue is not retried, and leaving the picker cancels a pending retry.
     failureCode = "google_reconnect_required";
     failNext = 1;
     const beforeReconnect = requests.length;
@@ -281,8 +356,25 @@ export async function checkBookingWeeks(
     await page.locator("[data-back]").click();
     await page.waitForTimeout(700);
     assert.equal(requests.length, beforeLeaving);
-    assert.equal((await page.locator("[data-type]").count()) > 0, true);
+
+    // An impossible notice/horizon combination does not issue an invalid range request.
+    localSettings.noticeHours = 48;
+    localSettings.horizonDays = 1;
+    const beforeEmpty = requests.length;
+    await page.goto(base + bookingPath);
+    await page.locator('[data-type="conversation"]').click();
+    await page.locator("[data-slot-status] .sr-only").waitFor();
+    assert.equal(requests.length, beforeEmpty);
+    assert.equal(await page.locator("[data-prev]").isDisabled(), true);
+    assert.equal(await page.locator("[data-next]").isDisabled(), true);
+    assert.equal(
+      await page.locator("[data-week]").textContent(),
+      "No dates available",
+    );
     assert.deepEqual(errors, []);
+    console.log(
+      "Available-date paging passed: seven nonempty dates, notice, horizon, DST, private rescheduling, location retention and provider failures.",
+    );
   } finally {
     await context.close();
   }

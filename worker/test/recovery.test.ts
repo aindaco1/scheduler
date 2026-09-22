@@ -50,7 +50,7 @@ function futureStart() {
   return date.getTime();
 }
 
-async function setup(reminderHours = [24]) {
+async function setup(reminderHours = [24], hostName = "Your name") {
   const busy = { events: [] as object[] };
   fetchMock
     .get("https://oauth2.googleapis.com")
@@ -73,7 +73,7 @@ async function setup(reminderHours = [24]) {
     accountId: "fixture-google-owner",
   });
   await runInDurableObject(stub, (_instance, state) => {
-    const settings = defaultSettings();
+    const settings = defaultSettings(hostName);
     settings.reminderHours = reminderHours;
     settings.enabled = true;
     settings.timezone = "UTC";
@@ -179,6 +179,51 @@ async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
 }
 
 describe("Coordinator recovery after overlapping actions and partial provider results", () => {
+  it("creates the invitation with the saved display name and connected Google email after reserving", async () => {
+    const { stub, created, start } = await setup([24], "Morgan Chen");
+    expect((await storedBooking(stub, created.booking.id)).status).toBe(
+      "pending",
+    );
+    const google = fetchMock.get(googleOrigin);
+    google
+      .intercept({ path: eventPath(created.booking.id), method: "GET" })
+      .reply(404, {})
+      .persist();
+    let payload: Record<string, any> = {};
+    google
+      .intercept({
+        path: "/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
+        method: "POST",
+      })
+      .reply(({ body }) => {
+        payload = JSON.parse(body);
+        return {
+          statusCode: 200,
+          data: remoteEvent(created.booking.id, start),
+        };
+      });
+    await runDurableObjectAlarm(stub);
+    expect(payload.summary).toBe(
+      "A conversation · Morgan Chen & Fixture guest",
+    );
+    expect(payload.description).toContain("Host: Morgan Chen");
+    expect(payload.attendees).toEqual([
+      {
+        email: "owner@example.test",
+        displayName: "Morgan Chen",
+        responseStatus: "accepted",
+      },
+      { email: "guest@example.test", displayName: "Fixture guest" },
+    ]);
+    expect((await storedBooking(stub, created.booking.id)).status).toBe(
+      "confirmed",
+    );
+    expect((await jobs(stub)).some((job) => job.mailKind === "confirmed")).toBe(
+      true,
+    );
+    fetchMock.assertConsumed();
+  });
+
   it("accepts up to three distinct reminders and upgrades the legacy single reminder", async () => {
     expect(reminderSchedule.parse(24)).toEqual([24]);
     expect(reminderSchedule.parse(0)).toEqual([]);

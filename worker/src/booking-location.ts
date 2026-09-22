@@ -18,8 +18,13 @@ export function calendarLocation(
     .join(", ");
 }
 // Google accepts HTML descriptions. Escape authored text and retain line breaks.
-export function calendarDescription(booking: Booking): string {
+export function calendarDescription(
+  booking: Booking,
+  hostName: string,
+): string {
   return [
+    `${booking.locale === "es" ? "Organiza" : "Host"}: ${hostName}`,
+    `${booking.locale === "es" ? "Invitado" : "Guest"}: ${booking.name}`,
     booking.topic.trim()
       ? `${booking.locale === "es" ? "Nota del invitado" : "Guest note"}:\n${booking.topic}`
       : "",

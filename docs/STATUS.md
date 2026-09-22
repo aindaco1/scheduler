@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 20, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 22, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,23 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Seven available dates per page — September 22 UTC (local)
+
+Booking and guest rescheduling now show up to seven dates with actual slots after minimum notice, skipping unavailable dates. Next starts at the next available date; a lookahead scan determines whether another page exists. All times on a displayed date stay together, dates use the visitor's selected time zone, and scans stop at the configured horizon. Location changes retain the current page's starting date. A provider error during any scan stops the page and uses the existing retry/error flow. Calendar-provider operations and reservation rules are unchanged.
+
+- Local: `npm run check` passed on Node 26.8.2 / Ruby 3.0.0, including 193 Worker tests, 324 paired translations, independent fork setup, browser/axe flows, 40 admin and 84 public responsive checks, and Wrangler dry deployment. The 13 date-paging cases cover skipped weekdays/blackouts, complete-date grouping, notice, sparse/final pages, lookahead failures, time zones, DST and bounded searches. Browser checks verify previous/next pages, duplicate-free date sequences, final partial pages, retry/cancellation, location retention, and authorization on every rescheduling scan. English desktop and Spanish 320-pixel dark previews were visually reviewed; `git diff --check` passed. This run also includes the invitation identity fix below.
+- CI: not run for these local changes.
+- Deployment: neither this change nor the invitation identity fix has been deployed.
+- Actual provider/recipient: not repeated. All tests use synthetic API/provider fixtures; no live calendar writes, bookings, invitations or mail were sent. Sparse schedules require more bounded availability reads; live latency has not been measured for this paging flow.
+
+### Invitation host identity — September 22 UTC (local)
+
+New Google invitations now include the saved Display name in the title and localized description, plus the connected Google account as an accepted attendee. Source inspection found that the previous title contained only the meeting type and guest name, while the attendee list contained only the guest. Events still go to the connected account's primary calendar. Existing events, including recovered creations and reschedules, keep their identity and attendee responses. See [operating guidance](OPERATIONS.md#location-details-and-consistent-branding).
+
+Local `npm run check` passed on Node 26.8.2 / Ruby 3.0.0: type checks, audit/platform tests, 186 Worker tests, build, quality/localization/privacy gates, independent fork setup, browser/axe flows, 40 admin and 84 public responsive checks, and Wrangler dry deployment. Ten added Worker cases cover the coordinator's use of saved identity, all meeting modes and languages, escaped names, duplicate host/guest addresses, uncertain insert recovery and rescheduling without replacing RSVPs. `git diff --check` passed. Existing Sass import deprecation and Wrangler configuration/fixture-secret warnings remain; no new production credentials were used.
+
+CI has not run for this change. This change has not been deployed. Actual Google invitation rendering and recipient receipt remain unverified; no live bookings, calendar writes, invitations or mail were used. The guest's particular event was not inspected, so this is a source-confirmed identity gap and local fix, not confirmation of that booking's current provider state.
 
 ### Dependency PR validation — September 20 UTC
 

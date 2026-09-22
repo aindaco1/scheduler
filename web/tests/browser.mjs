@@ -8,7 +8,7 @@ import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
 import { checkQuality } from "./quality.mjs";
 import { checkSharing } from "./sharing.mjs";
-import { checkBookingWeeks } from "./booking-weeks.mjs";
+import { checkAvailableDates } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
 import { checkResponsiveAdmin } from "./responsive-admin.mjs";
 import { checkResponsivePublic } from "./responsive-public.mjs";
@@ -127,24 +127,22 @@ async function apiFixture(route) {
     payload = { settings, turnstileSiteKey: "fixture-key", ready: true };
   else if (path === "/api/availability") {
     if (url.searchParams.has("booking")) {
-      assert.equal(
-        new Intl.DateTimeFormat("en", {
-          timeZone: "America/Denver",
-          weekday: "long",
-        }).format(new Date(url.searchParams.get("from"))),
-        "Monday",
-      );
       assert.equal(url.searchParams.has("token"), false);
       assert.equal(
         route.request().headers().authorization,
         "Bearer fixture-private-token",
       );
     }
+    const from = Date.parse(url.searchParams.get("from"));
+    const to = Date.parse(url.searchParams.get("to"));
     payload = {
       slots: [
-        new Date(start).toISOString(),
-        new Date(start + 3600000).toISOString(),
-      ],
+        start,
+        start + 3600000,
+        ...Array.from({ length: 27 }, (_, i) => start + (i + 1) * 86400000),
+      ]
+        .filter((slot) => slot >= from && slot < to)
+        .map((slot) => new Date(slot).toISOString()),
     };
   } else if (path === "/api/bookings" && method === "POST") {
     bookingWrites++;
@@ -336,7 +334,9 @@ try {
   assert.equal(bookingWrites, 1);
   await axe("confirmed manage");
   await page.getByRole("button", { name: "Reschedule", exact: true }).click();
-  await page.locator("[data-slot]").last().click();
+  await page
+    .locator(`[data-slot="${new Date(start + 3600000).toISOString()}"]`)
+    .click();
   const moved = page.waitForResponse((response) =>
     response.url().endsWith("/reschedule"),
   );
@@ -1013,7 +1013,7 @@ try {
   await preferencePage.locator("#panel-settings").waitFor({ state: "visible" });
   await preferenceContext.close();
   await checkQuality(browser, base, apiFixture, bookingPath);
-  await checkBookingWeeks(browser, base, apiFixture, settings, bookingPath);
+  await checkAvailableDates(browser, base, apiFixture, settings, bookingPath);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(base + "/admin/");
   await page.getByRole("tab", { name: "Bookings", exact: true }).click();

@@ -1241,8 +1241,13 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
           }
         }
       }
+      const connection = await this.connection<GoogleConnection>("google");
+      if (!connection) throw new AppError("google_not_connected", 503);
       if (this.booking(b.id).revision !== b.revision) return;
-      const result = await google.create(b, this.env.OWNER_SLUG);
+      const result = await google.create(b, this.env.OWNER_SLUG, {
+        name: this.getSettings().settings.name,
+        email: connection.email,
+      });
       if (!this.mergeResult(b, result)) return;
       b.status = "confirmed";
       b.error = undefined;

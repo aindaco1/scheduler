@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Page booking and guest rescheduling by seven dates with actual availability after minimum notice. Skip unavailable dates, retain all slots for each displayed date, look ahead before enabling Next, and stop at the configured horizon. Keep provider failures visible and preserve location/time-zone browsing context.
+
+- Identify the host in new calendar invitations using the saved Display name and connected Google account. Titles include both participants, descriptions name the host and guest in the booking language, and the host is included as an accepted attendee. Preserve existing events and guest responses during recovery and rescheduling.
 - Update Zod to 4.6.5, Wrangler to 4.131.2, Sass to 1.104.1, Node types to 26.5.1, and the SHA-pinned Ruby setup action to 1.322.0. Retain the Cloudflare-compatible Vitest 4 and workerd pins; verify the combined updates with the full check and dependency audits.
 - Detect variable-length GitHub App installation tokens in the source audit, including dots, underscores, and hyphens, while keeping credential values out of diagnostics.
 

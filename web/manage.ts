@@ -131,6 +131,7 @@ async function reschedule() {
       type: booking.typeId,
       location: booking.locationId,
       horizon: config.settings.horizonDays,
+      noticeHours: config.settings.noticeHours,
       timezone: booking.timezone,
       booking: id,
       token,

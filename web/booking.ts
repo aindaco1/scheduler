@@ -142,6 +142,7 @@ function renderSlots() {
       type: type.id,
       location: locationId,
       horizon: config.settings.horizonDays,
+      noticeHours: config.settings.noticeHours,
       timezone,
       onSelect: (iso, zone) => {
         slot = iso;

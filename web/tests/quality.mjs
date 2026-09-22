@@ -35,7 +35,7 @@ export async function checkQuality(browser, base, apiFixture, bookingPath) {
         .locator("[data-next]")
         .evaluate((el) => el === document.activeElement),
       true,
-      "Week navigation retains keyboard focus",
+      "Available-date navigation retains keyboard focus",
     );
     assert.match(
       await page.locator("[data-slot-status]").textContent(),
@@ -122,7 +122,7 @@ export async function checkQuality(browser, base, apiFixture, bookingPath) {
       fullPage: true,
     });
     console.log(
-      "Quality browser checks passed: skip link, week focus, live announcements, 200% text, reduced motion, English/Spanish and WCAG scans.",
+      "Quality browser checks passed: skip link, date-page focus, live announcements, 200% text, reduced motion, English/Spanish and WCAG scans.",
     );
   } finally {
     await context.close();

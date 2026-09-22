@@ -33,6 +33,7 @@ const booking: Booking = {
   managementHash: "fixture-hash",
   revision: 1,
 };
+const host = { name: "Jordan Rivera", email: "host@example.test" };
 const eventId = "s" + booking.id.replaceAll("-", "");
 const eventPath = "/calendar/v3/calendars/primary/events/" + eventId;
 const event = {
@@ -372,16 +373,170 @@ describe("Google conflict completeness and conference recovery", () => {
         };
       });
     const provider = new GoogleCalendar("fixture-token");
-    await expect(provider.create(booking, "alonso")).rejects.toMatchObject({
+    await expect(
+      provider.create(booking, "alonso", host),
+    ).rejects.toMatchObject({
       code: "conference_repair_pending",
     });
     google.intercept({ path: eventPath, method: "GET" }).reply(200, {
       ...event,
       hangoutLink: "https://meet.google.com/fixture-code",
     });
-    await expect(provider.create(booking, "alonso")).resolves.toEqual({
+    await expect(provider.create(booking, "alonso", host)).resolves.toEqual({
       eventId,
       joinUrl: "https://meet.google.com/fixture-code",
+    });
+  });
+});
+
+describe("Google invitation host identity", () => {
+  it.each(
+    (["meet", "zoom", "in-person"] as const).flatMap((mode) =>
+      (["en", "es"] as const).map((locale) => ({ mode, locale })),
+    ),
+  )(
+    "includes the configured host for $mode in $locale",
+    async ({ mode, locale }) => {
+      const candidate = { ...booking, mode, locale, name: "Guest <G> & Co" };
+      const identity = { name: "Jordan <J> & Co", email: host.email };
+      const google = fetchMock.get("https://www.googleapis.com");
+      google.intercept({ path: eventPath, method: "GET" }).reply(404, {});
+      let payload: Record<string, any> = {};
+      google
+        .intercept({
+          path: "/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
+          method: "POST",
+        })
+        .reply(({ body }) => {
+          payload = JSON.parse(body);
+          return {
+            statusCode: 200,
+            data: {
+              ...event,
+              hangoutLink: "https://meet.google.com/fixture-room",
+            },
+          };
+        });
+      await new GoogleCalendar("fixture-token").create(
+        candidate,
+        "alonso",
+        identity,
+      );
+      expect(payload.summary).toBe(
+        "A conversation · Jordan <J> & Co & Guest <G> & Co",
+      );
+      expect(payload.description).toBe(
+        `${locale === "es" ? "Organiza" : "Host"}: Jordan &lt;J&gt; &amp; Co\n\n${locale === "es" ? "Invitado" : "Guest"}: Guest &lt;G&gt; &amp; Co`,
+      );
+      expect(payload.attendees).toEqual([
+        {
+          email: host.email,
+          displayName: identity.name,
+          responseStatus: "accepted",
+        },
+        { email: booking.email, displayName: candidate.name },
+      ]);
+      expect(payload).not.toHaveProperty("organizer");
+      expect(payload.id).toBe(eventId);
+    },
+  );
+
+  it("does not add the host twice when they book using the connected account", async () => {
+    const google = fetchMock.get("https://www.googleapis.com");
+    google.intercept({ path: eventPath, method: "GET" }).reply(404, {});
+    let attendees: unknown;
+    google
+      .intercept({
+        path: "/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
+        method: "POST",
+      })
+      .reply(({ body }) => {
+        attendees = JSON.parse(body).attendees;
+        return { statusCode: 200, data: event };
+      });
+    await new GoogleCalendar("fixture-token").create(
+      { ...booking, mode: "in-person", email: host.email.toUpperCase() },
+      "alonso",
+      host,
+    );
+    expect(attendees).toEqual([
+      { email: host.email, displayName: host.name, responseStatus: "accepted" },
+    ]);
+  });
+
+  it("recovers a lost insert response without sending another invitation or resetting RSVPs", async () => {
+    const google = fetchMock.get("https://www.googleapis.com");
+    google.intercept({ path: eventPath, method: "GET" }).reply(404, {});
+    google
+      .intercept({
+        path: "/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
+        method: "POST",
+      })
+      .replyWithError(new Error("Fixture response lost after insertion"));
+    const provider = new GoogleCalendar("fixture-token");
+    await expect(
+      provider.create(booking, "alonso", host),
+    ).rejects.toMatchObject({
+      code: "google_unavailable",
+      retryable: true,
+    });
+    google.intercept({ path: eventPath, method: "GET" }).reply(200, {
+      ...event,
+      hangoutLink: "https://meet.google.com/fixture-room",
+      attendees: [
+        {
+          email: host.email,
+          displayName: host.name,
+          responseStatus: "accepted",
+        },
+        { email: booking.email, responseStatus: "tentative" },
+      ],
+    });
+    await expect(
+      provider.create(booking, "alonso", { ...host, name: "Changed name" }),
+    ).resolves.toEqual({
+      eventId,
+      joinUrl: "https://meet.google.com/fixture-room",
+    });
+  });
+
+  it("reschedules without replacing the title, description, attendees or their RSVPs", async () => {
+    const google = fetchMock.get("https://www.googleapis.com");
+    google.intercept({ path: eventPath, method: "GET" }).reply(200, {
+      ...event,
+      summary: "A conversation · Jordan Rivera & Fixture guest",
+      description: "Host: Jordan Rivera",
+      attendees: [
+        { email: host.email, responseStatus: "accepted" },
+        { email: booking.email, responseStatus: "tentative" },
+      ],
+    });
+    let payload: unknown;
+    google
+      .intercept({
+        path: eventPath + "?sendUpdates=all&conferenceDataVersion=1",
+        method: "PATCH",
+      })
+      .reply(({ body }) => {
+        payload = JSON.parse(body);
+        return { statusCode: 200, data: event };
+      });
+    const targetStart = booking.start + 3_600_000;
+    const targetEnd = booking.end + 3_600_000;
+    await new GoogleCalendar("fixture-token").reschedule({
+      ...booking,
+      targetStart,
+      targetEnd,
+    });
+    expect(payload).toEqual({
+      start: {
+        dateTime: new Date(targetStart).toISOString(),
+        timeZone: booking.timezone,
+      },
+      end: {
+        dateTime: new Date(targetEnd).toISOString(),
+        timeZone: booking.timezone,
+      },
     });
   });
 });
@@ -493,7 +648,7 @@ it.each(["en", "es"] as const)(
         return { statusCode: 200, data: event };
       });
     await expect(
-      new GoogleCalendar("fixture-token").create(candidate, "alonso"),
+      new GoogleCalendar("fixture-token").create(candidate, "alonso", host),
     ).resolves.toEqual({ eventId, joinUrl: undefined });
   },
 );
