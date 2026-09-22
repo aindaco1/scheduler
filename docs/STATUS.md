@@ -10,14 +10,15 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
-### Seven available dates per page — September 22 UTC (local)
+### Seven available dates and invitation identity — September 22 UTC
 
 Booking and guest rescheduling now show up to seven dates with actual slots after minimum notice, skipping unavailable dates. Next starts at the next available date; a lookahead scan determines whether another page exists. All times on a displayed date stay together, dates use the visitor's selected time zone, and scans stop at the configured horizon. Location changes retain the current page's starting date. A provider error during any scan stops the page and uses the existing retry/error flow. Calendar-provider operations and reservation rules are unchanged.
 
 - Local: `npm run check` passed on Node 26.8.2 / Ruby 3.0.0, including 193 Worker tests, 324 paired translations, independent fork setup, browser/axe flows, 40 admin and 84 public responsive checks, and Wrangler dry deployment. The 13 date-paging cases cover skipped weekdays/blackouts, complete-date grouping, notice, sparse/final pages, lookahead failures, time zones, DST and bounded searches. Browser checks verify previous/next pages, duplicate-free date sequences, final partial pages, retry/cancellation, location retention, and authorization on every rescheduling scan. English desktop and Spanish 320-pixel dark previews were visually reviewed; `git diff --check` passed. This run also includes the invitation identity fix below.
-- CI: not run for these local changes.
-- Deployment: neither this change nor the invitation identity fix has been deployed.
-- Actual provider/recipient: not repeated. All tests use synthetic API/provider fixtures; no live calendar writes, bookings, invitations or mail were sent. Sparse schedules require more bounded availability reads; live latency has not been measured for this paging flow.
+- CI: [Check passed](https://github.com/aindaco1/scheduler/actions/runs/35772145438) for source `9774a418723fcbed23b931e5180566ba413b06e5` on Node 24 / Ruby 3.3. The local dependency audit also found zero npm advisories and no findings across 34 Ruby packages.
+- Deployment: that source is live as Worker `524bcce3-a49a-4280-9e89-6e59163defcb`, including the invitation identity fix below. Health and all eight English/Spanish shells returned 200; unauthenticated owner settings returned 401. Nine compiled assets and both generated preview images matched the tested build. Public configuration remained enabled and ready. The live Brief chat picker in America/Chicago showed seven available dates on each of its first two pages, with 112 and 143 slots, no overlapping dates, and successful Previous navigation. The code rollback target is `ccecef10-b77b-47f2-8397-94f881daa1c3`, confirmed as the version deployed immediately beforehand. See the [deployment evidence](release-evidence/available-dates-and-host-2026-09-22.json).
+- Actual provider/recipient: live availability reads passed, but calendar writes and recipient acceptance were not repeated. No live bookings, invitations or mail were sent. Invitation rendering is covered by synthetic provider fixtures; actual rendering and recipient receipt remain unverified. Sparse schedules require more bounded reads; the live smoke sampled two pages without a formal latency measurement.
+- Cleanup: after verification, stopped the temporary local servers and ran the repository's fixed-output cleanup. Removed generated builds, manifests, caches and browser reports; moved reviewed scratch logs and verification scripts to Trash. Retained dependencies, source/fixtures, pinned submodules, local Durable Object state and the small read-only preview helper under ignored `work/local-preview/`. Fetch/prune and remote inspection confirmed only `main` locally and on GitHub, with one worktree and no stale branches to delete. No production settings, secrets, provider connections or schema migrations changed.
 
 ### Invitation host identity — September 22 UTC (local)
 
@@ -25,7 +26,7 @@ New Google invitations now include the saved Display name in the title and local
 
 Local `npm run check` passed on Node 26.8.2 / Ruby 3.0.0: type checks, audit/platform tests, 186 Worker tests, build, quality/localization/privacy gates, independent fork setup, browser/axe flows, 40 admin and 84 public responsive checks, and Wrangler dry deployment. Ten added Worker cases cover the coordinator's use of saved identity, all meeting modes and languages, escaped names, duplicate host/guest addresses, uncertain insert recovery and rescheduling without replacing RSVPs. `git diff --check` passed. Existing Sass import deprecation and Wrangler configuration/fixture-secret warnings remain; no new production credentials were used.
 
-CI has not run for this change. This change has not been deployed. Actual Google invitation rendering and recipient receipt remain unverified; no live bookings, calendar writes, invitations or mail were used. The guest's particular event was not inspected, so this is a source-confirmed identity gap and local fix, not confirmation of that booking's current provider state.
+This fix is included in the successful CI and September 22 deployment above. Actual Google invitation rendering and recipient receipt remain unverified; no live bookings, calendar writes, invitations or mail were used. The guest's particular event was not inspected, so the fix does not confirm that booking's current provider state.
 
 ### Dependency PR validation — September 20 UTC
 

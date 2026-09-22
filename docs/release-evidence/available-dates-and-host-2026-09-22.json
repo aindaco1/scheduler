@@ -1,0 +1,173 @@
+{
+  "dateUTC": "2026-09-22",
+  "sourceCommit": "9774a418723fcbed23b931e5180566ba413b06e5",
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/35772145438",
+    "conclusion": "success",
+    "nodeMajor": 24,
+    "ruby": "3.3"
+  },
+  "local": {
+    "fullCheck": "passed",
+    "workerTests": 193,
+    "pairedTranslations": 324,
+    "responsiveChecks": {
+      "admin": 40,
+      "public": 84
+    },
+    "dependencyAudit": {
+      "npmAdvisories": 0,
+      "rubyPackages": 34,
+      "rubyFindings": 0
+    }
+  },
+  "deployment": {
+    "id": "6e4ec638-a0bd-448e-a0d4-b175ce2f2851",
+    "deployedAt": "2026-09-22T19:14:23.644378Z",
+    "versions": [
+      {
+        "version_id": "524bcce3-a49a-4280-9e89-6e59163defcb",
+        "percentage": 100
+      }
+    ],
+    "rollbackVersion": "ccecef10-b77b-47f2-8397-94f881daa1c3"
+  },
+  "checkedAt": "2026-09-22T19:14:39.262Z",
+  "publicChecks": [
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/alonso",
+      "status": 200
+    },
+    {
+      "path": "/admin/",
+      "status": 200
+    },
+    {
+      "path": "/manage/",
+      "status": 200
+    },
+    {
+      "path": "/privacy/",
+      "status": 200
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/settings",
+      "status": 401
+    }
+  ],
+  "assets": [
+    {
+      "path": "/assets/build/admin-2VRSTFHO.js",
+      "status": 200,
+      "sha256": "c06909fbbd46f1bc1c5cebc0e2809332b115c2136335267d94df3535070c65c6",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/booking-YDQHPMJT.js",
+      "status": 200,
+      "sha256": "86703d7cbe5339fde938f43c8cdf84761c93005979a21e1616519e99459068c5",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/manage-ZEZY6UU5.js",
+      "status": 200,
+      "sha256": "2e1d3b31a8a47a1efc0db93ecd0e147c98afa16234c51c667ef16c58c957cb65",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/privacy-DIVN25YF.js",
+      "status": 200,
+      "sha256": "ace124af47bef87aa5ee715227dea2210566b6be1853c4fb09edde663ef3b2c2",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/scheduler-e6b049deb74d.css",
+      "status": 200,
+      "sha256": "e6b049deb74d978472aa37b9344f4286198fa7fa62315dc37d70997a186bb609",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-J7IVGWSB.js",
+      "status": 200,
+      "sha256": "e5d26492ab1ebce36032042e8fa38cc22a27ee43eb19f3b762af73f889160990",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-JSOII72L.js",
+      "status": 200,
+      "sha256": "1e1000e57e67cd37a45bcf0b040a4a3b19153b21838b995d5e4573fa0435f918",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-MMYUMTA2.js",
+      "status": 200,
+      "sha256": "8331da443a2d4ba9f9c1471ef09fed6d8e77daeda18f9e513c544596480173b6",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-R7LVHLVE.js",
+      "status": 200,
+      "sha256": "8457372b30ee3b03aa1c5fceddc946aa31da56c75bcde535fb4257c0bf5bdebf",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/social/apple-touch-icon-v1.png",
+      "status": 200,
+      "sha256": "0abc2e0a91ce91ef9aba29a866cb30f46871a27c25bd9010c5c753a84e5d1a6e",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/social/preview-v1.png",
+      "status": 200,
+      "sha256": "cbb1b4d61b0daf048b016cf9ff625d4e7b0a5a15496d16a43d443c61727a8594",
+      "matchesBuild": true
+    }
+  ],
+  "publicConfig": {
+    "status": 200,
+    "enabled": true,
+    "ready": true
+  },
+  "browser": {
+    "meetingType": "conversation",
+    "timezone": "America/Chicago",
+    "pages": [
+      {
+        "availableDates": 7,
+        "slots": 112
+      },
+      {
+        "availableDates": 7,
+        "slots": 143
+      }
+    ],
+    "overlappingDates": 0,
+    "previousRestoresFirstPage": true
+  },
+  "limitations": [
+    "No live bookings, calendar writes, invitations or email were sent for verification.",
+    "Invitation host identity is covered by provider fixtures; actual invitation rendering and recipient receipt have not been repeated.",
+    "Browser checks sampled the first two pages. Horizon, sparse final pages, time zones and provider failures are covered by local and CI fixtures.",
+    "No settings, secrets, provider connections or schema migrations were changed."
+  ]
+}
