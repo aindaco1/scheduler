@@ -34,10 +34,15 @@ override was used to obtain release acceptance. The change is unreleased.
 
 Hosted CI is wired for live checks on trusted main runs, with explicitly offline
 pull-request checks. The dedicated Workers AI secret and account variable are
-configured in GitHub; hosted verification and deployment are pending. CutNotes
+configured in GitHub. [Draft PR 7](https://github.com/aindaco1/scheduler/pull/7)
+runs offline CI; trusted live CI and deployment remain blocked. CutNotes
 keeps its separate credentials and workflow. No calendar write, invitation or
 recipient delivery occurred. Judge evidence and actual provider/recipient
 acceptance remain separate.
+
+Generated builds, caches and reports were cleaned after archiving the raw Jev
+trials for review. Local dependencies, Worker state and preview helpers remain.
+Only `main` and the active unmerged feature branch exist; neither is stale.
 
 ### Seven available dates and invitation identity — September 22 UTC
 

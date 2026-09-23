@@ -1,7 +1,8 @@
 # Required Jev development checks — September 23, 2026
 
-Local implementation on `feat/jev-testing`, based on Scheduler source
-`c951add`. This is development-tooling evidence, not a deployed release.
+Implementation on `feat/jev-testing`, based on Scheduler source `c951add`,
+published for review in [draft PR 7](https://github.com/aindaco1/scheduler/pull/7).
+This is development-tooling evidence, not a deployed release.
 
 ## Scope and reuse
 
@@ -129,7 +130,9 @@ finding into a pass.
   to the identical fragment URL without reloading the document. It timed out
   before any Jev calls. The fixture now reloads explicitly; no product code was
   changed to satisfy it.
-- Hosted CI: workflow prepared, not run or pushed from this task. The repository
+- Hosted CI: [draft PR 7](https://github.com/aindaco1/scheduler/pull/7) runs the
+  explicit offline workflow; its result is tracked on the PR. Trusted main/live
+  CI remains unverified while the local semantic gate blocks merging. The repository
   variable `JEV_CLOUDFLARE_ACCOUNT_ID` was configured with `gh` from CutNotes'
   matching account configuration. Initially no Scheduler repository secrets were
   listed. The required dedicated Workers AI secret is
@@ -140,7 +143,7 @@ finding into a pass.
   create a Cloudflare token. Cloudflare denied token-management API access with
   the local OAuth credential. The user subsequently provisioned the dedicated
   Scheduler secret, verified present through `gh` on September 23 at 12:47 UTC.
-  Hosted verification and deployment remain pending.
+  Trusted live verification and deployment remain pending.
 - Deployment: none. No production setting, secret, schema or booking was changed.
 - Calendar providers/recipients: not exercised. No live calendar write,
   invitation or email was sent. Only the approved synthetic text went to Jev.
@@ -151,10 +154,18 @@ finding into a pass.
 - Final complete check: `work/jev/2026-09-23T05-07-40-973Z-1420dc/`.
 - Zero-call preview: `work/jev/2026-09-23T05-06-18-086Z-bb83fe/`.
 
-Each ignored directory contains fresh rendered cases, the complete corpus,
+Each run directory contained fresh rendered cases, the complete corpus,
 raw responses/probabilities, source and candidate hashes, usage, and `review.md`.
-It contains no credentials or real guest/calendar content. These are local
-artifacts; a different checkout regenerates them with the documented command.
+All raw Jev runs, including blocked trials, were moved to a private recoverable
+archive in macOS Trash before cleanup. The curated review JSON remains in this
+repository. No credentials or real guest/calendar content are in these reports.
+A different checkout regenerates new evidence with the documented command.
+
+The bounded cleanup removed generated assets/site/manifests, caches, browser
+reports and local audit/Jev output. Local Worker state and the preview helpers
+were hash-verified unchanged; dependencies and local-secret presence were
+preserved. Branch inventory found only `main` and the active unmerged
+`feat/jev-testing` branch, so no stale feature branch was deleted.
 
 ## Rollback
 
