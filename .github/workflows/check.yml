@@ -31,7 +31,15 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run audit:dependencies
-      - run: npm run check
+      - name: Explicit offline checks (pull requests and non-main refs)
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        run: npm run check:offline
+      - name: Complete checks including required live Jev (trusted main)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: npm run check
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.JEV_CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.JEV_CLOUDFLARE_API_TOKEN }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
@@ -42,5 +50,8 @@ jobs:
             work/audit/ruby-advisories.json
             work/audit/quality.json
             work/audit/translation-review.json
+            work/jev/*/corpus.json
+            work/jev/*/report.json
+            work/jev/*/review.md
           if-no-files-found: ignore
           retention-days: 14

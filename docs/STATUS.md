@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 22, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 23, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,39 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Required Jev development checks — September 23 UTC (release candidate)
+
+Scheduler reuses Platform Test Core for required live semantic evaluation of
+34 synthetic English/Spanish browser/email cases, with 40 separate labeled
+controls. `npm run check` retains all existing deterministic checks and blocks
+semantic failures, unapproved reviews and incomplete evaluation. `check:offline` explicitly
+omits the model gate; its browser capture assertions still run. See
+[Quality](QUALITY.md#required-jev-development-check) and the
+[dated evidence](release-evidence/jev-development-2026-09-23.md).
+
+Earlier release checks passed deterministic tests but exposed an unstable
+English pending-copy judgment. The owner approved clearer copy and then
+explicitly approved a narrow human-review exception for the remaining near tie.
+[Recorded review](../config/jev-reviews.json) binds the exact candidate, question,
+policy and model. Raw model evidence remains intact. Failures, changed inputs,
+control mismatches, unrelated reviews and incomplete runs still block. Earlier
+blocked trials remain in the [review evidence](release-evidence/jev-rubric-review-2026-09-23.json).
+
+The final local check passed 193 Worker tests, 11 gate regressions, 325 paired
+translations, fork/build/browser/accessibility checks, all 40 controls and
+33 rendered passes plus the one explicitly approved review. Dependency audits
+found zero npm advisories and no findings across 34 Ruby packages. Hosted
+validation is pending. CI runs live
+only on trusted main, with offline PR checks. The dedicated Workers AI secret and
+account variable are configured in GitHub. [PR 7](https://github.com/aindaco1/scheduler/pull/7)
+contains the integration; deployment has not occurred yet. CutNotes keeps its
+separate credentials and workflow. No live booking, calendar write, invitation
+or email has been used in these checks.
+
+Generated builds, caches and reports were cleaned after archiving the raw Jev
+trials for review. Local dependencies, Worker state and preview helpers remain.
+Only `main` and the active unmerged feature branch exist; neither is stale.
 
 ### Seven available dates and invitation identity — September 22 UTC
 

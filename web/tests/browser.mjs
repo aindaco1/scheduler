@@ -3,7 +3,7 @@
 import { chromium } from "@playwright/test";
 import { build } from "esbuild";
 import { createServer } from "node:http";
-import { readFile, stat, mkdir } from "node:fs/promises";
+import { readFile, writeFile, stat, mkdir } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import assert from "node:assert/strict";
 import { checkQuality } from "./quality.mjs";
@@ -12,6 +12,7 @@ import { checkAvailableDates } from "./booking-weeks.mjs";
 import { checkSettingsEnhancements } from "./settings.mjs";
 import { checkResponsiveAdmin } from "./responsive-admin.mjs";
 import { checkResponsivePublic } from "./responsive-public.mjs";
+import { captureJevCases } from "./jev.mjs";
 const root = resolve(".");
 const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
 const bookingPath = "/" + deployment.slug;
@@ -1036,6 +1037,14 @@ try {
   await checkResponsiveAdmin(browser, base, apiFixture, settings);
   await checkResponsivePublic(browser, base, apiFixture, settings, bookingPath);
   assert.deepEqual(errors, []);
+  const cases = await captureJevCases(browser, base, settings, bookingPath);
+  if (process.env.SCHEDULER_JEV_OUTPUT) {
+    const output = resolve(process.env.SCHEDULER_JEV_OUTPUT);
+    assert.ok(output.startsWith(resolve(root, "work/jev") + "/"));
+    await writeFile(output, JSON.stringify(cases, null, 2) + "\n", {
+      flag: "wx",
+    });
+  }
   console.log(
     "Frontend acceptance passed: booking, management, bilingual themes, mobile layout, admin saves, iCloud form, and WCAG axe scans.",
   );

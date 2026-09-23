@@ -1,6 +1,6 @@
 {
   "name": "@dustwave/scheduler",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "types": "wrangler types",
     "test": "vitest run",
-    "check": "npm run template:check && npm run typecheck && npm run test:audit && npm run test:platform && npm test && npm run build && npm run test:quality && npm run test:setup && npm run test:browser && wrangler deploy --dry-run",
+    "check": "node scripts/jev-evaluation.mjs --check",
     "template:check": "node shared/dust-wave-jekyll-template/bin/sync-consumer.mjs --consumer-root . --check",
     "deploy": "npm run check && wrangler deploy",
     "test:browser": "node web/tests/browser.mjs",
@@ -25,7 +25,10 @@
     "clean": "node scripts/clean.mjs",
     "audit:dependencies": "npm audit --audit-level=moderate && node scripts/audit-ruby.mjs",
     "test:audit": "node --test scripts/audit-ruby.test.mjs scripts/credential-signatures.test.mjs",
-    "test:platform": "node --test scripts/platform-pin.test.mjs"
+    "test:platform": "node --test scripts/platform-pin.test.mjs",
+    "check:offline": "npm run template:check && npm run typecheck && npm run test:audit && npm run test:platform && npm run test:jev:unit && npm test && npm run build && npm run test:quality && npm run test:setup && npm run test:browser && wrangler deploy --dry-run",
+    "test:jev": "node scripts/jev-evaluation.mjs",
+    "test:jev:unit": "node --test scripts/jev-evaluation.test.mjs"
   },
   "dependencies": {
     "@dustwave/admin-shell": "file:shared/dust-wave-platform/packages/admin-shell",
@@ -53,7 +56,8 @@
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.131.2",
-    "sharp": "0.35.4"
+    "sharp": "0.35.4",
+    "@dustwave/test-core": "file:shared/dust-wave-platform/packages/test-core"
   },
   "overrides": {
     "sharp": "$sharp",

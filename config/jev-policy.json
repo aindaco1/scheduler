@@ -1,0 +1,6 @@
+{
+  "minimumMargin": 0.1,
+  "models": ["jev-1.13.0"],
+  "protocolSha256": "64c739631b0d6a6873d99749694be18513d3efcd01d0657a2ff9d54a1b1b03f3",
+  "note": "Affirmative pending-state consistency rubric, 2026-09-23. Margin and model unchanged. Four fresh full-page validation controls frozen before live evaluation; both prior trials preserved. Never loosen automatically."
+}

@@ -33,6 +33,10 @@ The required guest-facing case: **when the booked guest declines the invitation 
 - [ ] Evaluate authenticated change notifications with durable reconciliation and catch-up for missed updates. Confirm provider state before applying changes; handle duplicates, delayed/out-of-order updates, expired subscriptions, revocation and failed reads without feedback loops or duplicate notices.
 - [ ] Verify the full cycle with designated test calendars: Scheduler booking → Calendar decline/cancellation/time edit → matching Scheduler state, reminders and availability. Include a late decline, a repeated update and recovery after a missed notification. Treat a local-only deletion that never reaches Google separately from an actual declined RSVP.
 
+## Test quality follow-up
+
+- [ ] Expand Scheduler-specific Jev controls with fluent bilingual review and fresh validation after rubric changes. Keep failures and unapproved uncertain results blocking; do not loosen the judge merely to pass current copy. The current workflow belongs in [Quality](QUALITY.md#required-jev-development-check).
+
 ## Scope and sequencing
 
 The completed 1.0.1 audit precedes new Phase 2 features. Profiles, payments and Google reconciliation can proceed independently of the Proton feasibility milestone. Phase 2 remains centred on one owner's schedule; public multi-owner hosting is a separate scope decision.
