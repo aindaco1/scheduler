@@ -26,7 +26,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 | Task | Guide |
 | --- | --- |
 | Work on the browser or API | [Browser entry point](../web/README.md), [API contract](API.md) |
-| Run checks and understand their limits | [Quality checks](QUALITY.md#commands-and-evidence) |
+| Run checks and understand their limits | [Quality checks](QUALITY.md#commands-and-evidence), [required Jev check](QUALITY.md#required-jev-development-check) |
 | Review authentication, private data and vulnerability reporting | [Security](SECURITY.md) |
 | Maintain accessible layouts and translations | [Accessibility and localization](QUALITY.md#accessibility-and-localization-contract) |
 | Maintain performance, calendar caching and search metadata | [Quality review](QUALITY.md), [calendar cache contract](QUALITY.md#calendar-cache-contract) |

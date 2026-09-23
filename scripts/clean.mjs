@@ -19,6 +19,7 @@ const outputs = [
   "playwright-report",
   "work/frontend",
   "work/audit",
+  "work/jev",
 ];
 for (const output of outputs) {
   if (!values["dry-run"])

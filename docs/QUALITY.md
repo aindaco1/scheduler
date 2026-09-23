@@ -101,9 +101,9 @@ npm run audit:dependencies
 npm run benchmark:availability -- --samples 30
 ```
 
-`check` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. The booking and management pages load the timezone/slot-picker code only when a picker opens. Budgets count initial shared imports separately from lazy code, with all code still subject to the aggregate limit. Exact footprints are written to the quality artifact. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
+`check:offline` runs the pinned shared-template contract, TypeScript, Workers-runtime tests, production build, quality gates, independent fork setup, browser flows/axe and a Wrangler dry run. `config/quality-budgets.json` owns the asset limits. The booking and management pages load the timezone/slot-picker code only when a picker opens. Budgets count initial shared imports separately from lazy code, with all code still subject to the aggregate limit. Exact footprints are written to the quality artifact. Calendar responses remain private/no-store; only content-addressed assets and saved public logos receive long-lived cache headers.
 
-Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixture screenshots, quality metrics and the translation packet for 14 days. It never calls real calendars or sends invitations. The read-only availability benchmark collects sequential duration/status samples without event/guest bodies; its p95 is emitted only for 30 samples. It is not real-user LCP/INP/CLS or sustained-load evidence.
+Local evidence goes to ignored `work/audit` and `work/frontend`. CI retains fixture screenshots, quality metrics, the translation packet and synthetic Jev evidence for 14 days. It never calls real calendars or sends invitations. The read-only availability benchmark collects sequential duration/status samples without event/guest bodies; its p95 is emitted only for 30 samples. It is not real-user LCP/INP/CLS or sustained-load evidence.
 
 `audit:dependencies` checks npm advisories and every registry Ruby package in `Gemfile.lock` through OSV. Failed, incomplete, malformed or paginated Ruby responses fail the gate; all reported Ruby advisories require disposition by updating the dependency. The audit-gate fixtures run inside `check`. Advisory queries run separately and in CI so offline local fixture success is not described as a current advisory result. The live isolated recovery runner is an explicit operational command, never an automatic CI deployment.
 
@@ -114,3 +114,121 @@ Meeting sharing adds Worker-response checks for localized initial metadata/JSON-
 Cloudflare documents `no-transform` for preventing automatic [Web Analytics injection](https://developers.cloudflare.com/web-analytics/faq/) and [JavaScript Detections injection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/). Scheduler's explicit Turnstile and server verification remain required. Do not add a zone rule that requires a JSD-passed signal for these no-transform pages; the signal is intentionally absent. No zone-wide settings were changed.
 
 Final source/CI/deployment results and measured latency/Lighthouse outcomes are recorded in [the pre-1.0 verification history](history/pre-1.0.md#final-quality-release-verification), with a [metrics-only evidence file](release-evidence/quality-evidence-2026-09-09.json).
+
+## Required Jev development check
+
+`npm run check` runs the complete deterministic suite, captures fresh synthetic
+browser/email output inside the existing browser harness, then runs live Jev.
+Failures, uncertain/near-tied judgments, unknown model versions, incorrect
+labeled controls and incomplete evaluation all prevent a passing check.
+`npm test` remains the focused, offline Worker suite.
+
+```sh
+npm run check                       # Complete deterministic + live semantic gate
+npm run check:offline               # Explicit deterministic-only check
+npm run test:jev                    # Fresh build/browser capture + live semantic gate
+npm run test:jev -- --dry-run        # Fresh capture and requests; zero model/auth calls
+npm run test:jev:unit               # Offline gate/error/budget regressions
+```
+
+A dry run exits successfully as a preview with `complete: false` and a false
+Scheduler gate. It is never equivalent to a live pass. The live command exits 1
+for findings/control mismatches/review, and 2 for missing authentication,
+preparation errors or incomplete provider evidence. The full command runs the
+existing deterministic suite once, before remote evaluation; Jev cannot override
+its failures. Standalone `test:jev` does not claim the Worker suite ran.
+
+### Ownership and inputs
+
+Reuse Platform Test Core 0.3.0's `@dustwave/test-core/jev` entry for request
+construction, bounded Cloudflare transport, complete response validation and
+probability routing. Scheduler owns requirements, controls, source capture,
+credentials, budget and the required gate. No runtime Worker/browser import,
+new service, database or separate test framework is added. CutNotes and Pool
+remain unchanged.
+
+Keep this boundary when adopting Jev elsewhere: reuse the shared evaluation
+protocol and transport, with a thin consumer adapter for each project's output
+and acceptance rules. Do not add a second shared Jev implementation or move
+consumer credentials into Platform. CutNotes' Python runner would need its own
+explicit adoption of the existing JavaScript entry.
+
+The first corpus contains 34 rendered cases: nine browser states in each
+language (calendar failure, pending, confirmed, reschedule reservation guidance,
+completed reschedule, expired change deadline, cancellation, failed booking and
+unauthorized access), plus four email kinds in HTML and text in each language.
+Browser cases exercise the built application against isolated API responses;
+email cases call the existing `bookingEmail` renderer. Local assertions check
+submission fields, private-link authorization, time changes, hidden mutation
+controls, retry behavior, email links and conditional message content. Existing
+Worker tests continue to own actual scheduling, concurrency and durable recovery.
+This is synthetic browser behavior, not a live-provider booking acceptance run.
+
+Only generated fixtures and public application copy can enter the evaluator.
+There is no arbitrary file, saved-output or production-data input option. The
+capture blocks external requests, intercepts Turnstile and every API, and removes
+email addresses/URLs from semantic text after exact checks. No messages or
+calendar invitations are sent. Generated reports stay in ignored `work/jev/`;
+each run has a new directory. They retain candidate/request text, raw responses,
+probabilities, model versions, usage, timings and source/corpus hashes, but no
+credentials. `review.md` places flagged text beside its requirement.
+
+### Credentials, spending and CI
+
+Use `CLOUDFLARE_ACCOUNT_ID` (otherwise the local Wrangler account configuration)
+and `CLOUDFLARE_API_TOKEN`. Locally, an existing Wrangler login is used if no token
+is set. CI requires the explicit token and never opens a login flow. Do not put
+tokens in command arguments, fixtures, runtime secrets or committed files.
+
+Trusted main-branch pushes, main-branch manual runs and scheduled checks run the
+full gate. Configure repository variable `JEV_CLOUDFLARE_ACCOUNT_ID` and secret
+`JEV_CLOUDFLARE_API_TOKEN` using a dedicated token limited to Workers AI for that
+account. Missing credentials fail the trusted check. Pull requests and non-main
+manual refs run the explicitly named offline step without Jev secrets; they do
+not establish semantic acceptance. Do not use `pull_request_target` to run a
+contributor's code with the token. Use a separate Workers AI token per consumer
+repository so rotation and revocation remain independent; sharing the package
+does not require sharing credentials. Provision tokens outside the repository.
+
+The runner permits at most 100 questions, one request attempt per case, with no
+automatic retry, fallback, purchase or top-up. Default estimated spending limit:
+$0.25; `--max-estimated-usd=...` can lower it or raise it to at most $1. The
+conservative reserve is 32,000 input tokens per question at the dated September
+23 [TypeSafe reference rate](https://docs.typesafe.ai/models) of $0.042/million.
+The current 100 questions reserve $0.1344. This is a local estimate, not a
+provider-enforced billing cap. The [Cloudflare model reference](https://developers.cloudflare.com/ai/models/typesafe/jev/) directs pricing checks to the account dashboard.
+Gateway cache/logging request headers are disabled; that is not a retention
+policy guarantee.
+
+### Judge policy and review
+
+There are 16 calibration and 24 separate validation controls, each a labeled
+faithful/flawed example in English or Spanish. The pending-state rubric uses
+separate assertions for confirmation in progress and consistent unfinished
+status. Twelve additional validation controls cover both languages, completed
+confirmation, contradictory claims, missing status and realistic page details. They test pending confirmation,
+reservation preservation, failed bookings, calendar errors, cancellation,
+change deadlines and reminders. Labels are engineering judgments; they do not
+establish native-speaker approval or universal judge accuracy.
+
+`config/jev-policy.json` freezes the 0.10 probability margin and recognized
+model `jev-1.13.0`. Its digest binds the shared question protocol and local
+requirements/controls; changing those requires deliberate policy review.
+The margin is inherited as a conservative starting point from CutNotes, not
+claimed to be calibrated to Scheduler. The live run checks both control splits;
+it never tunes prompts, labels or thresholds automatically. The September 23
+[review record](release-evidence/jev-development-2026-09-23.md#pending-state-rubric-review)
+documents an explicit atomic-question revision and fresh validation after a
+near-tie blocked release, followed by a failed absence-based rubric and an
+affirmative consistency revision with four further held-out controls. The margin
+and production copy were unchanged. Shared evidence remains advisory;
+the consumer's `schedulerGate.passed` is the mandatory outcome. A complete API
+response and `releaseAccepted: false` in shared evidence are not release approval.
+
+Investigate flags against actual source/rendered behavior. Preserve the failing
+report, fix a demonstrated product defect or revise a demonstrably wrong rubric,
+and use fresh held-out examples after tuning. Do not weaken thresholds or rewrite
+correct product copy merely to get a pass. See TypeSafe's [confidence guidance](https://docs.typesafe.ai/confidence).
+Jev evaluates text meaning, not screen layout or calendar atomicity. Keep
+keyboard/axe, deterministic business rules, deployment, provider and recipient
+verification as separate evidence in [STATUS.md](STATUS.md).

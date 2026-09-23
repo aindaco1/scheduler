@@ -78,12 +78,15 @@ Open `http://localhost:8787/your-name` (or `/alonso` in the unchanged upstream c
 | --- | --- |
 | `npm run dev` | Build and run the local Worker on port 8787 |
 | `npm run build` | Generate routes, hashed assets and Jekyll output |
-| `npm run check` | Run the complete type, Worker, build, setup, browser and quality checks |
+| `npm run check` | Run all deterministic checks and required live Jev evaluation of synthetic output |
+| `npm run check:offline` | Run all deterministic checks, explicitly excluding live Jev |
+| `npm run test:jev` | Rebuild, capture browser/email fixtures, and run the live semantic gate |
+| `npm run test:jev -- --dry-run` | Preview fresh synthetic requests without model calls |
 | `npm run audit:dependencies` | Check current dependency advisories |
 | `npm run clean -- --dry-run` | List disposable generated output |
 | `npm run clean` | Remove generated output; retain dependencies, secrets and local database state |
 
-Use the project build command rather than bare `jekyll build`. See [operations](docs/OPERATIONS.md) for maintenance and [contributing](docs/CONTRIBUTING.md) for development conventions.
+Use the project build command rather than bare `jekyll build`. The full check requires Cloudflare Workers AI authentication for Jev; see [test setup and interpretation](docs/QUALITY.md#required-jev-development-check). Jev is development tooling and does not run in the deployed scheduler. See [operations](docs/OPERATIONS.md) for maintenance and [contributing](docs/CONTRIBUTING.md) for development conventions.
 
 ## Documentation
 

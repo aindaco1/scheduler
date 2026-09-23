@@ -14,7 +14,7 @@ bundle install
 npx playwright install chromium
 ```
 
-Use Node 24+ and Ruby 3.1+ with Bundler (CI uses Ruby 3.3). If you cloned without dependencies, run `git submodule update --init --recursive`. Both pinned Dust Wave submodules are public and MIT-licensed; no Dust Wave account is needed. Keep their license notices.
+Use Node 24+ and Ruby 3.1+ with Bundler (CI uses Ruby 3.3). Configure the development-only [Jev credential](QUALITY.md#required-jev-development-check) for the full `npm run check`; `npm run check:offline` is an explicit deterministic-only alternative, not full acceptance. If you cloned without dependencies, run `git submodule update --init --recursive`. Both pinned Dust Wave submodules are public and MIT-licensed; no Dust Wave account is needed. Keep their license notices.
 
 ## 2. Configure your identity and domain
 
@@ -86,4 +86,4 @@ The current release tag is `v1.0.1`; [release notes](../CHANGELOG.md) describe i
 
 Commit your public configuration. To adopt upstream fixes, add an upstream remote and merge/rebase deliberately, preserving your Wrangler configuration and secrets. Run `npm ci`, `git submodule update --init --recursive`, and `npm run check` before each deploy. Ordinary code deployments preserve SQLite state and queued work. Do not reapply a new namespace migration or delete the Durable Object to perform an upgrade.
 
-Enable GitHub Actions and private vulnerability reporting on your fork, then update the reporting URL in [the security policy](SECURITY.md). Check runs on PRs, main pushes and a weekly schedule; Dependabot proposes dependency/action updates. Scheduled workflows in forks may need explicit activation. No deployment credential is stored in GitHub and no workflow deploys automatically.
+Enable GitHub Actions and private vulnerability reporting on your fork, then update the reporting URL in [the security policy](SECURITY.md). Check runs on PRs, main pushes and a weekly schedule; Dependabot proposes dependency/action updates. Scheduled workflows in forks may need explicit activation. The live Jev step on trusted main runs needs its own scoped Workers AI secret as described in [Quality](QUALITY.md#required-jev-development-check); PR checks remain offline. No deployment credential is stored in GitHub and no workflow deploys automatically.

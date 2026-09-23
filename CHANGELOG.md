@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Require live Jev evaluation alongside deterministic checks for synthetic English/Spanish booking flows and rendered emails. Reuse Platform Test Core, retain raw evidence and separate labeled controls, block failures/reviews/incomplete results, and provide explicit offline/preview commands. Wire trusted-main CI for a dedicated Workers AI credential; pull requests remain explicitly offline.
+- State explicitly in English and Spanish that a new pending meeting is not confirmed yet. Keep waiting-for-calendar guidance shared across pending operations without implying an existing reservation has lost confirmation.
+- Include disposable Jev evidence in the existing cleanup command while retaining dependencies, local secrets and development database state.
+
 - Page booking and guest rescheduling by seven dates with actual availability after minimum notice. Skip unavailable dates, retain all slots for each displayed date, look ahead before enabling Next, and stop at the configured horizon. Keep provider failures visible and preserve location/time-zone browsing context.
 
 - Identify the host in new calendar invitations using the saved Display name and connected Google account. Titles include both participants, descriptions name the host and guest in the booking language, and the host is included as an accepted attendee. Preserve existing events and guest responses during recovery and rescheduling.

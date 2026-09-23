@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 22, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 23, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,35 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Required Jev development checks — September 23 UTC (release candidate)
+
+Scheduler reuses Platform Test Core for required live semantic evaluation of
+34 synthetic English/Spanish browser/email cases, with 40 separate labeled
+controls. `npm run check` retains all existing deterministic checks and blocks
+semantic failures, reviews and incomplete evaluation. `check:offline` explicitly
+omits the model gate; its browser capture assertions still run. See
+[Quality](QUALITY.md#required-jev-development-check) and the
+[dated evidence](release-evidence/jev-development-2026-09-23.md).
+
+The release checks passed 193 Worker tests, seven gate regressions, the
+build/fork/browser/accessibility matrix and dependency audits. A live near-tie
+then blocked release despite two earlier passes. Separating the pending-state
+assertions suggested an absence-based rubric mismatch; a further affirmative
+consistency revision and fresh full-page controls passed all 40 controls but
+still failed the actual English pending screen (33/34 rendered passes). All
+four blocked trials are preserved. The owner approved explicit pending copy in
+both languages, but its final live check still produced an English pending-screen
+review (pass 0.51, fail 0.48). All 40 controls and the other 33 rendered cases
+passed. This remains a judge-quality blocker; no threshold, label or review
+override was used to obtain release acceptance. The change is unreleased.
+
+Hosted CI is wired for live checks on trusted main runs, with explicitly offline
+pull-request checks. The dedicated Workers AI secret and account variable are
+configured in GitHub; hosted verification and deployment are pending. CutNotes
+keeps its separate credentials and workflow. No calendar write, invitation or
+recipient delivery occurred. Judge evidence and actual provider/recipient
+acceptance remain separate.
 
 ### Seven available dates and invitation identity — September 22 UTC
 
