@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 — 2026-09-23
 
-- Require live Jev evaluation alongside deterministic checks for synthetic English/Spanish booking flows and rendered emails. Reuse Platform Test Core, retain raw evidence and separate labeled controls, block failures/reviews/incomplete results, and provide explicit offline/preview commands. Wire trusted-main CI for a dedicated Workers AI credential; pull requests remain explicitly offline.
+Required semantic checks, clearer pending status, available-date paging and invitation identity. Existing installations need no migration or provider reconnection.
+
+- Require live Jev evaluation alongside deterministic checks for synthetic English/Spanish booking flows and rendered emails. Reuse Platform Test Core, retain raw evidence and separate labeled controls, block failures/unapproved reviews/incomplete results, and provide explicit offline/preview commands. Wire trusted-main CI for a dedicated Workers AI credential; pull requests remain explicitly offline.
+- Record an owner-approved review exception for the exact English pending-copy finding. Bind it to the candidate, question, policy and model; retain raw scores and block changed text, failures, unrelated reviews, control failures and incomplete evidence.
 - State explicitly in English and Spanish that a new pending meeting is not confirmed yet. Keep waiting-for-calendar guidance shared across pending operations without implying an existing reservation has lost confirmation.
 - Include disposable Jev evidence in the existing cleanup command while retaining dependencies, local secrets and development database state.
 

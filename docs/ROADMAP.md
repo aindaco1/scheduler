@@ -35,7 +35,7 @@ The required guest-facing case: **when the booked guest declines the invitation 
 
 ## Test quality follow-up
 
-- [ ] Expand Scheduler-specific Jev controls with fluent bilingual review and fresh validation after rubric changes. Keep failures and uncertain results blocking; do not loosen the judge merely to pass current copy. The current workflow belongs in [Quality](QUALITY.md#required-jev-development-check).
+- [ ] Expand Scheduler-specific Jev controls with fluent bilingual review and fresh validation after rubric changes. Keep failures and unapproved uncertain results blocking; do not loosen the judge merely to pass current copy. The current workflow belongs in [Quality](QUALITY.md#required-jev-development-check).
 
 ## Scope and sequencing
 

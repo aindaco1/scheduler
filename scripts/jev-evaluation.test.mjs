@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { evaluateJevCases } from "@dustwave/test-core/jev";
 import {
   budget,
@@ -133,4 +134,114 @@ test("fixed controls are bound to the reviewed protocol; limits reject excessive
   for (const value of [0, -1, 2, NaN]) assert.throws(() => budget(78, value));
   assert.throws(() => budget(101, 1));
   assert.throws(() => budget(78, 0.001));
+});
+
+const hash = (value) => createHash("sha256").update(value).digest("hex");
+const reviewReport = () =>
+  run((request, result) => {
+    if (request.input.state.candidate === "Current UI") {
+      result.result.answers.meaning = response(request, "pass", "jev-1.13.0", {
+        pass: 0.51,
+        fail: 0.48,
+        uncertain: 0.01,
+      }).result.answers.meaning;
+    }
+    return result;
+  });
+const approvalFor = (report, source = corpus[2], question = "meaning") => ({
+  caseId: source.id,
+  question,
+  candidateSha256: hash(source.candidate),
+  requirementSha256: hash(source.requirements[question]),
+  policySha256: hash(JSON.stringify(report.policy)),
+  model: "jev-1.13.0",
+  approvedBy: "Fixture owner",
+  approvedAt: "2026-09-23",
+  reason: "Reviewed fixture text communicates the pending state.",
+});
+
+test("explicit human review accepts only its finding while preserving raw evidence", async () => {
+  const report = await reviewReport();
+  const approvals = [approvalFor(report)];
+  assert.equal(exitCode(report, corpus), 1);
+  assert.equal(exitCode(report, corpus, false, approvals), 0);
+  const summary = summarize(report, corpus, approvals);
+  assert.equal(summary.rendered.review, 1);
+  assert.equal(summary.approvedReviews.length, 1);
+  assert.equal(report.cases[2].result.findings.meaning.decision, "review");
+  assert.equal(report.releaseAccepted, false);
+  assert.match(
+    reviewMarkdown(report, corpus, { mode: "live" }, approvals),
+    /Human review accepted by Fixture owner/,
+  );
+});
+
+test("changed text, rubric, policy, case, question or model invalidates the approval", async () => {
+  const report = await reviewReport();
+  const approvals = [approvalFor(report)];
+  for (const mutate of [
+    (r, c) => {
+      c[2].candidate += " Changed";
+    },
+    (r, c) => {
+      c[2].requirements.meaning = "Changed requirement";
+    },
+    (r) => {
+      r.policy.minimumMargin = 0.2;
+    },
+    (r, c) => {
+      r.cases[2].id = c[2].id = "different-case";
+    },
+    (r, c) => {
+      c[2].requirements.changed = c[2].requirements.meaning;
+      delete c[2].requirements.meaning;
+      r.cases[2].result.findings.changed = r.cases[2].result.findings.meaning;
+      delete r.cases[2].result.findings.meaning;
+    },
+    (r) => {
+      r.cases[2].result.model = "jev-new";
+    },
+  ]) {
+    const changedReport = structuredClone(report),
+      changedCorpus = structuredClone(corpus);
+    mutate(changedReport, changedCorpus);
+    assert.equal(exitCode(changedReport, changedCorpus, false, approvals), 1);
+  }
+});
+
+test("review approval cannot hide a failure, another review, missing evidence or incomplete evaluation", async () => {
+  const report = await reviewReport();
+  const approvals = [approvalFor(report)];
+  for (const mutate of [
+    (r) => {
+      r.cases[2].result.findings.meaning.decision = "fail";
+    },
+    (r) => {
+      r.cases[2].result.findings.policy.decision = "fail";
+    },
+    (r) => {
+      r.cases[2].result.findings.policy.decision = "review";
+    },
+    (r) => {
+      delete r.cases[2].result.findings.policy;
+    },
+    (r) => {
+      r.complete = false;
+    },
+    (r) => {
+      r.error = "Provider error";
+    },
+  ]) {
+    const changed = structuredClone(report);
+    mutate(changed);
+    assert.notEqual(exitCode(changed, corpus, false, approvals), 0);
+  }
+});
+
+test("controls cannot be waived through human review", async () => {
+  const report = await run();
+  report.cases[0].result.findings.meaning.decision = "review";
+  const approvals = [approvalFor(report, corpus[0])];
+  assert.equal(exitCode(report, corpus, false, approvals), 1);
+  assert.equal(summarize(report, corpus, approvals).approvedReviews.length, 0);
 });

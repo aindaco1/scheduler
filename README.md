@@ -2,7 +2,7 @@
 
 An open-source, self-hosted meeting scheduler for one person. Guests choose a meeting type, a place or video call, and an available time. Confirmed meetings are added to your main Google calendar automatically.
 
-**Version 1.0.1 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
+**Version 1.0.2 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
 
 [See the booking page](https://scheduler.dustwave.xyz/alonso).
 

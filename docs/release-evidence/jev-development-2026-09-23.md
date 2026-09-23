@@ -92,8 +92,8 @@ controls, 34 rendered cases, 100 questions and 74 requests. The fixed limit is
 still 100 questions, with a $0.1344 conservative reserve. The revised check at
 15:06 UTC passed all 40 controls and 33/34 rendered cases. The actual English
 pending screen still failed the consistency assertion (pass 0.33, fail 0.66,
-uncertain 0.01). This does not prove a product defect. Deployment remains blocked
-while the owner chooses between making pending copy explicit and retaining the
+uncertain 0.01). This does not prove a product defect. Deployment was blocked
+while the owner chose between making pending copy explicit and retaining the
 copy for further evaluator review. No threshold or label was changed to erase
 this finding.
 
@@ -109,9 +109,31 @@ again passed all deterministic checks and all 40 controls, with 33 rendered
 passes and one review: English pending consistency received pass 0.51, fail 0.48,
 uncertain 0.01 (margin 0.03). It used 74 requests, 100 questions and 48,471 input
 tokens (estimated $0.002035782). The copy clarification did not resolve the
-judge-quality issue. Release, trusted live CI and deployment remain blocked;
-version 1.0.1 stays the published release. No retry or override converted the
+judge-quality issue. At that point release, trusted live CI and deployment remained blocked;
+version 1.0.1 remained the published release. No retry or override converted the
 finding into a pass.
+
+## Explicit owner approval
+
+After reviewing the remaining near tie, the owner approved the copy and the
+recommended narrow human-review exception. The committed
+[approval](../../config/jev-reviews.json) covers only `browser-pending-en` /
+`no_early_confirmation`, with exact candidate/requirement/policy hashes and the
+recognized model. It can accept an uncertain finding without changing its raw
+scores or decision; it cannot waive a failure, control mismatch, missing answer,
+incomplete provider run, changed candidate/rubric/policy or another model.
+
+Four focused regressions exercise acceptance with retained evidence, invalidation
+on changed inputs, additional blocking findings/incomplete runs, and exclusion
+of controls. The semantic-gate suite now has 11 tests. Final local/hosted and
+deployed verification are recorded separately. The complete local check at
+16:10 UTC passed with 193 Worker tests, 11 gate regressions, 325 paired messages,
+40 admin and 84 public responsive checks, all 40 controls and 33 rendered passes
+plus one approved review. All 74 requests / 100 questions completed; usage was
+48,471 input tokens, estimated $0.002035782. The raw pending finding remains a
+review; `blockingFindings` is zero and `approvedReviews` records the applied
+owner approval. Dependency audits again found zero npm advisories and no
+findings across 34 Ruby packages. Hosted CI and deployment are pending.
 
 ## Verification boundaries
 

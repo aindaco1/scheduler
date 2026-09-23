@@ -40,7 +40,30 @@ export function loadPolicy() {
   return policy;
 }
 
-export function summarize(report, corpus) {
+function approvedReview(report, source, key, result, approvals) {
+  if (
+    source.expected ||
+    !report.complete ||
+    report.error ||
+    result?.findings[key]?.decision !== "review"
+  )
+    return undefined;
+  return approvals.find(
+    (approval) =>
+      approval.caseId === source.id &&
+      approval.question === key &&
+      approval.candidateSha256 === sha256(source.candidate) &&
+      approval.requirementSha256 === sha256(source.requirements[key]) &&
+      approval.policySha256 === sha256(JSON.stringify(report.policy)) &&
+      approval.model === result.model &&
+      report.policy.models.includes(result.model) &&
+      approval.approvedBy &&
+      approval.approvedAt &&
+      approval.reason,
+  );
+}
+
+export function summarize(report, corpus, approvals = []) {
   const labels = {
     calibration: { correct: 0, fail: 0, review: 0, missing: 0 },
     validation: { correct: 0, fail: 0, review: 0, missing: 0 },
@@ -48,10 +71,18 @@ export function summarize(report, corpus) {
   const rendered = { pass: 0, fail: 0, review: 0, missing: 0 };
   const results = new Map(report.cases.map((row) => [row.id, row]));
   let inputTokens = 0;
+  let blockingFindings = 0;
+  const approvedReviews = [];
   for (const source of corpus) {
     const result = results.get(source.id)?.result;
     inputTokens += result?.usage.input_tokens || 0;
     const findings = result?.findings || {};
+    for (const key of Object.keys(source.requirements)) {
+      if (findings[key]?.decision === (source.expected || "pass")) continue;
+      const approval = approvedReview(report, source, key, result, approvals);
+      if (approval) approvedReviews.push(approval);
+      else blockingFindings++;
+    }
     const decisions = Object.keys(source.requirements).map(
       (key) => findings[key]?.decision,
     );
@@ -62,25 +93,22 @@ export function summarize(report, corpus) {
       bucket[source.expected ? "correct" : "pass"]++;
     else bucket.fail++;
   }
-  const passed =
-    report.complete &&
-    !report.error &&
-    [labels.calibration, labels.validation, rendered].every(
-      (b) => b.fail + b.review + b.missing === 0,
-    );
+  const passed = report.complete && !report.error && blockingFindings === 0;
   return {
     passed,
     controls: labels,
     rendered,
+    blockingFindings,
+    approvedReviews,
     inputTokens,
     estimatedInferenceUsd: (inputTokens * INPUT_USD_PER_MILLION) / 1_000_000,
   };
 }
 
-export function exitCode(report, corpus, dryRun = false) {
+export function exitCode(report, corpus, dryRun = false, approvals = []) {
   if (dryRun) return 0;
   if (!report.complete || report.error) return 2;
-  return summarize(report, corpus).passed ? 0 : 1;
+  return summarize(report, corpus, approvals).passed ? 0 : 1;
 }
 
 export function budget(questionCount, maximum) {
@@ -97,8 +125,8 @@ export function budget(questionCount, maximum) {
   return reservedEstimateUsd;
 }
 
-export function reviewMarkdown(report, corpus, metadata) {
-  const summary = summarize(report, corpus);
+export function reviewMarkdown(report, corpus, metadata, approvals = []) {
+  const summary = summarize(report, corpus, approvals);
   const lines = [
     "# Scheduler Jev development check",
     "",
@@ -108,6 +136,7 @@ export function reviewMarkdown(report, corpus, metadata) {
     "",
     `Controls: ${JSON.stringify(summary.controls)}.`,
     `Rendered: ${JSON.stringify(summary.rendered)}.`,
+    `Blocking findings: ${summary.blockingFindings}. Applied human reviews: ${summary.approvedReviews.length}.`,
     "",
     "The fixed 0.10 margin is a conservative starting policy, not a measured accuracy guarantee. Exact scheduling, authorization and provider tests remain authoritative. This check does not establish deployment, calendar writes, recipient delivery or fluent-speaker acceptance.",
     "",
@@ -125,9 +154,20 @@ export function reviewMarkdown(report, corpus, metadata) {
     lines.push(`### ${source.id}`, "", ...(row?.error ? [row.error, ""] : []));
     for (const [key, requirement] of findings) {
       const finding = row?.result?.findings[key];
+      const approval = approvedReview(
+        report,
+        source,
+        key,
+        row?.result,
+        approvals,
+      );
       lines.push(
         `- ${finding?.decision || "unevaluated"} (expected ${source.expected || "pass"}): ${requirement} Probabilities: ${JSON.stringify(finding?.probabilities || {})}.`,
       );
+      if (approval)
+        lines.push(
+          `  Human review accepted by ${approval.approvedBy} on ${approval.approvedAt}: ${approval.reason}`,
+        );
     }
     lines.push(
       "",
@@ -196,6 +236,11 @@ export async function main(args = process.argv.slice(2)) {
   );
   budget(0, maximum); // Reject invalid limits before running local subprocesses.
   const policy = loadPolicy();
+  const approvals = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "config/jev-reviews.json"), "utf8"),
+  );
+  if (!Array.isArray(approvals))
+    throw new Error("Invalid Jev review approvals");
   const output = path.join(
     ROOT,
     "work/jev",
@@ -237,6 +282,7 @@ export async function main(args = process.argv.slice(2)) {
     "web/common.ts",
     "worker/src/email.ts",
     "config/jev-policy.json",
+    "config/jev-reviews.json",
     ...protocolFiles.slice(1),
   ];
   const questionCount = corpus.reduce(
@@ -274,7 +320,7 @@ export async function main(args = process.argv.slice(2)) {
         {
           ...metadata,
           evaluation: report,
-          schedulerGate: summarize(report, corpus),
+          schedulerGate: summarize(report, corpus, approvals),
         },
         null,
         2,
@@ -282,7 +328,7 @@ export async function main(args = process.argv.slice(2)) {
     );
     fs.writeFileSync(
       path.join(output, "review.md"),
-      reviewMarkdown(report, corpus, metadata),
+      reviewMarkdown(report, corpus, metadata, approvals),
     );
   };
   let report = await evaluateJevCases(corpus, {
@@ -316,13 +362,13 @@ export async function main(args = process.argv.slice(2)) {
         complete: report.complete,
         networkAttempts: report.networkAttempts,
         questionCount,
-        ...summarize(report, corpus),
+        ...summarize(report, corpus, approvals),
       },
       null,
       2,
     ),
   );
-  return exitCode(report, corpus, dryRun);
+  return exitCode(report, corpus, dryRun, approvals);
 }
 
 if (

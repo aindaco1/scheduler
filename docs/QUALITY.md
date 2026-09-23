@@ -133,7 +133,7 @@ npm run test:jev:unit               # Offline gate/error/budget regressions
 
 A dry run exits successfully as a preview with `complete: false` and a false
 Scheduler gate. It is never equivalent to a live pass. The live command exits 1
-for findings/control mismatches/review, and 2 for missing authentication,
+for findings/control mismatches/unapproved review, and 2 for missing authentication,
 preparation errors or incomplete provider evidence. The full command runs the
 existing deterministic suite once, before remote evaluation; Jev cannot override
 its failures. Standalone `test:jev` does not claim the Worker suite ran.
@@ -221,9 +221,20 @@ it never tunes prompts, labels or thresholds automatically. The September 23
 documents an explicit atomic-question revision and fresh validation after a
 near-tie blocked release, followed by a failed absence-based rubric and an
 affirmative consistency revision with four further held-out controls. The margin
-and production copy were unchanged. Shared evidence remains advisory;
+were unchanged during rubric review; the owner subsequently approved clearer
+pending copy. Shared evidence remains advisory;
 the consumer's `schedulerGate.passed` is the mandatory outcome. A complete API
 response and `releaseAccepted: false` in shared evidence are not release approval.
+
+Explicit owner approval can resolve a specific uncertain rendered finding.
+[Review approvals](../config/jev-reviews.json) bind the case, question, complete
+candidate text, requirement, policy and recognized model by exact values/hashes.
+The current single approval records the owner-reviewed English pending copy.
+It accepts only a `review` result, never a `fail`, control mismatch, missing
+answer, incomplete run or different model. Changed text or policy invalidates
+it. The gate reports applied approvals separately; raw decisions, probabilities
+and review counts remain unchanged in the evidence. New approvals require an
+explicit review decision and a committed record, never an automatic update.
 
 Investigate flags against actual source/rendered behavior. Preserve the failing
 report, fix a demonstrated product defect or revise a demonstrably wrong rubric,
