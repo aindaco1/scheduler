@@ -1,8 +1,9 @@
 # Required Jev development checks — September 23, 2026
 
 Implementation on `feat/jev-testing`, based on Scheduler source `c951add`,
-published for review in [draft PR 7](https://github.com/aindaco1/scheduler/pull/7).
-This is development-tooling evidence, not a deployed release.
+merged through [PR 7](https://github.com/aindaco1/scheduler/pull/7).
+This record preserves development trials; final deployment and hosted acceptance
+are recorded in the [1.0.2 release evidence](jev-release-2026-09-23.json).
 
 ## Scope and reuse
 
@@ -133,17 +134,18 @@ plus one approved review. All 74 requests / 100 questions completed; usage was
 48,471 input tokens, estimated $0.002035782. The raw pending finding remains a
 review; `blockingFindings` is zero and `approvedReviews` records the applied
 owner approval. Dependency audits again found zero npm advisories and no
-findings across 34 Ruby packages. Hosted CI and deployment are pending.
+findings across 34 Ruby packages. The subsequent hosted check and deployment
+passed; see the release evidence linked above.
 
 ## Verification boundaries
 
-- Local deterministic: complete check passed with 193 Worker tests, seven new
+- Local deterministic: complete check passed with 193 Worker tests, 11
   semantic-gate regressions, template/pin/type/audit checks, production build,
   eight localized shells, 325 paired messages, independent fork setup,
   browser/axe/date-paging checks, 40 admin and 84 public responsive checks,
   synthetic capture and Wrangler dry deployment. Node 26.8.2 / Ruby 3.0.0
   on this host; hosted workflow remains Node 24 / Ruby 3.3.
-- Source review: formatting and `git diff --check` passed; all 143 local links
+- Initial source review: formatting and `git diff --check` passed; all 143 local links
   across 25 Markdown files resolve. Changed-file credential-signature scan found
   no matches across 20 text files.
 - Dependencies: current npm audit found zero vulnerabilities; OSV returned no
@@ -152,28 +154,22 @@ findings across 34 Ruby packages. Hosted CI and deployment are pending.
   to the identical fragment URL without reloading the document. It timed out
   before any Jev calls. The fixture now reloads explicitly; no product code was
   changed to satisfy it.
-- Hosted CI: [draft PR 7](https://github.com/aindaco1/scheduler/pull/7) runs the
-  explicit offline workflow; its result is tracked on the PR. Trusted main/live
-  CI remains unverified while the local semantic gate blocks merging. The repository
-  variable `JEV_CLOUDFLARE_ACCOUNT_ID` was configured with `gh` from CutNotes'
-  matching account configuration. Initially no Scheduler repository secrets were
-  listed. The required dedicated Workers AI secret is
-  `JEV_CLOUDFLARE_API_TOKEN`. CutNotes has no Jev repository secret or permanent
-  token in its development configuration; local runs use Wrangler OAuth.
-  That temporary credential was not copied to GitHub. GitHub CLI can store a
-  supplied secret but cannot retrieve another repository's secret plaintext or
-  create a Cloudflare token. Cloudflare denied token-management API access with
-  the local OAuth credential. The user subsequently provisioned the dedicated
-  Scheduler secret, verified present through `gh` on September 23 at 12:47 UTC.
-  Trusted live verification and deployment remain pending.
-- Deployment: none. No production setting, secret, schema or booking was changed.
-- Calendar providers/recipients: not exercised. No live calendar write,
-  invitation or email was sent. Only the approved synthetic text went to Jev.
+- Hosted CI: [offline PR check](https://github.com/aindaco1/scheduler/actions/runs/35887209748)
+  and [trusted main/live check](https://github.com/aindaco1/scheduler/actions/runs/35887448480)
+  passed. Hosted and local corpus hashes match. The new dedicated Workers AI
+  secret was verified through actual CI use; local Wrangler OAuth was not copied
+  to GitHub. CutNotes keeps separate credentials and its current workflow.
+- Deployment: tested source `259bd4eadd95b2f74145a9a43cb2a88faf963c9a` is live as
+  Worker `1316ceae-f045-4796-8232-139bfb915fba`. All public shell/asset checks and
+  bounded availability reads passed; exact results are in the release JSON.
+- Calendar providers/recipients: read-only availability succeeded. No live
+  calendar write, invitation or email was sent. Only synthetic text went to Jev.
 
 ## Local evidence
 
 - First live run: `work/jev/2026-09-23T05-03-50-697Z-81ab99/`.
-- Final complete check: `work/jev/2026-09-23T05-07-40-973Z-1420dc/`.
+- Second initial check: `work/jev/2026-09-23T05-07-40-973Z-1420dc/`.
+- Approved final check: `work/jev/2026-09-23T16-10-40-174Z-16a3b4/`.
 - Zero-call preview: `work/jev/2026-09-23T05-06-18-086Z-bb83fe/`.
 
 Each run directory contained fresh rendered cases, the complete corpus,
@@ -186,8 +182,8 @@ A different checkout regenerates new evidence with the documented command.
 The bounded cleanup removed generated assets/site/manifests, caches, browser
 reports and local audit/Jev output. Local Worker state and the preview helpers
 were hash-verified unchanged; dependencies and local-secret presence were
-preserved. Branch inventory found only `main` and the active unmerged
-`feat/jev-testing` branch, so no stale feature branch was deleted.
+preserved. After merge and deployment, `feat/jev-testing` was deleted locally and remotely.
+Only `main` remains; no unrelated branch was removed.
 
 ## Rollback
 

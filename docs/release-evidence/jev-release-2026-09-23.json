@@ -1,0 +1,323 @@
+{
+  "dateUTC": "2026-09-23",
+  "checkedAt": "2026-09-23T16:19:06.321Z",
+  "sourceCommit": "259bd4eadd95b2f74145a9a43cb2a88faf963c9a",
+  "version": "1.0.2",
+  "publicChecks": [
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/alonso",
+      "status": 200
+    },
+    {
+      "path": "/admin/",
+      "status": 200
+    },
+    {
+      "path": "/manage/",
+      "status": 200
+    },
+    {
+      "path": "/privacy/",
+      "status": 200
+    },
+    {
+      "path": "/es/alonso",
+      "status": 200
+    },
+    {
+      "path": "/es/admin/",
+      "status": 200
+    },
+    {
+      "path": "/es/manage/",
+      "status": 200
+    },
+    {
+      "path": "/es/privacy/",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/settings",
+      "status": 401
+    }
+  ],
+  "assets": [
+    {
+      "path": "/assets/build/admin-2VRSTFHO.js",
+      "status": 200,
+      "sha256": "c06909fbbd46f1bc1c5cebc0e2809332b115c2136335267d94df3535070c65c6",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/booking-YDQHPMJT.js",
+      "status": 200,
+      "sha256": "86703d7cbe5339fde938f43c8cdf84761c93005979a21e1616519e99459068c5",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/manage-UFIWYGKT.js",
+      "status": 200,
+      "sha256": "ee93163d84131def2201d28d355cf4917c770f8a80272cf564609a11339c4ed6",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/privacy-DIVN25YF.js",
+      "status": 200,
+      "sha256": "ace124af47bef87aa5ee715227dea2210566b6be1853c4fb09edde663ef3b2c2",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/scheduler-e6b049deb74d.css",
+      "status": 200,
+      "sha256": "e6b049deb74d978472aa37b9344f4286198fa7fa62315dc37d70997a186bb609",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-J7IVGWSB.js",
+      "status": 200,
+      "sha256": "e5d26492ab1ebce36032042e8fa38cc22a27ee43eb19f3b762af73f889160990",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-JSOII72L.js",
+      "status": 200,
+      "sha256": "1e1000e57e67cd37a45bcf0b040a4a3b19153b21838b995d5e4573fa0435f918",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-MMYUMTA2.js",
+      "status": 200,
+      "sha256": "8331da443a2d4ba9f9c1471ef09fed6d8e77daeda18f9e513c544596480173b6",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/build/shared-R7LVHLVE.js",
+      "status": 200,
+      "sha256": "8457372b30ee3b03aa1c5fceddc946aa31da56c75bcde535fb4257c0bf5bdebf",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/social/apple-touch-icon-v1.png",
+      "status": 200,
+      "sha256": "0abc2e0a91ce91ef9aba29a866cb30f46871a27c25bd9010c5c753a84e5d1a6e",
+      "matchesBuild": true
+    },
+    {
+      "path": "/assets/social/preview-v1.png",
+      "status": 200,
+      "sha256": "cbb1b4d61b0daf048b016cf9ff625d4e7b0a5a15496d16a43d443c61727a8594",
+      "matchesBuild": true
+    }
+  ],
+  "availability": [
+    {
+      "type": "conversation",
+      "status": 200,
+      "slots": 71
+    },
+    {
+      "type": "zoom",
+      "status": 200,
+      "slots": 50
+    },
+    {
+      "type": "in-person",
+      "location": "place-ade1e5d6",
+      "status": 200,
+      "slots": 30
+    },
+    {
+      "type": "in-person",
+      "location": "place-aad76bc7",
+      "status": 200,
+      "slots": 24
+    },
+    {
+      "type": "in-person",
+      "location": "place-02c658ba",
+      "status": 200,
+      "slots": 0
+    }
+  ],
+  "limitations": [
+    "Read-only probes; no live bookings, calendar writes, invitations or emails.",
+    "Availability proves successful provider reads for the sampled window, not new invitation rendering or recipient delivery."
+  ],
+  "publicConfig": {
+    "status": 200,
+    "enabled": true,
+    "ready": true
+  },
+  "availabilityWindow": {
+    "from": "2026-09-25T00:00:00.000Z",
+    "to": "2026-10-02T00:00:00.000Z"
+  },
+  "pr": "https://github.com/aindaco1/scheduler/pull/7",
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/35887448480",
+    "conclusion": "success",
+    "nodeMajor": 24,
+    "ruby": "3.3",
+    "liveJev": true
+  },
+  "local": {
+    "fullCheck": "passed",
+    "workerTests": 193,
+    "jevGateTests": 11,
+    "pairedTranslations": 325,
+    "responsiveChecks": {
+      "admin": 40,
+      "public": 84
+    },
+    "dependencyAudit": {
+      "npmAdvisories": 0,
+      "rubyPackages": 34,
+      "rubyFindings": 0
+    }
+  },
+  "jev": {
+    "corpusSha256": "59fc506e9e66d05d57a40c48127183a054f400ddb6e1772b097fb7f6deb77476",
+    "requests": 74,
+    "questions": 100,
+    "localGate": {
+      "passed": true,
+      "controls": {
+        "calibration": {
+          "correct": 16,
+          "fail": 0,
+          "review": 0,
+          "missing": 0
+        },
+        "validation": {
+          "correct": 24,
+          "fail": 0,
+          "review": 0,
+          "missing": 0
+        }
+      },
+      "rendered": {
+        "pass": 33,
+        "fail": 0,
+        "review": 1,
+        "missing": 0
+      },
+      "blockingFindings": 0,
+      "approvedReviews": [
+        {
+          "caseId": "browser-pending-en",
+          "question": "no_early_confirmation",
+          "candidateSha256": "9e7df75dde2a2a6463f546840705596e170e0f03d44bab1247f1c28b2d58b5e3",
+          "requirementSha256": "c46c9bf55df3bcb5cc5bcaecf13924fe555c5d08b1b102a0e985e2bfe09d892a",
+          "policySha256": "b4086fb3e32f527303a1fd667b2eb4ff7129dd2e96d220720dac2e1141fc8093",
+          "model": "jev-1.13.0",
+          "approvedBy": "Project owner",
+          "approvedAt": "2026-09-23T16:09:52.648Z",
+          "reason": "Owner explicitly approved this pending copy and the narrowly scoped human-review exception. The text states that the meeting is not confirmed yet; the near-tie does not demonstrate a conflicting confirmation claim.",
+          "evidence": "docs/release-evidence/jev-rubric-review-2026-09-23.json"
+        }
+      ],
+      "inputTokens": 48471,
+      "estimatedInferenceUsd": 0.0020357820000000003
+    },
+    "ciGate": {
+      "passed": true,
+      "controls": {
+        "calibration": {
+          "correct": 16,
+          "fail": 0,
+          "review": 0,
+          "missing": 0
+        },
+        "validation": {
+          "correct": 24,
+          "fail": 0,
+          "review": 0,
+          "missing": 0
+        }
+      },
+      "rendered": {
+        "pass": 33,
+        "fail": 0,
+        "review": 1,
+        "missing": 0
+      },
+      "blockingFindings": 0,
+      "approvedReviews": [
+        {
+          "caseId": "browser-pending-en",
+          "question": "no_early_confirmation",
+          "candidateSha256": "9e7df75dde2a2a6463f546840705596e170e0f03d44bab1247f1c28b2d58b5e3",
+          "requirementSha256": "c46c9bf55df3bcb5cc5bcaecf13924fe555c5d08b1b102a0e985e2bfe09d892a",
+          "policySha256": "b4086fb3e32f527303a1fd667b2eb4ff7129dd2e96d220720dac2e1141fc8093",
+          "model": "jev-1.13.0",
+          "approvedBy": "Project owner",
+          "approvedAt": "2026-09-23T16:09:52.648Z",
+          "reason": "Owner explicitly approved this pending copy and the narrowly scoped human-review exception. The text states that the meeting is not confirmed yet; the near-tie does not demonstrate a conflicting confirmation claim.",
+          "evidence": "docs/release-evidence/jev-rubric-review-2026-09-23.json"
+        }
+      ],
+      "inputTokens": 48471,
+      "estimatedInferenceUsd": 0.0020357820000000003
+    },
+    "localPendingFindings": {
+      "in_progress": {
+        "choice": "pass",
+        "probabilities": {
+          "uncertain": 0.01,
+          "pass": 0.86,
+          "fail": 0.13
+        },
+        "margin": 0.73,
+        "decision": "pass"
+      },
+      "no_early_confirmation": {
+        "choice": "pass",
+        "probabilities": {
+          "fail": 0.48,
+          "pass": 0.51,
+          "uncertain": 0.01
+        },
+        "margin": 0.030000000000000027,
+        "decision": "review"
+      }
+    },
+    "ciPendingFindings": {
+      "in_progress": {
+        "choice": "pass",
+        "probabilities": {
+          "fail": 0.16,
+          "uncertain": 0.02,
+          "pass": 0.82
+        },
+        "margin": 0.6599999999999999,
+        "decision": "pass"
+      },
+      "no_early_confirmation": {
+        "choice": "pass",
+        "probabilities": {
+          "fail": 0.49,
+          "uncertain": 0.01,
+          "pass": 0.5
+        },
+        "margin": 0.010000000000000009,
+        "decision": "review"
+      }
+    },
+    "approvalFile": "config/jev-reviews.json"
+  },
+  "deployment": {
+    "id": "6dc83ddc-2daf-40dd-8906-e94d52234b60",
+    "created_on": "2026-09-23T16:18:48.544428Z",
+    "versions": [
+      {
+        "version_id": "1316ceae-f045-4796-8232-139bfb915fba",
+        "percentage": 100
+      }
+    ],
+    "rollbackVersion": "524bcce3-a49a-4280-9e89-6e59163defcb"
+  }
+}

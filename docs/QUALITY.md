@@ -221,7 +221,7 @@ it never tunes prompts, labels or thresholds automatically. The September 23
 documents an explicit atomic-question revision and fresh validation after a
 near-tie blocked release, followed by a failed absence-based rubric and an
 affirmative consistency revision with four further held-out controls. The margin
-were unchanged during rubric review; the owner subsequently approved clearer
+was unchanged during rubric review; the owner subsequently approved clearer
 pending copy. Shared evidence remains advisory;
 the consumer's `schedulerGate.passed` is the mandatory outcome. A complete API
 response and `releaseAccepted: false` in shared evidence are not release approval.
