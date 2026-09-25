@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 23, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 25, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,57 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Zoom calendar joining-link protection — September 25 UTC
+
+Zoom invitations now retain joining details in both Location and the description.
+Creation, recovery and rescheduling repair missing details on the existing event,
+preserving notes, custom locations and RSVPs. Conditional updates protect
+concurrent edits, and unsuccessful repairs keep the operation pending. This
+addresses a reproduced Scheduler weakness; the exact external edit that cleared
+the reported event's location remains unproven. See the
+[investigation and verification record](release-evidence/zoom-calendar-link-2026-09-25.md).
+
+- Local: complete `npm run check` passed 206 Worker tests, 11 gate regressions,
+  build/fork/privacy/localization/browser/accessibility checks, 40 admin and
+  84 public responsive cases, and Wrangler dry deployment. Live Jev passed all
+  40 controls, 33 rendered cases and the existing exact-copy approved review,
+  with no blocking findings. Nine new regression cases fail against pre-fix
+  source; all 12 provider cases and the added coordinator case pass with the fix.
+- CI/deployment: pending; the live version remains the one recorded below.
+- Actual provider/client: the original event repair remains verified. An
+  owner-approved attendee-free Apple Calendar diagnostic was inconclusive because
+  its edit was not confirmed synced and the client reported a connection error.
+  The fixture was removed and Google search confirmed cleanup. No new application
+  booking, Zoom meeting or guest invitation was created for testing.
+- Recipient: no new recipient-side rendering or delivery acceptance is claimed.
+  Confirmed events are not continuously polled or bulk-rewritten by this change.
+
+### Existing Zoom invitation repair — September 25 UTC
+
+An owner-reported booking had no joining link in its Google Calendar event.
+The original Resend confirmation and latest reminder both contained the same
+Zoom joining URL and had provider `delivered` status. The existing Google event
+was updated with that original URL in its location and description; no new
+booking or Zoom meeting was created.
+
+- Local/source: traced Zoom creation, durable result storage and Google event
+  creation. The current implementation supplies the saved Zoom URL as the Google
+  event location. Available evidence does not establish when or how that field
+  became empty. No application code or settings changed; functional checks were
+  not rerun for this operational repair.
+- CI/deployment: no new CI run or deployment. Wrangler confirmed version
+  `1316ceae-f045-4796-8232-139bfb915fba` still serves all traffic.
+- Actual provider/client: a fresh Google event read confirmed the repaired
+  location and description, unchanged time, and all three accepted attendees.
+  The Zoom desktop calendar subsequently displayed the same joining URL and a
+  Start button. The meeting itself was not started as a test.
+- Recipient: the original confirmation and latest reminder were accepted by
+  the recipient's mail server. Recipient inbox rendering and receipt of a
+  calendar update were not independently inspected. No separate email was sent.
+
+Guest identities, event IDs, joining URLs and private management links are
+excluded from this record.
 
 ### Version 1.0.2 — required Jev checks and explicit pending status
 

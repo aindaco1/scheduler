@@ -179,6 +179,70 @@ async function retainAndRunNow(stub: Stub, kind: string, created?: number) {
 }
 
 describe("Coordinator recovery after overlapping actions and partial provider results", () => {
+  it("keeps a Zoom booking pending until its calendar link repair succeeds, then confirms once", async () => {
+    const { stub, created, start } = await setup();
+    const joinUrl = "https://zoom.us/j/00000000000?pwd=fixture";
+    await runInDurableObject(stub, (_instance, state) => {
+      const b = JSON.parse(
+        state.storage.sql
+          .exec<{ data: string }>(
+            "SELECT data FROM bookings WHERE id=?",
+            created.booking.id,
+          )
+          .one().data,
+      );
+      b.mode = "zoom";
+      b.zoomId = "00000000000";
+      b.joinUrl = joinUrl;
+      state.storage.sql.exec(
+        "UPDATE bookings SET data=? WHERE id=?",
+        JSON.stringify(b),
+        b.id,
+      );
+    });
+    let remote = {
+      ...remoteEvent(created.booking.id, start),
+      hangoutLink: undefined,
+      etag: '"fixture-v1"',
+      location: "",
+      description: "Existing owner notes",
+    };
+    const google = fetchMock.get(googleOrigin);
+    google
+      .intercept({ path: eventPath(created.booking.id), method: "GET" })
+      .reply(() => ({ statusCode: 200, data: remote }))
+      .persist();
+    const patchPath =
+      eventPath(created.booking.id) +
+      "?sendUpdates=all&conferenceDataVersion=1";
+    google.intercept({ path: patchPath, method: "PATCH" }).reply(503, {});
+    await runDurableObjectAlarm(stub);
+    expect((await storedBooking(stub, created.booking.id)).status).toBe(
+      "pending",
+    );
+    expect((await jobs(stub)).some((job) => job.mailKind === "confirmed")).toBe(
+      false,
+    );
+    await retainAndRunNow(stub, "booking");
+    google.intercept({ path: patchPath, method: "PATCH" }).reply(({ body }) => {
+      remote = { ...remote, ...JSON.parse(body) };
+      return { statusCode: 200, data: remote };
+    });
+    await runDurableObjectAlarm(stub);
+    expect((await storedBooking(stub, created.booking.id)).status).toBe(
+      "confirmed",
+    );
+    expect(remote.location).toBe(joinUrl);
+    expect(remote.description).toContain(joinUrl);
+    expect(
+      (await jobs(stub)).filter((job) => job.mailKind === "confirmed"),
+    ).toHaveLength(1);
+    expect(
+      (await jobs(stub)).filter((job) => job.kind === "booking"),
+    ).toHaveLength(0);
+    fetchMock.assertConsumed();
+  });
+
   it("creates the invitation with the saved display name and connected Google email after reserving", async () => {
     const { stub, created, start } = await setup([24], "Morgan Chen");
     expect((await storedBooking(stub, created.booking.id)).status).toBe(
