@@ -45,6 +45,22 @@ Rescheduling holds both the original and proposed time until provider updates su
 
 Alarms retry pending jobs with bounded backoff. A failed job's error appears in the admin booking list. On `google_reconnect_required`, reconnect the same Google account. On Zoom uncertainty, inspect the scheduled meeting with the booking reference before any manual repair. Do not delete a reservation simply to free a slot while an external creation may have succeeded. The dashboard can cancel pending bookings and the cancellation job reconciles provider outcomes.
 
+Zoom invitations include the saved joining URL in both Location and a localized
+description section. Creation, recovery and rescheduling verify the description
+copy and restore an empty Location. Repairs append to the current description,
+preserve a nonempty custom location, and never replace attendees or their RSVPs.
+They use Google's `If-Match` event version so concurrent edits cause a retry from
+a fresh event instead of losing notes. A failed or incomplete repair keeps the
+booking operation pending; a lost repair response is recovered on the same event.
+An unrelated Google Meet link never replaces the saved Zoom URL.
+
+This is not continuous Calendar reconciliation. A confirmed event edited outside
+Scheduler is not polled or rewritten automatically. If its joining information
+is missing, compare the saved booking and original confirmation with the actual
+Google event, then restore the original Zoom URL on that event. Do not create a
+replacement Zoom meeting. Separate the observed missing field from any hypothesis
+about the calendar client that removed it.
+
 Email messages and sender are frozen on first dispatch, with a stable Resend idempotency key. Automatic sends stop after 23 hours from that first attempt if the outcome remains uncertain, because the provider's deduplication window is finite. A reminder's first attempt is its scheduled time, not its original enqueue time. Stale reminders after cancellation/rescheduling are discarded. An email API acceptance alone does not prove inbox delivery.
 
 External calendars cannot participate in the local database transaction: a last-second edit made directly in Google/iCloud can race a scheduler write. Final provider conflict reads narrow that gap, but they cannot eliminate it. Proton's subscription-through-Google refresh delay is accepted for phase 1. Keep direct Proton integration in phase 2.
@@ -150,7 +166,7 @@ Turning Spanish back on restores the links and bilingual editors. Runtime prefer
 
 Google assigns the organizer to the calendar where the event is created and adds the event directly to that calendar ([Google invitation model](https://developers.google.com/workspace/calendar/api/concepts/inviting-attendees-to-events)). Scheduler continues to write to the connected account's primary calendar and lets Google serialize and deliver invitations. It does not override organizer fields or invite the admin-login address as another participant. Actual display names and participant presentation still depend on the recipient's calendar client.
 
-Saving a Display name changes subsequent invitation creation; it does not resend existing invitations. Recovery reuses an already-created event, and rescheduling patches its time without replacing titles, descriptions, attendee lists or RSVPs. Existing bookings are not backfilled. For a report about one particular booking, check its dashboard status and matching event in the connected Google calendar; source tests alone cannot confirm that booking or its recipient's invitation.
+Saving a Display name changes subsequent invitation creation; it does not resend existing invitations. Recovery reuses an already-created event, and rescheduling patches its time without replacing titles, attendee lists or RSVPs. Existing descriptions are preserved, with missing Zoom joining details appended as described above. Existing bookings are not bulk-backfilled. For a report about one particular booking, check its dashboard status and matching event in the connected Google calendar; source tests alone cannot confirm that booking or its recipient's invitation.
 
 A location keeps one full postal address and optional localized `instructions` separately. The editor shows a single full-width address field, shared across languages. For compatibility, stored `address` still uses the `{en, es}` shape: reads prefer nonempty English, then Spanish; editing the shared field updates both values. Reading legacy data does not overwrite it. Public configuration and new invitations use the same canonical address for either language. The calendar provider’s [Location field is plain text](https://developers.google.com/workspace/calendar/api/v3/reference/events), so the scheduler formats a single venue/address line there. The description has separate Guest note and Arrival instructions sections, with HTML escaping. This follows the distinction between [iCalendar LOCATION and DESCRIPTION](https://www.rfc-editor.org/rfc/rfc5545.html); Google owns the invitation’s iCalendar serialization. Existing guest `topic` data is preserved. Resend adds instructions as a separate section for confirmations, reschedules and reminders. Anonymous `/api/config` omits instructions; only the owner and token-authorized booking responses receive them. New bookings snapshot instructions; changing a location does not rewrite existing invitations.
 

@@ -2,6 +2,11 @@ import type { Booking, Settings, Locale } from "./model";
 import { escapeHtml, localizedText, streetAddress } from "./text";
 export const arrivalHeading = (locale: Locale) =>
   locale === "es" ? "Instrucciones de llegada" : "Arrival instructions";
+export function zoomJoinDetails(booking: Booking): string {
+  return booking.mode === "zoom" && booking.joinUrl
+    ? `${booking.locale === "es" ? "Unirse a la reunión de Zoom" : "Join Zoom meeting"}:\n${booking.joinUrl}`
+    : "";
+}
 // Calendar LOCATION is a single text value. Keep access notes out of the address.
 export function calendarLocation(
   location: Settings["locations"][number],
@@ -31,6 +36,7 @@ export function calendarDescription(
     booking.locationInstructions?.trim()
       ? `${arrivalHeading(booking.locale)}:\n${booking.locationInstructions.trim()}`
       : "",
+    zoomJoinDetails(booking),
   ]
     .filter(Boolean)
     .map(escapeHtml)

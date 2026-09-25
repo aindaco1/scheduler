@@ -1,4 +1,5 @@
-import { calendarDescription } from "../booking-location";
+import { calendarDescription, zoomJoinDetails } from "../booking-location";
+import { escapeHtml } from "../text";
 import { fetchProvider } from "../provider-fetch";
 import { Temporal } from "@js-temporal/polyfill";
 import {
@@ -13,6 +14,9 @@ import { boundedJson } from "../security";
 const api = "https://www.googleapis.com/calendar/v3";
 interface GoogleEvent {
   id: string;
+  etag?: string;
+  location?: string;
+  description?: string;
   status?: string;
   transparency?: string;
   hangoutLink?: string;
@@ -83,6 +87,8 @@ export class GoogleCalendar {
     }
     if (allowMissing && [404, 410].includes(response.status)) return null;
     if (response.status === 401) this.onUnauthorized();
+    if (response.status === 412)
+      throw new AppError("calendar_event_changed", 503, true);
     if (!response.ok)
       throw new AppError(
         response.status === 401
@@ -198,11 +204,54 @@ export class GoogleCalendar {
       true,
     );
   }
+  private zoomLinkPatch(booking: Booking, event: GoogleEvent) {
+    const patch: { location?: string; description?: string } = {};
+    if (booking.mode !== "zoom") return patch;
+    if (!booking.joinUrl) throw new AppError("zoom_incomplete", 503, true);
+    // Preserve an owner-authored location, but restore an empty one. Always keep
+    // a description copy so a calendar client cannot lose the only joining URL
+    // by rewriting LOCATION while editing attendees.
+    if (!event.location?.trim()) patch.location = booking.joinUrl;
+    const description = event.description || "";
+    if (
+      !description.includes(booking.joinUrl) &&
+      !description.includes(escapeHtml(booking.joinUrl))
+    )
+      patch.description = [description, escapeHtml(zoomJoinDetails(booking))]
+        .filter(Boolean)
+        .join("\n\n");
+    return patch;
+  }
+  private async patchZoomLink(booking: Booking, event: GoogleEvent) {
+    const patch = this.zoomLinkPatch(booking, event);
+    if (!Object.keys(patch).length) return;
+    // A concurrent Calendar edit must not be replaced with our stale description.
+    // The durable job retries from a fresh GET after a precondition failure.
+    if (!event.etag) throw new AppError("google_incomplete", 503, true);
+    const repaired = await this.request<GoogleEvent>(
+      `/calendars/primary/events/${this.eventId(booking)}?sendUpdates=all&conferenceDataVersion=1`,
+      {
+        method: "PATCH",
+        headers: { "If-Match": event.etag },
+        body: JSON.stringify(patch),
+      },
+    );
+    if (
+      !repaired ||
+      repaired.id !== event.id ||
+      repaired.status === "cancelled" ||
+      repaired.extendedProperties?.private?.schedulerBooking !== booking.id ||
+      Object.keys(this.zoomLinkPatch(booking, repaired)).length
+    )
+      throw new AppError("conference_pending", 503, true);
+  }
   async create(
     booking: Booking,
     owner: string,
     host: { name: string; email: string },
   ): Promise<{ eventId: string; joinUrl?: string }> {
+    if (booking.mode === "zoom" && !booking.joinUrl)
+      throw new AppError("zoom_incomplete", 503, true);
     let event = await this.get(booking);
     if (!event) {
       const hostName = host.name.trim() || host.email;
@@ -260,6 +309,7 @@ export class GoogleCalendar {
       event.extendedProperties?.private?.schedulerOwner !== owner
     )
       throw new AppError("calendar_event_mismatch", 503);
+    await this.patchZoomLink(booking, event);
     if (booking.mode === "meet" && !event.hangoutLink) {
       if (
         event.conferenceData?.createRequest?.status?.statusCode === "failure"
@@ -283,7 +333,10 @@ export class GoogleCalendar {
       }
       throw new AppError("conference_pending", 503, true);
     }
-    return { eventId: event.id, joinUrl: event.hangoutLink || booking.joinUrl };
+    return {
+      eventId: event.id,
+      joinUrl: booking.mode === "zoom" ? booking.joinUrl : event.hangoutLink,
+    };
   }
   async reschedule(booking: Booking): Promise<void> {
     const event = await this.get(booking);
@@ -293,6 +346,7 @@ export class GoogleCalendar {
       event.extendedProperties?.private?.schedulerBooking !== booking.id
     )
       throw new AppError("calendar_event_mismatch", 503);
+    await this.patchZoomLink(booking, event);
     const start = booking.targetStart!,
       end = booking.targetEnd!;
     if (

@@ -397,7 +397,15 @@ describe("Google invitation host identity", () => {
   )(
     "includes the configured host for $mode in $locale",
     async ({ mode, locale }) => {
-      const candidate = { ...booking, mode, locale, name: "Guest <G> & Co" };
+      const candidate = {
+        ...booking,
+        mode,
+        locale,
+        name: "Guest <G> & Co",
+        ...(mode === "zoom"
+          ? { joinUrl: "https://zoom.us/j/00000000000" }
+          : {}),
+      };
       const identity = { name: "Jordan <J> & Co", email: host.email };
       const google = fetchMock.get("https://www.googleapis.com");
       google.intercept({ path: eventPath, method: "GET" }).reply(404, {});
@@ -413,7 +421,12 @@ describe("Google invitation host identity", () => {
             statusCode: 200,
             data: {
               ...event,
-              hangoutLink: "https://meet.google.com/fixture-room",
+              location: payload.location,
+              description: payload.description,
+              hangoutLink:
+                mode === "meet"
+                  ? "https://meet.google.com/fixture-room"
+                  : undefined,
             },
           };
         });
@@ -426,7 +439,7 @@ describe("Google invitation host identity", () => {
         "A conversation · Jordan <J> & Co & Guest <G> & Co",
       );
       expect(payload.description).toBe(
-        `${locale === "es" ? "Organiza" : "Host"}: Jordan &lt;J&gt; &amp; Co\n\n${locale === "es" ? "Invitado" : "Guest"}: Guest &lt;G&gt; &amp; Co`,
+        `${locale === "es" ? "Organiza" : "Host"}: Jordan &lt;J&gt; &amp; Co\n\n${locale === "es" ? "Invitado" : "Guest"}: Guest &lt;G&gt; &amp; Co${mode === "zoom" ? `\n\n${locale === "es" ? "Unirse a la reunión de Zoom" : "Join Zoom meeting"}:\n${candidate.joinUrl}` : ""}`,
       );
       expect(payload.attendees).toEqual([
         {

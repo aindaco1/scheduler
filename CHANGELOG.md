@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Include Zoom joining details in calendar descriptions as well as the location, in English and Spanish. Calendar clients that rewrite the location retain a second copy of the link.
+- Check Zoom links during invitation creation, recovery and rescheduling. Restore empty locations and append missing joining details without replacing owner notes, custom locations or attendees. Use Google's event version to protect concurrent edits; keep failed or uncertain repairs pending and reuse the original event and Zoom meeting.
+
 ## 1.0.2 — 2026-09-23
 
 Required semantic checks, clearer pending status, available-date paging and invitation identity. Existing installations need no migration or provider reconnection.
