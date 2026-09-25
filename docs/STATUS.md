@@ -26,12 +26,27 @@ the reported event's location remains unproven. See the
   40 controls, 33 rendered cases and the existing exact-copy approved review,
   with no blocking findings. Nine new regression cases fail against pre-fix
   source; all 12 provider cases and the added coordinator case pass with the fix.
-- CI/deployment: pending; the live version remains the one recorded below.
+- Dependency audit: zero npm advisories and no findings across 34 Ruby packages.
+- CI: [PR checks passed](https://github.com/aindaco1/scheduler/actions/runs/36162527757).
+  [Trusted main checks passed](https://github.com/aindaco1/scheduler/actions/runs/36162804283)
+  for source `db7134b246f4c1f8c11b84a5e46865d013b0ef25`, including the required
+  live Jev gate with 40 correct controls, 33 rendered passes, the existing
+  exact-copy approved review and zero blocking findings.
+- Deployment: Worker `b6cbf295-0a79-4b67-901f-bdbc549b9eb3` serves 100% of traffic.
+  Health and all eight localized shells returned 200; unauthenticated admin
+  settings returned 401. Nine compiled assets and both social images matched
+  the tested build. Public configuration remained enabled/ready. Five bounded
+  availability reads for September 28–October 5 succeeded: 64 and 46 video slots,
+  and 40, 31 and 16 in-person slots. Code rollback target:
+  `1316ceae-f045-4796-8232-139bfb915fba`. No settings, secrets, connections or
+  schema migrations changed.
 - Actual provider/client: the original event repair remains verified. An
   owner-approved attendee-free Apple Calendar diagnostic was inconclusive because
   its edit was not confirmed synced and the client reported a connection error.
-  The fixture was removed and Google search confirmed cleanup. No new application
-  booking, Zoom meeting or guest invitation was created for testing.
+  The fixture was removed and Google search confirmed cleanup. A final Google
+  read retained both joining details, the original time and all three accepted
+  attendees; Apple Calendar also displayed the restored Zoom location. No new
+  application booking, Zoom meeting or guest invitation was created for testing.
 - Recipient: no new recipient-side rendering or delivery acceptance is claimed.
   Confirmed events are not continuously polled or bulk-rewritten by this change.
 

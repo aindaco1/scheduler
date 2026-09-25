@@ -65,7 +65,23 @@ recovery if an external client removes both copies after confirmation.
   84 public responsive cases, and Wrangler dry deployment. Live Jev passed all
   40 controls with 33 rendered passes and the existing exact-copy approved
   pending-message review; zero blocking findings. No rubric/approval changed.
-- CI and deployment: final outcomes are recorded in [STATUS](../STATUS.md).
+- Dependency audits: zero npm advisories and no findings across 34 Ruby packages.
+- CI: [PR checks](https://github.com/aindaco1/scheduler/actions/runs/36162527757)
+  and [trusted main checks](https://github.com/aindaco1/scheduler/actions/runs/36162804283)
+  passed. Main ran the complete check, including live Jev: all 40 controls
+  correct, 33 rendered passes, the existing exact-copy approved review and zero
+  blocking findings.
+- Deployment: source `db7134b246f4c1f8c11b84a5e46865d013b0ef25` was deployed at
+  16:49 UTC as Worker `b6cbf295-0a79-4b67-901f-bdbc549b9eb3`, confirmed at 100%
+  traffic. Health and eight localized shells returned 200; unauthenticated admin
+  settings returned 401. All nine compiled assets and both social images matched
+  local SHA-256 hashes. Public configuration was enabled/ready. Five bounded
+  September 28–October 5 availability reads passed (64/46 video slots and
+  40/31/16 in-person slots). Rollback version:
+  `1316ceae-f045-4796-8232-139bfb915fba`. Settings, secrets, provider connections
+  and schema were unchanged. Current release summary: [STATUS](../STATUS.md).
 - Actual provider/client: the existing meeting repair and diagnostic cleanup
-  above are verified. The application change has not created live invitations;
+  above are verified. Final Google read-back retained both joining fields,
+  original time and all three accepted attendees. Apple Calendar also displayed
+  the restored Zoom location. The application change has not created live invitations;
   recipient-side rendering/delivery of the new description is not yet verified.
