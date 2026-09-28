@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 25, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated September 28, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,109 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Version 1.0.3 — September 28 UTC
+
+The three dependency PRs ([#8](https://github.com/aindaco1/scheduler/pull/8),
+[#9](https://github.com/aindaco1/scheduler/pull/9),
+[#10](https://github.com/aindaco1/scheduler/pull/10)) are merged. This release
+also records the September 25 Zoom joining-policy and timestamp corrections in
+Git; their adapter hash matches the already deployed version, so the dependency
+rollout preserves those production fixes.
+
+- Local: `npm ci`, `npm run check` and `npm run audit:dependencies` passed.
+  The complete check covered 223 Worker tests, 11 Jev gate regressions,
+  325 paired messages, eight localized shells, browser/accessibility flows,
+  40 admin and 84 public responsive cases, and Wrangler dry deployment.
+  Live Jev completed 74 requests / 100 questions: all 40 controls correct,
+  33 rendered passes and the existing exact-copy approved review, with zero
+  blocking findings. No policy, rubric or approval was changed.
+- Local development: the updated Wrangler/Miniflare starts with the retained
+  workerd pin and disposable storage. Health and both booking shells returned
+  200; unauthenticated settings returned 401. The temporary server used no
+  provider credentials. Node 26.8.2 / installed Ruby 3.0.0 were used locally;
+  supported Node 24 / Ruby 3.3 are covered separately by hosted CI.
+- Audit: zero npm advisories and no findings across 34 Ruby packages.
+- CI/deployment: release-source CI and production deployment are pending.
+  The currently verified production version is
+  `3c9b0134-bfd0-4da3-a958-9ef72bf0896c` at 100% traffic.
+- Provider/recipient: no new booking, provider write, invitation or email was
+  used. Actual Zoom creation/rescheduling read-back and recipient rendering
+  remain separate outstanding acceptance items in the roadmap.
+- Cleanup: eight iCloud duplicate/superseded files were moved to a private,
+  recoverable archive; no additional duplicate names remain in consumer files.
+  Generated-output and merged-branch cleanup follows deployment verification.
+
+See the [release evidence](release-evidence/maintenance-1.0.3-2026-09-28.md).
+
+### Literal paragraph tags in an existing invite — September 25 UTC
+
+Apple Calendar displayed `<p>` and `</p>` literally in an owner-reported Zoom
+invitation. Its detected hyperlink included the closing tag, making this a link
+formatting defect as well as a cosmetic issue. Scheduler's current creation and
+missing-link repair paths already use escaped text with line breaks, without
+paragraph wrappers; no runtime change was needed or made for this investigation.
+
+- Local: all 12 existing Zoom calendar-link tests passed. Replacing the notes
+  locally removed the visible tags and corrected the detected URL, but Calendar
+  reported a refresh error. That local edit did not establish a synced repair.
+- Actual provider/client: a description-only connector update was accepted;
+  fresh reads preserved the event identity, title, times, location, attendees
+  and reminders. Connector reads normalize the description and did not expose
+  its markup. Apple Calendar subsequently displayed the paragraph wrapper again.
+  Google Calendar's event editor remained blank after normal and cache-bypassing
+  reloads. The owner subsequently confirmed fixing the existing invitation
+  manually. This resolves the reported invite issue by owner confirmation;
+  no independent post-repair provider or recipient check was performed.
+- CI/deployment: no new CI run or deployment; no application behavior changed.
+  The full functional check was not rerun for this operational investigation.
+- Recipient: no recipient rendering or delivery acceptance is claimed. No new
+  booking, meeting or diagnostic invitation was created.
+
+### Zoom scheduled-time format correction — September 25 UTC
+
+Two reported Zoom meetings had saved start instants seven hours later than their
+Google events. The adapter used JavaScript ISO timestamps with milliseconds,
+outside Zoom's documented whole-second UTC format. Zoom staff acknowledged an
+equivalent seven-hour parsing shift. This is strong evidence for the observed
+discrepancy; no fresh live API A/B reproduction was performed.
+
+Creation and rescheduling now share whole-second UTC serialization, preserving
+the booked instant and selected timezone. Local `npm run check` passed all 223
+Worker tests, including 16 new timezone/DST cases, the browser/accessibility
+checks, Wrangler dry deployment and the complete live Jev gate. CI was not run.
+Worker `3c9b0134-bfd0-4da3-a958-9ef72bf0896c` was deployed at 18:55 UTC and
+confirmed at 100% traffic. Health and all eight localized shells returned 200;
+unauthenticated admin settings returned 401. All nine compiled assets matched
+the local build, and public configuration remained enabled/ready. Rollback
+version: `7310f571-928c-4f05-a534-ca0a2d726d7d`.
+
+Existing meeting times were not changed, and no new test meeting or invitation
+was created. Actual Zoom write/read-back
+and recipient verification remain outstanding. See the
+[investigation and verification record](release-evidence/zoom-timestamp-2026-09-25.md).
+
+### Zoom joining policy and second calendar repair — September 25 UTC
+
+The owner requested joining before the host without a waiting room. The local
+creation default now explicitly enables joining anytime and disables the
+waiting room. The complete `npm run check` passed 207 Worker tests and the full
+deterministic/live Jev gate. CI was not run. Worker
+`7310f571-928c-4f05-a534-ca0a2d726d7d` was deployed at 18:41 UTC and confirmed at
+100% traffic. Health and all eight localized shells returned 200; unauthenticated
+admin settings returned 401. All nine compiled assets matched the local build,
+and public configuration remained enabled/ready. Rollback version:
+`b6cbf295-0a79-4b67-901f-bdbc549b9eb3`.
+
+The earlier meeting's requested Zoom settings were saved and verified. A second
+existing Google event had no joining URL; its original Zoom link was restored
+to Location and the description, with unchanged time, title and attendees on
+read-back. Zoom rejected a joining-policy update for the second meeting because
+it was in progress; its original settings remain in effect. Recipient-side
+refresh is unverified. The original cause of the missing link remains unproven.
+The separately observed scheduled-time discrepancy is investigated in the
+timestamp correction above. See the
+[investigation and verification record](release-evidence/zoom-joining-policy-2026-09-25.md).
 
 ### Zoom calendar joining-link protection — September 25 UTC
 

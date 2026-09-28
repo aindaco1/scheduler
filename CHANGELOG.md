@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+## 1.0.3 — 2026-09-28
+
+Zoom invitation reliability and dependency maintenance. Existing installations need no migration or provider reconnection.
+
+- Send Zoom creation and rescheduling timestamps in the documented whole-second UTC format. Removing milliseconds avoids a provider parsing ambiguity that matches the observed seven-hour scheduled-time shift; the booked instant and selected timezone are retained.
+- Allow participants to join newly created Zoom meetings anytime before the host, without a waiting room. Existing meetings retain their provider settings unless updated separately.
 - Include Zoom joining details in calendar descriptions as well as the location, in English and Spanish. Calendar clients that rewrite the location retain a second copy of the link.
 - Check Zoom links during invitation creation, recovery and rescheduling. Restore empty locations and append missing joining details without replacing owner notes, custom locations or attendees. Use Google's event version to protect concurrent edits; keep failed or uncertain repairs pending and reuse the original event and Zoom meeting.
+
+- Update tsdav to 2.3.4, Wrangler to 4.136.0, Node types to 26.6.2, Prettier to 3.9.8, and the SHA-pinned Ruby setup action to 1.325.0. Retain the supported Vitest/workerd combination and both shared-package pins.
 
 ## 1.0.2 — 2026-09-23
 

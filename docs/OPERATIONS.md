@@ -54,6 +54,28 @@ a fresh event instead of losing notes. A failed or incomplete repair keeps the
 booking operation pending; a lost repair response is recovered on the same event.
 An unrelated Google Meet link never replaces the saved Zoom URL.
 
+Keep joining notes as a localized label, a line break and the bare joining URL;
+do not add paragraph tags or Markdown link syntax. Scheduler's formatter already
+uses this form, with authored text escaped for Google's description field.
+Apple Calendar can expose paragraph markup literally and include a closing tag
+in an automatically detected URL. For a reported existing invitation, inspect
+the actual client's notes and link target; a connector's normalized description
+alone does not establish the stored markup or successful client synchronization.
+
+New Zoom meetings allow participants to join anytime before the host, with the
+waiting room disabled. This is set explicitly when creating the meeting; a
+deployment does not change existing Zoom meetings. Update an existing meeting's
+options in Zoom when needed. Zoom can reject scheduled-setting edits while a
+meeting is in progress; leave the active call intact. The scheduled time itself
+does not launch a meeting.
+
+Zoom creation and rescheduling serialize the booking instant as whole-second UTC
+(`YYYY-MM-DDTHH:mm:ssZ`) while retaining the selected timezone. Do not send the
+milliseconds produced by JavaScript's `toISOString()`: Zoom has acknowledged
+that this unsupported format can be interpreted as local time. See the
+[timestamp investigation](release-evidence/zoom-timestamp-2026-09-25.md).
+This correction applies to future writes; it does not retime existing meetings.
+
 This is not continuous Calendar reconciliation. A confirmed event edited outside
 Scheduler is not polled or rewritten automatically. If its joining information
 is missing, compare the saved booking and original confirmation with the actual

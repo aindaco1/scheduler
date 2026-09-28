@@ -35,6 +35,12 @@ The required guest-facing case: **when the booked guest declines the invitation 
 
 ## Test quality follow-up
 
+- [ ] Verify actual Zoom creation and rescheduling read-back after the
+  whole-second UTC correction, using an owner-approved attendee-free fixture or
+  the next authorized real booking. Compare saved provider instants across
+  timezones; local contract tests do not prove live provider acceptance. See the
+  [timestamp evidence](release-evidence/zoom-timestamp-2026-09-25.md).
+
 - [ ] Expand Scheduler-specific Jev controls with fluent bilingual review and fresh validation after rubric changes. Keep failures and unapproved uncertain results blocking; do not loosen the judge merely to pass current copy. The current workflow belongs in [Quality](QUALITY.md#required-jev-development-check).
 
 ## Scope and sequencing

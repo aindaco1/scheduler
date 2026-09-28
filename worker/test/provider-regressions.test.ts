@@ -555,6 +555,33 @@ describe("Google invitation host identity", () => {
 });
 
 describe("Zoom write outcomes", () => {
+  it("allows guests to join a new meeting anytime without a host or waiting room", async () => {
+    let payload: Record<string, any> = {};
+    const joinUrl = "https://zoom.us/j/00000000000?pwd=fixture";
+    fetchMock
+      .get("https://api.zoom.us")
+      .intercept({ path: "/v2/users/me/meetings", method: "POST" })
+      .reply(({ body }) => {
+        payload = JSON.parse(body);
+        return {
+          statusCode: 201,
+          data: { id: 12345678901, join_url: joinUrl },
+        };
+      });
+    await expect(
+      new ZoomMeetings("fixture-token").create({ ...booking, mode: "zoom" }),
+    ).resolves.toEqual({ zoomId: "12345678901", joinUrl });
+    expect(payload.settings).toMatchObject({
+      waiting_room: false,
+      join_before_host: true,
+      jbh_time: 0,
+      use_pmi: false,
+      meeting_authentication: false,
+    });
+    expect(payload.start_time).toBe("2026-09-10T16:00:00Z");
+    expect(payload.agenda).toBe(`Scheduler reference: ${booking.id}`);
+  });
+
   it("preserves the connected account identity when rotating refresh credentials", async () => {
     fetchMock
       .get("https://zoom.us")
@@ -605,6 +632,113 @@ describe("Zoom write outcomes", () => {
     ).rejects.toMatchObject({ code: "zoom_write_uncertain" });
   });
 });
+
+describe.each(["create", "reschedule"] as const)(
+  "Zoom %s timestamps",
+  (operation) => {
+    it.each([
+      {
+        label: "Central daylight time",
+        timezone: "America/Chicago",
+        local: "2026-10-05T12:15:00-05:00",
+        utc: "2026-10-05T17:15:00Z",
+      },
+      {
+        label: "Pacific daylight time",
+        timezone: "America/Los_Angeles",
+        local: "2026-10-05T11:30:00-07:00",
+        utc: "2026-10-05T18:30:00Z",
+      },
+      {
+        label: "before the spring clock change",
+        timezone: "America/Los_Angeles",
+        local: "2027-03-14T01:30:00-08:00",
+        utc: "2027-03-14T09:30:00Z",
+      },
+      {
+        label: "after the spring clock change",
+        timezone: "America/Los_Angeles",
+        local: "2027-03-14T03:30:00-07:00",
+        utc: "2027-03-14T10:30:00Z",
+      },
+      {
+        label: "first repeated fall hour",
+        timezone: "America/Los_Angeles",
+        local: "2026-11-01T01:30:00-07:00",
+        utc: "2026-11-01T08:30:00Z",
+      },
+      {
+        label: "second repeated fall hour",
+        timezone: "America/Los_Angeles",
+        local: "2026-11-01T01:30:00-08:00",
+        utc: "2026-11-01T09:30:00Z",
+      },
+      {
+        label: "half-hour offset with a UTC date rollover",
+        timezone: "Asia/Kolkata",
+        local: "2026-10-05T00:15:00+05:30",
+        utc: "2026-10-04T18:45:00Z",
+      },
+      {
+        label: "UTC",
+        timezone: "UTC",
+        local: "2026-10-05T00:15:00Z",
+        utc: "2026-10-05T00:15:00Z",
+      },
+    ])(
+      "sends whole-second UTC for $label without changing the instant",
+      async ({ timezone, local, utc }) => {
+        const start = Date.parse(local);
+        const end = start + 30 * 60_000;
+        const zoomId = "12345678901";
+        let payload: Record<string, unknown> = {};
+        fetchMock
+          .get("https://api.zoom.us")
+          .intercept({
+            path:
+              operation === "create"
+                ? "/v2/users/me/meetings"
+                : `/v2/meetings/${zoomId}`,
+            method: operation === "create" ? "POST" : "PATCH",
+          })
+          .reply(({ body }) => {
+            payload = JSON.parse(body);
+            return operation === "create"
+              ? {
+                  statusCode: 201,
+                  data: {
+                    id: Number(zoomId),
+                    join_url: "https://zoom.us/j/12345678901",
+                  },
+                }
+              : { statusCode: 204 };
+          });
+        const zoom = new ZoomMeetings("fixture-token");
+        if (operation === "create") {
+          await zoom.create({ ...booking, mode: "zoom", timezone, start, end });
+        } else {
+          await zoom.reschedule({
+            ...booking,
+            mode: "zoom",
+            timezone,
+            zoomId,
+            targetStart: start,
+            targetEnd: end,
+          });
+          expect(Object.keys(payload).sort()).toEqual([
+            "duration",
+            "start_time",
+            "timezone",
+          ]);
+        }
+        expect(payload.start_time).toBe(utc);
+        expect(Date.parse(String(payload.start_time))).toBe(start);
+        expect(payload.timezone).toBe(timezone);
+        expect(payload.duration).toBe(30);
+      },
+    );
+  },
+);
 
 it.each(["en", "es"] as const)(
   "keeps the street address, guest note and arrival instructions separate in a %s invitation",

@@ -2,6 +2,11 @@ import { fetchProvider } from "../provider-fetch";
 import { AppError, type Booking, type ZoomConnection } from "../model";
 import { boundedJson } from "../security";
 
+// Zoom expects whole-second UTC; milliseconds can be misread as local time.
+function zoomStartTime(timestamp: number): string {
+  return new Date(timestamp).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
 export async function refreshZoom(
   connection: ZoomConnection,
   id: string,
@@ -111,13 +116,14 @@ export class ZoomMeetings {
       body: JSON.stringify({
         topic: booking.typeName,
         type: 2,
-        start_time: new Date(booking.start).toISOString(),
+        start_time: zoomStartTime(booking.start),
         duration: (booking.end - booking.start) / 60_000,
         timezone: booking.timezone,
         agenda: `Scheduler reference: ${booking.id}`,
         settings: {
-          waiting_room: true,
-          join_before_host: false,
+          waiting_room: false,
+          join_before_host: true,
+          jbh_time: 0,
           use_pmi: false,
           meeting_authentication: false,
         },
@@ -132,7 +138,7 @@ export class ZoomMeetings {
     await this.request("/meetings/" + booking.zoomId, {
       method: "PATCH",
       body: JSON.stringify({
-        start_time: new Date(booking.targetStart!).toISOString(),
+        start_time: zoomStartTime(booking.targetStart!),
         duration: (booking.targetEnd! - booking.targetStart!) / 60_000,
         timezone: booking.timezone,
       }),
