@@ -32,15 +32,33 @@ rollout preserves those production fixes.
   provider credentials. Node 26.8.2 / installed Ruby 3.0.0 were used locally;
   supported Node 24 / Ruby 3.3 are covered separately by hosted CI.
 - Audit: zero npm advisories and no findings across 34 Ruby packages.
-- CI/deployment: release-source CI and production deployment are pending.
-  The currently verified production version is
-  `3c9b0134-bfd0-4da3-a958-9ef72bf0896c` at 100% traffic.
+- CI: [release PR checks passed](https://github.com/aindaco1/scheduler/actions/runs/36379284226).
+  [Trusted main checks passed](https://github.com/aindaco1/scheduler/actions/runs/36379492704)
+  for source `1dafb4d165650a55d995fa032dcee4edf67517b0` on Node 24 / Ruby 3.3,
+  including live Jev with all controls correct, 33 rendered passes, the existing
+  approved review and zero blocking findings.
+- Deployment: Worker `e7a53911-e9eb-4b78-98a1-6cc1ebbf7830` was deployed at
+  04:55 UTC and confirmed at 100% traffic. Health and all eight localized shells
+  returned 200; two anonymous owner APIs returned 401 with no-store headers.
+  Nine compiled assets and both social images match the tested build. Public
+  settings match their pre-deployment fingerprint and remain enabled/ready.
+  Five bounded availability reads returned 64 and 41 Zoom slots and 29, 20 and
+  5 in-person slots. An initial availability probe returned 503; its error code
+  was not retained, and its cause is unconfirmed. The complete repeat succeeded,
+  as did a later read after the cache window and the live browser pickers.
+  English Zoom showed seven dates / 139 times; English and Spanish in-person
+  showed seven dates / 87 times with the location and timezone retained.
+  Rollback target: `3c9b0134-bfd0-4da3-a958-9ef72bf0896c`.
 - Provider/recipient: no new booking, provider write, invitation or email was
   used. Actual Zoom creation/rescheduling read-back and recipient rendering
   remain separate outstanding acceptance items in the roadmap.
 - Cleanup: eight iCloud duplicate/superseded files were moved to a private,
-  recoverable archive; no additional duplicate names remain in consumer files.
-  Generated-output and merged-branch cleanup follows deployment verification.
+  recoverable archive. No additional duplicate names remain, including in the
+  read-only scan of shared directories. Synthetic local/CI evidence was archived;
+  fixed generated output and merged branches were removed. Only `main` remains
+  locally and on origin. Dependencies, source fixtures, submodules, local secrets,
+  Worker database state and preview helpers are retained; all 25 protected
+  local files have unchanged hashes. No open PRs or extra worktrees remain.
 
 See the [release evidence](release-evidence/maintenance-1.0.3-2026-09-28.md).
 
@@ -290,7 +308,14 @@ See the [published 1.0.0 release](https://github.com/aindaco1/scheduler/releases
 
 ## Checkout cleanup
 
-For 1.0.1, reproducible site/bundle/manifests, caches and test reports were removed with `npm run clean`. Remaining one-off release logs, screenshots/helpers and isolated-drill scratch files were moved to a private recoverable archive outside the checkout. Dependencies, source fixtures, pinned submodules, secrets and any local database state are retained; TypeScript passes after cleanup. Remote references were pruned; only `main` remains locally and on origin, with no extra worktrees or open pull requests. There were no stale branches to delete.
+September 28: `npm run clean` removed reproducible bundles/site output,
+manifests, caches, Wrangler temporary packaging and reports after release
+verification. Eight iCloud duplicate/superseded files and local/CI evidence
+were moved to a private recoverable archive. Only `main` remains locally and
+on origin, with one worktree and no open PRs. Dependencies, source fixtures,
+pinned submodules, local secrets, Worker database state and the read-only
+`work/local-preview/` helper remain. All 25 protected local files match their
+pre-cleanup hashes; submodule worktrees are clean.
 
 ## Provider and recipient acceptance
 

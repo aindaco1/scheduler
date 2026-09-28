@@ -51,16 +51,48 @@ those operational fixes from being lost in a clean-checkout deployment.
 
 ## Hosted CI and deployment
 
-Release-source CI and deployment are pending. Before this rollout, Wrangler
-confirmed `3c9b0134-bfd0-4da3-a958-9ef72bf0896c` at 100% traffic; that version
-is the rollback target. Worker identity, namespace, migration, bindings,
-settings, secrets and provider connections remain unchanged.
+[PR #12](https://github.com/aindaco1/scheduler/pull/12) passed its
+[offline hosted check](https://github.com/aindaco1/scheduler/actions/runs/36379284226).
+The merged source `1dafb4d165650a55d995fa032dcee4edf67517b0` passed
+[trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/36379492704)
+on Node 24 / Ruby 3.3, including the complete live Jev gate. Hosted results:
+all 40 controls correct, 33 rendered passes, the same exact-copy approved review
+and zero blocking findings. Local and hosted raw evidence is retained in the
+private cleanup archive; hosted artifacts also have the usual 14-day retention.
+
+Wrangler 4.136.0 deployed that source as
+`e7a53911-e9eb-4b78-98a1-6cc1ebbf7830` at `2026-09-28T04:55:26.875837Z`.
+A fresh deployment read confirms 100% traffic. The previous version
+`3c9b0134-bfd0-4da3-a958-9ef72bf0896c` is the code rollback target.
+Worker identity, namespace, migration, bindings, settings, secrets and provider
+connections were not changed. The pre/post public configuration hashes match.
+
+Read-only production verification at `2026-09-28T04:56:30.543Z`:
+
+- Health and all eight localized public/admin/manage/privacy shells: 200.
+- Anonymous settings and connections: 401 with no-store headers.
+- Nine compiled assets and both social images: exact local SHA-256 matches.
+  Wrangler reported no changed static assets to upload.
+- Public configuration: enabled, ready and Spanish enabled, unchanged from
+  its pre-deployment fingerprint.
+- Availability window: `2026-09-29T05:00:00Z`–`2026-10-06T05:00:00Z`.
+  Two Zoom types returned 64 and 41 slots; the three in-person locations
+  returned 29, 20 and 5 slots. These are five successful bounded provider reads,
+  not a performance benchmark or a write/recipient test.
+- The first availability probe returned 503 before the full repeat passed.
+  Its provider error classification was not captured. Cause remains unconfirmed;
+  no dependency regression or specific provider outage is inferred. A further
+  read at `2026-09-28T04:57:30.529Z`, after the normal cache window, returned
+  200 and 64 slots. The browser also successfully loaded the public picker.
+- Browser smoke: English Brief chat displayed seven nonempty dates, 139 times
+  and enabled Next. English/Spanish in-person displayed seven dates / 87 times
+  and preserved the selected location and America/Denver timezone. The Spanish
+  system-dark picker was visually inspected. No time was booked or submitted.
 
 ## Provider and recipient limits
 
 No real booking, calendar/Zoom write, invitation or email is used for this
-maintenance pass. Live availability reads will be recorded separately after
-deployment. The existing Zoom write/read-back and recipient acceptance gaps
+maintenance pass. Live availability reads passed as recorded above. The existing Zoom write/read-back and recipient acceptance gaps
 remain in [the roadmap](../ROADMAP.md#test-quality-follow-up).
 
 ## Cleanup
@@ -69,5 +101,15 @@ Seven byte-identical iCloud duplicate files and one superseded documentation
 copy were moved to a private recoverable archive outside the checkout. No
 additional duplicate-name candidates remain in consumer source or generated
 files. Dependency/submodule contents were not changed by duplicate cleanup.
-Generated-output and merged-branch cleanup follows deployment verification;
-local secrets, database state, dependencies and preview helpers are retained.
+After live verification, the local synthetic Jev/browser/audit output and
+hosted evidence were archived privately. `npm run clean` removed fixed build
+output, generated manifests, caches, Wrangler temporary packaging and reports.
+Disposable Finder metadata was archived too. No blanket Git cleanup was used.
+
+Merged `fix/zoom-calendar-link` and `release/1.0.3` branches were deleted
+locally and remotely; merged Dependabot branches were removed and remote refs
+pruned. Only `main` remains locally and on GitHub, with one worktree and no open
+PRs. All 25 protected local-secret/state/preview files match pre-cleanup hashes.
+Dependencies, source fixtures and clean pinned submodules remain. `work/` keeps
+only the read-only local preview helper and its README. The final evidence-only
+commit changes no tested runtime source, configuration, dependency or asset.
