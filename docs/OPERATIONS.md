@@ -25,11 +25,49 @@ The Check workflow runs on pushes, pull requests and a weekly schedule with read
 1. Sign in at `/admin/` using the exact `ADMIN_EMAIL`. Turnstile protects login requests. The email link is single-use for 15 minutes; the secure owner session lasts 12 hours. Guest booking does not require email verification.
 2. Connect Google through a Web application OAuth client with Google Calendar API enabled. Use redirect URI `https://scheduler.dustwave.xyz/api/admin/callback/google`. Local development needs a separately registered localhost callback. The application requests `openid`, `email`, `calendar.readonly`, and `calendar.events`. Refresh tokens are encrypted in the owner object. Select the Google calendars that should block time, including the subscribed Proton work calendar. All writes use `primary`.
 3. Connect iCloud with the Apple Account email and an app-specific password. The adapter discovers actual calendars, then you select Family and any other blockers. The application only reads iCloud, although Apple's credential itself is not restricted to read-only access. Account login, two-factor approval, and app-password issuance must be done by the account owner.
-4. For Zoom, create a user-managed General OAuth app with `user:read:user`, `meeting:read:meeting`, `meeting:read:list_meetings`, `meeting:write:meeting`, `meeting:update:meeting`, and `meeting:delete:meeting`. Register `https://scheduler.dustwave.xyz/api/admin/callback/zoom` as the redirect and allow-list URL, enable strict URL matching, save the client secrets, then connect from the dashboard. The owner's private deployment uses development credentials and local-test distribution, which allows the app creator's own Zoom account; it is not a public Marketplace listing. Fork owners create their own app. Shared-access permissions are not required. Keep Zoom types disabled until connection passes. Meet needs no separate Google Meet credential.
+4. Provision Zoom using [the per-owner app setup](FORKING.md#zoom-for-your-own-scheduler), which owns the scopes, branding and credential instructions. This deployment's redirect and allow-list URL is `https://scheduler.dustwave.xyz/api/admin/callback/zoom`; forks use their own origin. Connect from the dashboard and keep Zoom types disabled until verification passes. Meet needs no separate Google Meet credential.
 5. Set the actual owner timezone, weekly hours, temporary and recurring blackouts, locations and their hours, meeting types, gaps, and reminders. Choose blocking calendars explicitly. Repository seed settings are editable starting defaults; the confirmed live launch values are documented in [phase 1 decisions](decisions/phase-1.md).
 6. Use Verify connections. The application reads current provider data before allowing bookings to be enabled. Read failures close availability. Enable bookings only after reviewing the actual hours and locations.
 
 Google OAuth applications left in external Testing can receive short-lived refresh tokens. Review Google's current publishing/verification requirements for the intended personal deployment. Supply the scheduler home and privacy pages when configuring consent. A production deployment is not evidence that Google/iCloud/Zoom authorization or recipient delivery has been verified.
+
+### Zoom reconnection and app replacement
+
+The Zoom **Connected** badge means Scheduler has a saved connection record. It
+does not identify the Zoom user or prove the OAuth app still exists. If reconnect
+fails on Zoom before consent, check the original app in its creator's Marketplace
+account, its development/production credentials, and the deployment's exact callback.
+An empty app list in one account does not prove deletion.
+
+If the original app cannot be recovered, prepare a user-managed General OAuth
+replacement using the six scopes and strict callback in the
+[fork guide](FORKING.md#zoom-for-your-own-scheduler). Use the development view
+and Local Test for a private deployment. Zoom documents
+[app creation](https://developers.zoom.us/docs/integrations/create/),
+[callback matching](https://developers.zoom.us/docs/build-flow/basic-info/oauth-info/)
+and [local testing](https://developers.zoom.us/docs/build-flow/local-test/).
+Keep the replacement scoped to the same Zoom user that owns existing meetings.
+Scheduler rejects a changed provider identity while pending operations or future
+confirmed bookings exist; do not clear that identity or disconnect to bypass it.
+
+Before replacing production credentials, pause new bookings and review pending
+operations. Record the active Worker version for rollback. Stage only
+`ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET` together with
+`wrangler versions secret bulk` from a private file; this creates a version without changing traffic.
+Review that version before deploying it. Preserve the existing Worker, Durable
+Object and encryption key. Do not store credential values in Git, logs or
+investigation evidence. Reconnect through Scheduler's dashboard so its
+session-bound OAuth state is present. A successful reconnect pauses the booking
+page; verify connections and deliberately re-enable it after validation.
+After successful authorization, the stored tokens belong to the replacement
+client. Rolling back only Worker credentials does not restore the previous
+connection; keep the matching client credentials and stored grant together.
+
+Finally, read an existing meeting under the reconnected account to confirm host
+identity and effective admission settings. Reconnecting does not transfer,
+recreate or repair existing Zoom meetings. Test new meeting creation and actual
+host/guest admission only with the owner's selected time and consenting recipient;
+record provider and recipient outcomes separately from deployment.
 
 ## Booking consistency and recovery
 
@@ -224,4 +262,4 @@ Worker observability records known availability failures as `{ "event": "availab
 
 Run `npm run clean -- --dry-run` to inspect the fixed generated-output list, then `npm run clean` to remove it. This removes build output, generated manifests, Jekyll/Sass caches, Wrangler temporary packaging, coverage, browser reports and local Jev evidence. Record release findings before cleanup; CI retains uploaded evidence for 14 days. It retains `node_modules`, Ruby dependencies, `.dev.vars`, all source/fixtures, pinned submodules and `.wrangler/state`. Do not use a blanket `git clean -fdx`, which also removes secrets and development state. Scratch provisioning exports and old operational logs should be reviewed separately and moved to a private recoverable archive if they are no longer needed.
 
-For a release: update the package/lockfile version and CHANGELOG, run `npm run check` and the dependency audit, commit and require a successful CI run for that source, then deploy. Verify the public routes/assets and read-only availability before tagging the tested commit and creating its GitHub release. Record source SHA, Worker version, CI and live checks in STATUS. GitHub source archives omit submodule contents; installation uses a recursive clone of the release tag. No extra database migration is needed for 1.0.2.
+For a release: update the package/lockfile version and CHANGELOG, run `npm run check` and the dependency audit, commit and require a successful CI run for that source, then deploy. Verify the public routes/assets and read-only availability before tagging the tested commit and creating its GitHub release. Record source SHA, Worker version, CI and live checks in STATUS. GitHub source archives omit submodule contents; installation uses a recursive clone of the release tag. No extra database migration is needed for 1.0.4.

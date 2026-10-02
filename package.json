@@ -1,6 +1,6 @@
 {
   "name": "@dustwave/scheduler",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -45,22 +45,25 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
     "@playwright/test": "1.63.0",
-    "@types/node": "26.6.2",
+    "@types/node": "26.6.3",
     "@types/sax": "1.2.7",
     "acorn": "8.18.0",
     "axe-core": "4.13.0",
     "esbuild": "0.28.2",
     "jsonc-parser": "3.3.1",
-    "prettier": "3.9.8",
-    "sass": "1.104.1",
+    "prettier": "3.9.9",
+    "sass": "1.105.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
-    "wrangler": "4.136.0",
-    "sharp": "0.35.4",
+    "wrangler": "4.142.0",
+    "sharp": "0.35.5",
     "@dustwave/test-core": "file:shared/dust-wave-platform/packages/test-core"
   },
   "overrides": {
     "sharp": "$sharp",
-    "workerd": "1.20260908.1"
+    "workerd": "1.20260908.1",
+    "miniflare": {
+      "undici": "7.30.0"
+    }
   }
 }

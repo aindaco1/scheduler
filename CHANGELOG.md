@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 1.0.4 — 2026-10-02
+
+Zoom setup guidance and dependency maintenance. Existing installations need no migration or provider reconnection.
+
+- Document per-owner Zoom app setup, required scopes, matching Scheduler branding and safe credential replacement. Distinguish private installations from a publicly distributed Zoom integration.
+
+- Update Wrangler to 4.142.0, Sharp to 0.35.5, Sass to 1.105.0, Prettier to 3.9.9, Node types to 26.6.3 and the SHA-pinned Ruby setup action to 1.327.0.
+- Pin Miniflare's Undici dependency to patched 7.30.0 to clear current security advisories without downgrading the Cloudflare test pool. Retain the supported Vitest/workerd combination and both shared-package pins.
+
 ## 1.0.3 — 2026-09-28
 
 Zoom invitation reliability and dependency maintenance. Existing installations need no migration or provider reconnection.

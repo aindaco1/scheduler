@@ -1,6 +1,6 @@
 # Roadmap
 
-Prospective work, updated September 10, 2026. The 1.0.1 engineering audit and fixes are complete; see the [audit report](release-evidence/security-audit-1.0.1-2026-09-10.md) and [release verification](STATUS.md). The work below is planned. Phase 2 has no release date yet.
+Prospective work, updated October 2, 2026. The 1.0.1 engineering audit and fixes are complete; see the [audit report](release-evidence/security-audit-1.0.1-2026-09-10.md) and [release verification](STATUS.md). The work below is planned. Phase 2 has no release date yet.
 
 Current behaviour belongs in the [documentation index](README.md), completed changes in the [changelog](../CHANGELOG.md), and validation in [release status](STATUS.md) and [release evidence](release-evidence/).
 
@@ -35,10 +35,12 @@ The required guest-facing case: **when the booked guest declines the invitation 
 
 ## Test quality follow-up
 
-- [ ] Verify actual Zoom creation and rescheduling read-back after the
-  whole-second UTC correction, using an owner-approved attendee-free fixture or
-  the next authorized real booking. Compare saved provider instants across
-  timezones; local contract tests do not prove live provider acceptance. See the
+- [ ] Verify actual Zoom rescheduling read-back and expand creation checks across
+  timezones after the whole-second UTC correction, using an owner-approved
+  attendee-free fixture or the next authorized real booking. Denver creation
+  and guest-first admission passed in the [October 2 live test](release-evidence/zoom-guest-first-2026-10-02.md);
+  rescheduling and other timezone cases remain unverified. Compare saved provider
+  instants; local contract tests do not prove live provider acceptance. See the
   [timestamp evidence](release-evidence/zoom-timestamp-2026-09-25.md).
 
 - [ ] Expand Scheduler-specific Jev controls with fluent bilingual review and fresh validation after rubric changes. Keep failures and unapproved uncertain results blocking; do not loosen the judge merely to pass current copy. The current workflow belongs in [Quality](QUALITY.md#required-jev-development-check).
