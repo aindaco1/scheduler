@@ -55,7 +55,8 @@ before the scheduled date. No unrelated recipient was invited.
   earlier 12:30 meeting or change its settings. Its ownership and original
   admission failure remain unresolved.
 
-Ignored local screenshots under `work/zoom-guest-first/` record the prepared Join
+Ignored screenshots were captured under `work/zoom-guest-first/` and moved to
+a private recoverable archive during the 1.0.4 cleanup. They record the prepared Join
 screen, the guest-only participant panel, Scheduler cancellation and Zoom's
 invalid-link response. No real joining URLs, meeting IDs, passcodes, management
 tokens, personal email addresses or calendar contents are retained in this file.

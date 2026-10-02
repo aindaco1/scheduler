@@ -10,18 +10,41 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
-### Version 1.0.4 — release candidate
+### Version 1.0.4 — October 2
 
-The release candidate incorporates the two pending tooling PRs and the completed
-Zoom setup/recovery documentation. Miniflare's Undici is pinned to patched 7.30.0;
-current npm and Ruby audits pass. All local deterministic checks pass, including
-223 Worker tests and the full browser suite. The local live Jev request stopped
-incomplete; a read-only model lookup returned HTTP 403 / code 10000 with the
-current Wrangler login. This is not a passing local full gate. Trusted-main CI
-with its dedicated Workers AI credential and deployment remain pending.
+[1.0.4 is released](https://github.com/aindaco1/scheduler/releases/tag/v1.0.4)
+and deployed. Both pending maintenance PRs are merged; the release documents
+per-owner Zoom setup, matching branding and credential replacement, and pins
+Miniflare to patched Undici 7.30.0. Booking/provider logic, Vitest/workerd pins
+and shared packages are unchanged.
 
-See [1.0.4 evidence](release-evidence/maintenance-1.0.4-2026-10-02.md) for the
-separate local, hosted, deployment and provider results.
+- Local: clean install, audits, all deterministic checks (223 Worker tests,
+  browser/accessibility, fork setup and deployment packaging) and isolated
+  local-server smoke passed. Local Jev stopped incomplete because the current
+  Wrangler login lacks Workers AI permission; this is not a local full-gate pass.
+- CI: [PR checks](https://github.com/aindaco1/scheduler/actions/runs/37074854980)
+  and [trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37075046779)
+  passed on Node 24 / Ruby 3.3. Trusted main ran the full `npm run check`,
+  including live Jev: all 40 controls correct, 33 rendered passes, the existing
+  exact-copy approved review and zero blocking findings. npm/Ruby audits passed.
+- Deployed source: `68de35f320468b56715a4a85d9f51e7f72a45d55`; Worker
+  `e9b50b30-ff94-4ca7-8529-fb3a33f9e98c` at 100% traffic. Health/eight shells,
+  eleven asset hashes, two private API boundaries and five live availability
+  reads passed. The browser Zoom picker loaded seven dates / 126 times.
+  Public configuration, namespace, compatibility settings and credential bindings
+  are preserved. No migration or reconnection is needed. Credential-compatible
+  rollback: `47c125f9-aa61-4e58-b826-4840f09d65cd`.
+- Provider/recipient: this release used read-only availability, without another
+  booking or invitation. Actual guest-first entry and provider cancellation were
+  verified earlier today as recorded below; remaining client/recipient limits
+  are unchanged.
+- Cleanup: generated output and merged branches removed; only `main` remains
+  with one worktree and no open PRs. Three duplicate/superseded documents and
+  local/hosted evidence are archived privately. Dependencies, fixtures, pinned
+  submodules, local database state and preview helpers remain; all 25 protected
+  local files retain their hashes.
+
+See [1.0.4 evidence](release-evidence/maintenance-1.0.4-2026-10-02.md).
 
 ### Zoom guest-first live acceptance — October 2
 

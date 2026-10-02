@@ -24,7 +24,8 @@ The app icon was rendered at 512 × 512 from `assets/icon.svg` with
 foreground and dark rounded background. It was uploaded with **Apply this app
 icon to dark mode** checked. After saving, the app detail page visibly showed
 the name and matching icon. The local screenshot and generated PNG are ignored
-under `work/zoom-branding/`; no credentials appear in them. Zoom branding is
+under `work/zoom-branding/`; no credentials appear in them. They were moved to
+a private recoverable archive during the 1.0.4 cleanup. Zoom branding is
 separate from Scheduler's runtime branding and does not synchronize automatically.
 
 The app remains in Development / Local Test. Its detail page's “Any user” role
