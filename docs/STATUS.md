@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated September 28, 2026 (UTC). This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated October 2, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,84 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Version 1.0.4 — release candidate
+
+The release candidate incorporates the two pending tooling PRs and the completed
+Zoom setup/recovery documentation. Miniflare's Undici is pinned to patched 7.30.0;
+current npm and Ruby audits pass. All local deterministic checks pass, including
+223 Worker tests and the full browser suite. The local live Jev request stopped
+incomplete; a read-only model lookup returned HTTP 403 / code 10000 with the
+current Wrangler login. This is not a passing local full gate. Trusted-main CI
+with its dedicated Workers AI credential and deployment remain pending.
+
+See [1.0.4 evidence](release-evidence/maintenance-1.0.4-2026-10-02.md) for the
+separate local, hosted, deployment and provider results.
+
+### Zoom guest-first live acceptance — October 2
+
+**Passed:** a new Brief chat booked through the public Scheduler page admitted a
+signed-out guest before the host, immediately after booking and before its
+scheduled date. Zoom showed **Participants (1)** with only the synthetic test
+guest and a **Claim Host** control. Its saved settings had a passcode, waiting
+room off, no required authentication, and participants allowed to join anytime.
+
+- Local / CI / deployment: no functional change, new check run or deployment for
+  this acceptance. The earlier OAuth recovery checks below remain separate.
+- Provider: Zoom's meeting ID/passcode matched the generated Scheduler link.
+  Both Zoom and Google retained the expected local start time; the Google event
+  contained the Zoom link in both Location and Description.
+- Client: actual entry passed in the signed-out Zoom Web App after its normal
+  Join click. No host joined. Camera and microphone access were declined; media,
+  another participant and native guest-app entry were not tested.
+- Cleanup: the guest left, Scheduler confirmed cancellation, Google returned
+  cancelled, and Zoom's browser link returned **This meeting link is invalid
+  (3,001)**. The temporary reservation is no longer active.
+- Recipient: the owner supplied their own address for normal test notifications.
+  Inbox receipt/rendering was not inspected. No unrelated person was invited.
+
+The earlier 12:30 incident remains unverified; the successful test applies to a
+new booking after reconnection. See [live test evidence](release-evidence/zoom-guest-first-2026-10-02.md).
+
+### Zoom pre-join preview investigation — October 2
+
+The reconnect failure is repaired. A replacement user-managed **Scheduler** app
+in the owner's intended Volver account now has the current Scheduler clock icon
+in both light and dark modes. It uses development credentials and Local Test;
+it is not publicly distributed. Other single-owner installations use their own
+Zoom apps and credentials as described in the [fork guide](FORKING.md#zoom-for-your-own-scheduler).
+
+- Local: `npm run build`, `npm run test:setup` and 85 existing authorization,
+  provider and Zoom calendar-link tests passed. The fork fixture uses an
+  independent domain, owner, route, brand and timezone. Its initial run lacked
+  generated build metadata; building first resolved that prerequisite. No
+  functional code changed, so the complete `npm run check` was not rerun.
+- CI: no new run.
+- Deployed: bookings were paused, then version
+  `47c125f9-aa61-4e58-b826-4840f09d65cd` replaced
+  `e7a53911-e9eb-4b78-98a1-6cc1ebbf7830` at 100% traffic. Only the two Zoom
+  credential bindings changed; the script hash and Durable Object namespace
+  matched. No source build was deployed.
+- OAuth/provider: reconnect reached Zoom consent instead of its generic error.
+  The owner completed authorization directly. Scheduler returned with
+  `connected=zoom`; Verify connections completed successfully. Active was then
+  restored and saved, with **Ready to book** displayed. This verifies the new
+  grant, not the identity or fate of the original app. A second owner's real
+  Zoom account has not been tested.
+- Branding: the app's name and icon were read back in its Zoom detail page.
+  The icon is rasterized from the repository's current SVG mark; the builder's
+  apply-to-dark-mode option was checked when saving.
+- Original meeting: Zoom's preview preference was enabled, but that explains
+  only the preview screen. The preview-only diagnosis is withdrawn. Google
+  read-back found a passcode-bearing Zoom link in the event description and an
+  empty Location. The original meeting's host identity, effective admission
+  settings and successful host/guest entry remain unverified. The preview
+  preference was left unchanged.
+- Recipient: the recovery steps made no invitation, email, new booking, calendar
+  or meeting write. The subsequent authorized live test is recorded above.
+
+See [recovery evidence](release-evidence/zoom-oauth-recovery-2026-10-02.md) and
+[the joining investigation](research/zoom-start-investigation-2026-10-02.md).
 
 ### Version 1.0.3 — September 28 UTC
 

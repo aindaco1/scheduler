@@ -16,6 +16,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 | Task | Guide |
 | --- | --- |
 | Connect calendars, provision accounts and verify bookings | [Owner setup](OPERATIONS.md#owner-setup), [fork credentials](FORKING.md#3-provision-your-accounts-and-secrets) |
+| Connect your own Zoom account or replace its OAuth app | [Zoom app setup and branding](FORKING.md#zoom-for-your-own-scheduler), [reconnection procedure](OPERATIONS.md#zoom-reconnection-and-app-replacement) |
 | Set hours, gaps, blackouts, reminders and branding | [Product decisions](decisions/phase-1.md), [operating guidance](OPERATIONS.md) |
 | Investigate provider failures and interrupted bookings | [Booking recovery](OPERATIONS.md#booking-consistency-and-recovery), [availability failures](OPERATIONS.md#intermittent-availability-failures) |
 | Review mail delivery and guest receipt | [Email operations](OPERATIONS.md#email-delivery-and-held-failures), [delivery audit](research/email-deliverability-audit.md) |
@@ -48,6 +49,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 - [Design and code reuse](research/design-reuse-notes.md): Pool/Store styling and shared-package references.
 - [Proton and Protoxide](research/proton-integration-notes.md): feasibility research for a direct integration.
 - [Location hours](research/location-hours.md): dated sources for the owner's initial venues.
+- [Zoom joining investigation](research/zoom-start-investigation-2026-10-02.md): unresolved host/guest admission report, preview observation and provider-setting limitations.
 
 ## Documentation ownership
 
