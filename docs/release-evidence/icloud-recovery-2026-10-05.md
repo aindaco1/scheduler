@@ -77,3 +77,30 @@ to identify the remaining failure before calling the connection repaired.
 No live booking or invitation test was sent; actual recipient acceptance remains
 a separate outcome. Existing credentials, owner state and selected calendars
 are retained. Credential-compatible rollback: the initial Worker above.
+
+## Final deployed result
+
+The diagnostic source `4c03ec97cea8a0e9b58b98e19797b3a8bc4eea2b` passed
+[trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37355255054),
+including required live Jev, after all final local deterministic checks passed.
+It deployed as `c463e769-62c6-4523-b5be-8d7dd4f52b07` at
+18:24:40 UTC / 12:24:40 Mountain with 100% traffic.
+
+The final read-only sweep passed all eleven route/private-boundary checks, nine
+compiled asset hashes and ten availability reads across two date windows and
+all active meeting types/locations. Public settings matched the pre-deployment
+fingerprint; the saved connections and selected calendars were retained. The
+browser rendered 66 studio times over seven available dates.
+
+A further request after the browsing-cache expiry provided actual recovery
+acceptance: at 18:26:20.646 UTC the iCloud reader logged `icloud_read_retry`,
+`icloud_incomplete`, reason `multistatus_error`; at 18:26:22.652 it logged
+`icloud_read_recovered`. The public request completed HTTP 200 in 4.083 seconds
+with 28 studio slots. Thus a failed iCloud read was recovered inside one public
+request with a newly discovered, complete snapshot. No stale/partial result was
+used, and no calendar invitation or email was sent.
+
+The original booking submissions' exact codes remain unavailable. This release
+improves recovery and diagnosis; it cannot guarantee Apple's uptime. If both
+attempts fail, bookings remain blocked. End-to-end confirmation and recipient
+receipt were not retested with a live guest.

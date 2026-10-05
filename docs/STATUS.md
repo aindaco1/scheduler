@@ -18,21 +18,28 @@ submissions returned 503 at 11:38/11:45 Mountain; the previous release did not
 record their application codes, so attribution to those exact submissions is
 unconfirmed. Subsequent reads succeeded without credential replacement.
 
-- Local: 243 Worker tests in 19 files passed, including complete iCloud retry,
-  rejected access/throttling, partial-read discard, conflict enforcement,
-  rescheduling, concurrent reservation and private diagnostic regressions.
-  Full deterministic browser/build/packaging results and the live semantic
-  gate are recorded in the [incident evidence](release-evidence/icloud-recovery-2026-10-05.md).
-- CI: the first recovery source passed [trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37354353116),
-  including live Jev. Local live Jev remains incomplete because the current
-  Wrangler OAuth login lacks `ai:write`.
-- Deployment: the first recovery source deployed at 18:17 UTC as
-  `bedd71a5-3ba3-4859-987c-bb8b6d3753d5`. Routes/assets and all six in-person
-  reads passed, but two video availability reads still failed. Provider recovery
-  remains under investigation; a follow-up adds safe reason/status diagnostics.
-- Provider/recipient: pre-change read-only availability recovered across all
-  three in-person locations. No booking, invitation, credential replacement or
-  settings change was made during this investigation.
+- Local: all deterministic checks passed, including 243 Worker tests in 19 files,
+  build/type/package/quality checks, browser/accessibility flows, 327 paired
+  messages, fork setup and dry deployment. Local live Jev remained incomplete
+  because this Mac's Wrangler OAuth login lacks `ai:write`.
+- CI: deployed source `4c03ec97cea8a0e9b58b98e19797b3a8bc4eea2b` passed
+  [trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37355255054)
+  on Node 24 / Ruby 3.3, including the full check with live Jev and dependency
+  audits. No evaluator policy or approval changed.
+- Deployment: Worker `c463e769-62c6-4523-b5be-8d7dd4f52b07` at 100% traffic
+  from 18:24:40 UTC. Eleven route/security checks and nine asset hashes passed.
+  Public settings, credential binding names and the Durable Object namespace
+  are preserved; no migration or password replacement was needed.
+- Provider: all ten final availability reads passed across two date windows and
+  every active type/location. An additional fresh studio read at 18:26 UTC
+  triggered `icloud_read_retry` with `multistatus_error`, then
+  `icloud_read_recovered` and HTTP 200 with 28 slots. Automatic recovery is
+  observed in production, not only fixtures. The browser displayed 66 studio
+  times over seven available dates.
+- Recipient: no live booking/invitation was sent. Confirmation/delivery was not
+  reverified. Apple can still fail both attempts; such failures continue to
+  block booking safely. The earlier failed deployed probes remain recorded in
+  the [incident evidence](release-evidence/icloud-recovery-2026-10-05.md).
 
 ### Version 1.0.4 — October 2
 
