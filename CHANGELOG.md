@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.0.5 — 2026-10-05
+
+iCloud calendar-read recovery. Existing installations retain their saved credentials and selected calendars; no migration is needed.
+
+- Retry a temporary iCloud discovery or conflict-read failure once after 500 ms, rebuilding discovery and rereading every selected iCloud calendar. Apply the same recovery to listing, booking, rescheduling, verification and queued booking operations. Never accept partial or stale results.
+- Stop automatic recovery for rejected credentials, throttling, long Retry-After instructions, unsafe responses and slow initial failures. Distinguish iCloud access problems from temporary failures in the English and Spanish owner dashboard.
+- Record only bounded iCloud recovery outcomes and booking/rescheduling failure codes. Avoid stacking the browser's retry on the server's exhausted iCloud recovery.
+
 ## 1.0.4 — 2026-10-02
 
 Zoom setup guidance and dependency maintenance. Existing installations need no migration or provider reconnection.

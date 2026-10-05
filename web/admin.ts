@@ -704,6 +704,20 @@ function renderConnections() {
 }
 function connectionIssue(code: string) {
   const lower = code.toLowerCase();
+  if (lower === "icloud_reconnect_required")
+    return t(
+      "iCloud rejected the saved credentials or calendar access. Update the iCloud connection with an Apple app-specific password, then verify connections.",
+      "iCloud rechazó las credenciales guardadas o el acceso al calendario. Actualiza la conexión de iCloud con una contraseña de aplicación de Apple y verifica las conexiones.",
+    );
+  if (
+    ["icloud_unavailable", "icloud_incomplete", "icloud_rate_limited"].includes(
+      lower,
+    )
+  )
+    return t(
+      "iCloud could not complete the calendar check. Wait a moment, then verify connections again.",
+      "iCloud no pudo completar la consulta del calendario. Espera un momento y vuelve a verificar las conexiones.",
+    );
   if (lower.includes("google"))
     return t(
       "Connect Google and verify the selected calendars.",

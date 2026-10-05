@@ -288,7 +288,7 @@ export async function checkAvailableDates(
       const dateLabel = await page.locator("[data-week]").textContent();
       await page.locator("[data-location]").focus();
       failNext = 1;
-      failureCode = spanish ? "icloud_unavailable" : "google_unavailable";
+      failureCode = spanish ? "service_unavailable" : "google_unavailable";
       const beforeCafe = requests.length;
       await loaded(() => page.locator("[data-location]").selectOption("cafe"));
       assert.equal(requests[beforeCafe].from, startingDate);
@@ -336,14 +336,27 @@ export async function checkAvailableDates(
       await loaded(() => page.locator("[data-prev]").click());
       assert.ok(requests.at(-1).from < startingDate);
     }
-    failureCode = "google_reconnect_required";
-    failNext = 1;
-    const beforeReconnect = requests.length;
-    await page.locator("[data-location]").selectOption("cafe");
-    await page.locator("[data-retry]").waitFor();
-    assert.equal(requests.length - beforeReconnect, 1);
-    await loaded(() => page.locator("[data-location]").selectOption("studio"));
-    failureCode = "icloud_unavailable";
+    // iCloud already exhausted its bounded server retry; the browser must not multiply it.
+    for (const code of [
+      "google_reconnect_required",
+      "icloud_reconnect_required",
+      "icloud_unavailable",
+      "icloud_incomplete",
+      "icloud_rate_limited",
+    ]) {
+      failureCode = code;
+      failNext = 1;
+      const beforeFailure = requests.length;
+      await page.locator("[data-location]").selectOption("cafe");
+      await page.locator("[data-retry]").waitFor();
+      await page.waitForTimeout(700);
+      assert.equal(requests.length - beforeFailure, 1);
+      assert.equal(await page.locator("[data-slot]").count(), 0);
+      await loaded(() =>
+        page.locator("[data-location]").selectOption("studio"),
+      );
+    }
+    failureCode = "service_unavailable";
     failNext = 1;
     await page.locator("[data-location]").selectOption("cafe");
     await page

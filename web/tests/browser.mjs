@@ -89,6 +89,7 @@ let revision = 1,
   settingsConflict = false,
   bookingWrites = 0,
   credentialWrites = 0;
+let connectionIssues = [];
 const ownerRescheduleBodies = [],
   ownerCancellationBodies = [];
 const ownerNote =
@@ -248,8 +249,8 @@ async function apiFixture(route) {
       google: { connected: true, email: "owner@example.test" },
       icloud: { connected: true },
       zoom: { connected: true },
-      ready: true,
-      issues: [],
+      ready: !connectionIssues.length,
+      issues: connectionIssues,
       calendars: [
         { id: "primary", name: "Personal", provider: "google", writable: true },
         {
@@ -730,6 +731,32 @@ try {
     () => document.querySelector("input[name=password]")?.value === "",
   );
   assert.equal(credentialWrites, 1);
+  for (const code of [
+    "icloud_reconnect_required",
+    "icloud_unavailable",
+    "icloud_incomplete",
+    "icloud_rate_limited",
+  ]) {
+    connectionIssues = [code];
+    await page.locator("[data-verify]").click();
+    await page
+      .getByText(
+        code === "icloud_reconnect_required"
+          ? "iCloud rejected the saved credentials or calendar access. Update the iCloud connection with an Apple app-specific password, then verify connections."
+          : "iCloud could not complete the calendar check. Wait a moment, then verify connections again.",
+        { exact: true },
+      )
+      .waitFor();
+    assert.equal(
+      await page
+        .getByLabel("App-specific password", { exact: true })
+        .inputValue(),
+      "",
+    );
+  }
+  connectionIssues = [];
+  await page.locator("[data-verify]").click();
+  await page.getByText("Ready to book", { exact: true }).waitFor();
   // All desktop tabs survive refresh; saved rules are loaded from the API.
   for (const [name, id] of [
     ["Bookings", "bookings"],

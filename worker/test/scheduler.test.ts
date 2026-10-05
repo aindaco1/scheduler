@@ -8,6 +8,14 @@ import {
 } from "cloudflare:test";
 import { defaultSettings, type Booking } from "../src/model";
 import { sha256Hex } from "../src/security";
+import {
+  busyReport,
+  calendarUrl,
+  credentials,
+  mockIcloudReport,
+  mockReport,
+  multistatus,
+} from "./icloud-fixtures";
 
 type Stub = ReturnType<typeof env.SCHEDULER.getByName>;
 const fixtureStubs = new Set<Stub>();
@@ -87,6 +95,136 @@ function input(start = startTime(), requestId = crypto.randomUUID()) {
     turnstile: "valid",
   };
 }
+
+async function enableIcloud(stub: Stub) {
+  await stub.putConnection("icloud", credentials);
+  await runInDurableObject(stub, (_instance, state) => {
+    const row = JSON.parse(
+      state.storage.sql
+        .exec<{ value: string }>(
+          "SELECT value FROM config WHERE key='settings'",
+        )
+        .one().value,
+    );
+    row.settings.enabled = true;
+    row.settings.requireIcloud = true;
+    row.settings.icloudCalendars = [calendarUrl];
+    state.storage.sql.exec(
+      "UPDATE config SET value=? WHERE key='settings'",
+      JSON.stringify(row),
+    );
+  });
+}
+
+describe("iCloud recovery across scheduling operations", () => {
+  it.each(["availability", "booking", "reschedule"])(
+    "%s respects conflicts discovered by the retry",
+    async (operation) => {
+      mockReads();
+      const stub = await setup();
+      const original =
+        operation === "reschedule"
+          ? await stub.createBooking(input())
+          : undefined;
+      if (original)
+        await runInDurableObject(stub, (_instance, state) => {
+          const b = JSON.parse(
+            state.storage.sql
+              .exec<{ data: string }>(
+                "SELECT data FROM bookings WHERE id=?",
+                original.booking.id,
+              )
+              .one().data,
+          );
+          b.status = "confirmed";
+          state.storage.sql.exec(
+            "UPDATE bookings SET status='confirmed',data=? WHERE id=?",
+            JSON.stringify(b),
+            b.id,
+          );
+          state.storage.sql.exec("DELETE FROM jobs");
+          return state.storage.deleteAlarm();
+        });
+      await enableIcloud(stub);
+      const start = startTime() + 3 * 3_600_000;
+      mockIcloudReport("unavailable", 503);
+      mockIcloudReport(busyReport(start, start + 3_600_000));
+      if (operation === "availability") {
+        expect(
+          (
+            await stub.availability(
+              "conversation",
+              "",
+              start,
+              start + 3_600_000,
+            )
+          ).slots,
+        ).toEqual([]);
+      } else {
+        const result = original
+          ? stub.reschedule(
+              original.booking.id,
+              original.token,
+              new Date(start).toISOString(),
+              crypto.randomUUID(),
+            )
+          : stub.createBooking(input(start));
+        await expectRpc(result).rejects.toMatchObject({
+          code: "slot_unavailable",
+        });
+      }
+      const bookings = (await stub.listBookings()).bookings;
+      expect(bookings).toHaveLength(original ? 1 : 0);
+      if (original)
+        expect(bookings[0]).toMatchObject({
+          status: "confirmed",
+          start: original.booking.start,
+        });
+    },
+  );
+
+  it("keeps a persistent iCloud outage from reserving a booking", async () => {
+    mockReads();
+    const stub = await setup();
+    await enableIcloud(stub);
+    mockIcloudReport("unavailable", 503);
+    mockIcloudReport("unavailable", 503);
+    await expectRpc(stub.createBooking(input())).rejects.toMatchObject({
+      code: "icloud_unavailable",
+    });
+    expect((await stub.listBookings()).bookings).toHaveLength(0);
+    await runInDurableObject(stub, (_instance, state) => {
+      expect(
+        state.storage.sql
+          .exec<{ count: number }>("SELECT count(*) AS count FROM jobs")
+          .one().count,
+      ).toBe(0);
+    });
+  });
+
+  it("reserves only once when a competing booking recovers from an iCloud failure", async () => {
+    mockReads();
+    const stub = await setup();
+    await enableIcloud(stub);
+    const start = startTime();
+    mockIcloudReport(multistatus());
+    await stub.availability("conversation", "", start, start + 3_600_000);
+    mockReport("unavailable", 503);
+    mockReport(multistatus());
+    mockIcloudReport(multistatus());
+    const results = await Promise.allSettled([
+      stub.createBooking(input()),
+      stub.createBooking(input()),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+    expect(
+      (results.find((r) => r.status === "rejected") as PromiseRejectedResult)
+        .reason,
+    ).toMatchObject({ code: "slot_unavailable" });
+    expect((await stub.listBookings()).bookings).toHaveLength(1);
+  });
+});
 
 it("rejects out-of-policy reschedule targets before any provider reads", async () => {
   mockReads();

@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Booking } from "../src/model";
-import {
-  IcloudSession,
-  icloudBusy,
-  validateMultistatus,
-} from "../src/providers/icloud";
+import { icloudBusy, validateMultistatus } from "../src/providers/icloud";
 import { calendarLocation } from "../src/booking-location";
 import { GoogleCalendar } from "../src/providers/google";
 import { refreshZoom, ZoomMeetings } from "../src/providers/zoom";
@@ -56,110 +52,29 @@ afterEach(() => {
   }
 });
 
-const multistatus = (contents = "") =>
-  `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">${contents}</d:multistatus>`;
-const response = (href: string, props: string) =>
-  `<d:response><d:href>${href}</d:href><d:propstat><d:prop>${props}</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`;
-const appleOrigin = "https://caldav.icloud.com";
-const calendarUrl = appleOrigin + "/fixture/calendars/family/";
-const credentials = {
-  username: "owner@example.test",
-  password: "fixture-app-password",
-};
-
-/** A complete discovery fixture keeps REPORT regressions on the actual tsdav integration path. */
-function mockIcloudReport(body: string | undefined, status = 207) {
-  const apple = fetchMock.get(appleOrigin);
-  const xml = { headers: { "Content-Type": "application/xml; charset=utf-8" } };
-  apple
-    .intercept({ path: "/.well-known/caldav", method: "PROPFIND" })
-    .reply(207, multistatus(), xml);
-  apple
-    .intercept({ path: "/.well-known/caldav", method: "GET" })
-    .reply(207, multistatus(), xml);
-  apple
-    .intercept({ path: "/", method: "PROPFIND" })
-    .reply(
-      207,
-      multistatus(
-        response(
-          "/",
-          "<d:current-user-principal><d:href>/fixture/principal/</d:href></d:current-user-principal>",
-        ),
-      ),
-      xml,
-    );
-  apple
-    .intercept({ path: "/fixture/principal/", method: "PROPFIND" })
-    .reply(
-      207,
-      multistatus(
-        response(
-          "/fixture/principal/",
-          "<c:calendar-home-set><d:href>/fixture/calendars/</d:href></c:calendar-home-set>",
-        ),
-      ),
-      xml,
-    );
-  apple
-    .intercept({ path: "/fixture/calendars/", method: "PROPFIND" })
-    .reply(
-      207,
-      multistatus(
-        response(
-          "/fixture/calendars/family/",
-          '<d:displayname>Family</d:displayname><d:resourcetype><d:collection/><c:calendar/></d:resourcetype><c:supported-calendar-component-set><c:comp name="VEVENT"/></c:supported-calendar-component-set>',
-        ),
-      ),
-      xml,
-    );
-  apple
-    .intercept({ path: "/fixture/calendars/family/", method: "PROPFIND" })
-    .reply(
-      207,
-      multistatus(
-        response("/fixture/calendars/family/", "<d:supported-report-set/>"),
-      ),
-      xml,
-    );
-  apple
-    .intercept({ path: "/fixture/calendars/family/", method: "REPORT" })
-    .reply(status, body, xml);
-}
+import {
+  calendarUrl,
+  credentials,
+  mockIcloudReport,
+  multistatus,
+  response,
+} from "./icloud-fixtures";
 
 describe("iCloud response completeness", () => {
   it.each([404, 409, 423, 507])(
     "rejects a failed REPORT resource with HTTP %s inside multistatus",
     async (status) => {
-      mockIcloudReport(
-        multistatus(
-          `<d:response><d:href>/fixture/calendars/family/event</d:href><d:status>HTTP/1.1 ${status} Unavailable</d:status></d:response>`,
-        ),
-      );
+      for (let attempt = 0; attempt < 2; attempt++)
+        mockIcloudReport(
+          multistatus(
+            `<d:response><d:href>/fixture/calendars/family/event</d:href><d:status>HTTP/1.1 ${status} Unavailable</d:status></d:response>`,
+          ),
+        );
       await expect(
         icloudBusy(credentials, [calendarUrl], from, to, "UTC"),
       ).rejects.toMatchObject({ code: "icloud_incomplete" });
     },
   );
-  it("reuses discovery but performs a fresh REPORT and rediscovers after failure", async () => {
-    mockIcloudReport(multistatus());
-    const session = new IcloudSession(credentials);
-    expect(
-      await session.busy([calendarUrl], from, to, "America/Denver"),
-    ).toEqual([]);
-    // No discovery fixtures remain: this second read must only issue REPORT.
-    fetchMock
-      .get(appleOrigin)
-      .intercept({ path: "/fixture/calendars/family/", method: "REPORT" })
-      .reply(503, "provider unavailable");
-    await expect(
-      session.busy([calendarUrl], from, to, "America/Denver"),
-    ).rejects.toMatchObject({ code: "icloud_unavailable" });
-    mockIcloudReport(multistatus());
-    expect(
-      await session.busy([calendarUrl], from, to, "America/Denver"),
-    ).toEqual([]);
-  });
 
   it.each([
     { status: 200, body: "" },
@@ -172,6 +87,7 @@ describe("iCloud response completeness", () => {
   ])(
     "rejects a REPORT without multistatus HTTP status: $status $body",
     async ({ status, body }) => {
+      mockIcloudReport(body, status);
       mockIcloudReport(body, status);
       await expect(
         icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
@@ -188,6 +104,7 @@ describe("iCloud response completeness", () => {
     '<!DOCTYPE d:multistatus [<!ENTITY data "fixture">]><d:multistatus xmlns:d="DAV:"/>',
   ])("rejects malformed or unsafe multistatus: %s", async (body) => {
     mockIcloudReport(body);
+    if (!body.includes("<!DOCTYPE")) mockIcloudReport(body);
     await expect(
       icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
     ).rejects.toMatchObject({ code: "icloud_incomplete" });
@@ -237,7 +154,7 @@ describe("iCloud response completeness", () => {
     );
     await expect(
       icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
-    ).rejects.toMatchObject({ code: "icloud_incomplete" });
+    ).rejects.toMatchObject({ code: "icloud_reconnect_required" });
   });
 });
 

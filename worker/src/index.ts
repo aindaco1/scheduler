@@ -479,13 +479,20 @@ export default {
         console.error(
           JSON.stringify({ event: "request_failed", code: "internal_error" }),
         );
-      if (
-        application &&
-        Number(remote.status) === 503 &&
-        new URL(request.url).pathname === "/api/availability"
-      )
+      const path = new URL(request.url).pathname;
+      const failureEvent =
+        path === "/api/availability"
+          ? "availability_failed"
+          : path === "/api/bookings"
+            ? "booking_failed"
+            : /^\/api\/(?:admin\/)?bookings\/[0-9a-f-]{36}\/reschedule$/.test(
+                  path,
+                )
+              ? "reschedule_failed"
+              : undefined;
+      if (application && Number(remote.status) === 503 && failureEvent)
         console.warn(
-          JSON.stringify({ event: "availability_failed", code: remote.code }),
+          JSON.stringify({ event: failureEvent, code: remote.code }),
         );
       return secure(
         json(

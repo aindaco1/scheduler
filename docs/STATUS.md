@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated October 2, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated October 5, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,26 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Version 1.0.5 — October 5: iCloud read recovery
+
+The October 5 investigation reproduced `icloud_incomplete` during public
+availability and found earlier `icloud_unavailable` failures. Three booking
+submissions returned 503 at 11:38/11:45 Mountain; the previous release did not
+record their application codes, so attribution to those exact submissions is
+unconfirmed. Subsequent reads succeeded without credential replacement.
+
+- Local: 243 Worker tests in 19 files passed, including complete iCloud retry,
+  rejected access/throttling, partial-read discard, conflict enforcement,
+  rescheduling, concurrent reservation and private diagnostic regressions.
+  Full deterministic browser/build/packaging results and the live semantic
+  gate are recorded in the [incident evidence](release-evidence/icloud-recovery-2026-10-05.md).
+- CI: pending for the final release source. Local live Jev remains incomplete;
+  the current Wrangler OAuth login lacks `ai:write`.
+- Deployment: pending; production remains on the October 2 version below.
+- Provider/recipient: pre-change read-only availability recovered across all
+  three in-person locations. No booking, invitation, credential replacement or
+  settings change was made during this investigation.
 
 ### Version 1.0.4 — October 2
 

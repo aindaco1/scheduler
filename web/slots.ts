@@ -164,11 +164,9 @@ export class SlotPicker {
         e instanceof TypeError ||
         [502, 504].includes(failure.status || 0) ||
         (failure.status === 503 &&
-          [
-            "google_unavailable",
-            "icloud_unavailable",
-            "service_unavailable",
-          ].includes(failure.code || ""));
+          ["google_unavailable", "service_unavailable"].includes(
+            failure.code || "",
+          ));
       if (attempt === 0 && temporary) {
         status.innerHTML = `<p class="help-text">${t("Calendar check interrupted. Trying again…", "Se interrumpió la consulta del calendario. Volviendo a intentar…")}</p>`;
         this.retryTimer = setTimeout(() => {
