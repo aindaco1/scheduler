@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.0.6 — 2026-10-05
+
+Fix iCloud calendar discovery failures blocking booking confirmation even when the selected calendar remains readable. Existing credentials and calendar selections are retained.
+
+- Read saved iCloud calendars directly for conflict checks. Account-wide discovery is only needed for the owner's calendar picker, removing an unnecessary failure point from availability, booking, rescheduling and queued operations.
+- Retain fresh, complete conflict checks, bounded retries, validated Apple hosts, authentication and atomic reservations. Deleted or inaccessible calendars still block booking.
+- Parse strictly validated calendar XML even when the upstream Content-Type is missing or incorrect, preventing the DAV library from silently dropping busy events.
+
 ## 1.0.5 — 2026-10-05
 
 iCloud calendar-read recovery. Existing installations retain their saved credentials and selected calendars; no migration is needed.

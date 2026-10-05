@@ -12,7 +12,6 @@ import {
   busyReport,
   calendarUrl,
   credentials,
-  mockIcloudReport,
   mockReport,
   multistatus,
 } from "./icloud-fixtures";
@@ -147,8 +146,8 @@ describe("iCloud recovery across scheduling operations", () => {
         });
       await enableIcloud(stub);
       const start = startTime() + 3 * 3_600_000;
-      mockIcloudReport("unavailable", 503);
-      mockIcloudReport(busyReport(start, start + 3_600_000));
+      mockReport("unavailable", 503);
+      mockReport(busyReport(start, start + 3_600_000));
       if (operation === "availability") {
         expect(
           (
@@ -187,8 +186,8 @@ describe("iCloud recovery across scheduling operations", () => {
     mockReads();
     const stub = await setup();
     await enableIcloud(stub);
-    mockIcloudReport("unavailable", 503);
-    mockIcloudReport("unavailable", 503);
+    mockReport("unavailable", 503);
+    mockReport("unavailable", 503);
     await expectRpc(stub.createBooking(input())).rejects.toMatchObject({
       code: "icloud_unavailable",
     });
@@ -207,11 +206,11 @@ describe("iCloud recovery across scheduling operations", () => {
     const stub = await setup();
     await enableIcloud(stub);
     const start = startTime();
-    mockIcloudReport(multistatus());
+    mockReport(multistatus());
     await stub.availability("conversation", "", start, start + 3_600_000);
     mockReport("unavailable", 503);
     mockReport(multistatus());
-    mockIcloudReport(multistatus());
+    mockReport(multistatus());
     const results = await Promise.allSettled([
       stub.createBooking(input()),
       stub.createBooking(input()),

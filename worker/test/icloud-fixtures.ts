@@ -11,10 +11,16 @@ export const credentials = {
   password: "fixture-app-password",
 };
 
-/** A complete discovery fixture keeps REPORT regressions on the actual tsdav integration path. */
-export function mockIcloudDiscovery(status = 207, names = ["family"]) {
+/** Exercise the owner's calendar picker through the actual tsdav discovery path. */
+export function mockIcloudDiscovery(
+  status = 207,
+  names = ["family"],
+  headers: Record<string, string> = {},
+) {
   const apple = fetchMock.get(appleOrigin);
-  const xml = { headers: { "Content-Type": "application/xml; charset=utf-8" } };
+  const xml = {
+    headers: { "Content-Type": "application/xml; charset=utf-8", ...headers },
+  };
   apple
     .intercept({ path: "/.well-known/caldav", method: "PROPFIND" })
     .reply(207, multistatus(), xml);
@@ -85,10 +91,6 @@ export function mockReport(
     .reply(status, body, {
       headers: { "Content-Type": "application/xml; charset=utf-8", ...headers },
     });
-}
-export function mockIcloudReport(body: string | undefined, status = 207) {
-  mockIcloudDiscovery();
-  mockReport(body, status);
 }
 export function busyReport(start: number, end: number) {
   const stamp = (ms: number) =>

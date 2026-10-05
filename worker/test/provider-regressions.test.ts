@@ -55,7 +55,7 @@ afterEach(() => {
 import {
   calendarUrl,
   credentials,
-  mockIcloudReport,
+  mockReport,
   multistatus,
   response,
 } from "./icloud-fixtures";
@@ -65,7 +65,7 @@ describe("iCloud response completeness", () => {
     "rejects a failed REPORT resource with HTTP %s inside multistatus",
     async (status) => {
       for (let attempt = 0; attempt < 2; attempt++)
-        mockIcloudReport(
+        mockReport(
           multistatus(
             `<d:response><d:href>/fixture/calendars/family/event</d:href><d:status>HTTP/1.1 ${status} Unavailable</d:status></d:response>`,
           ),
@@ -87,8 +87,8 @@ describe("iCloud response completeness", () => {
   ])(
     "rejects a REPORT without multistatus HTTP status: $status $body",
     async ({ status, body }) => {
-      mockIcloudReport(body, status);
-      mockIcloudReport(body, status);
+      mockReport(body, status);
+      mockReport(body, status);
       await expect(
         icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
       ).rejects.toMatchObject({ code: "icloud_incomplete" });
@@ -103,15 +103,15 @@ describe("iCloud response completeness", () => {
     '<d:multistatus xmlns:d="urn:wrong"/>',
     '<!DOCTYPE d:multistatus [<!ENTITY data "fixture">]><d:multistatus xmlns:d="DAV:"/>',
   ])("rejects malformed or unsafe multistatus: %s", async (body) => {
-    mockIcloudReport(body);
-    if (!body.includes("<!DOCTYPE")) mockIcloudReport(body);
+    mockReport(body);
+    if (!body.includes("<!DOCTYPE")) mockReport(body);
     await expect(
       icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
     ).rejects.toMatchObject({ code: "icloud_incomplete" });
   });
 
   it("accepts an empty valid multistatus as a successful no-conflict result", async () => {
-    mockIcloudReport(multistatus());
+    mockReport(multistatus());
     await expect(
       icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
     ).resolves.toEqual([]);
@@ -131,7 +131,7 @@ describe("iCloud response completeness", () => {
       "END:VEVENT",
       "END:VCALENDAR",
     ].join("\r\n");
-    mockIcloudReport(
+    mockReport(
       multistatus(
         response(
           "/fixture/calendars/family/extensionless-event",
@@ -147,7 +147,7 @@ describe("iCloud response completeness", () => {
   });
 
   it("rejects a nested permission error even when HTTP status is 207", async () => {
-    mockIcloudReport(
+    mockReport(
       multistatus(
         "<d:response><d:href>/fixture/calendars/family/event</d:href><d:status>HTTP/1.1 403 Forbidden</d:status></d:response>",
       ),

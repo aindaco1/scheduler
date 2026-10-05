@@ -1,4 +1,9 @@
-import { createDAVClient, type DAVCalendar } from "tsdav";
+import {
+  createDAVClient,
+  fetchCalendarObjects,
+  getBasicAuthHeaders,
+  type DAVCalendar,
+} from "tsdav";
 import { fetchProvider } from "../provider-fetch";
 import { readBoundedText } from "@dustwave/worker-core/request-validation";
 import { AppError, type CalendarChoice, type IcloudConnection } from "../model";
@@ -160,9 +165,14 @@ const appleFetch: typeof fetch = async (input, init) => {
       );
     if (/HTTP\/1\.[01] 5\d\d/.test(body))
       throw new IcloudReadError("icloud_incomplete", true, "multistatus_error");
+    // After strict XML validation, ensure tsdav parses the snapshot. Otherwise
+    // a missing/mistyped Content-Type silently turns valid busy events into [].
+    const headers = new Headers(response.headers);
+    if (response.status === 207)
+      headers.set("Content-Type", "application/xml; charset=utf-8");
     return new Response(body, {
       status: response.status,
-      headers: response.headers,
+      headers,
     });
   }
   throw new IcloudReadError("icloud_unavailable", false, "redirect_limit");
@@ -176,7 +186,8 @@ async function client(connection: IcloudConnection) {
     fetch: appleFetch,
   });
 }
-// Discovery metadata is reusable; every busy() call still sends a new REPORT.
+// Discovery is only needed for the owner's calendar picker. Conflict checks
+// query the saved, validated collection URLs directly with a fresh REPORT.
 export class IcloudSession {
   private discovery = new FreshCache<{
     dav: Awaited<ReturnType<typeof client>>;
@@ -225,7 +236,7 @@ export class IcloudSession {
           }),
         );
         if (!retry) throw failure;
-        // Retry the entire read with new discovery; never reuse partial events.
+        // Retry the entire read; never reuse partial events.
         // Slow attempts, rejected credentials and throttling need owner/provider recovery.
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
@@ -262,16 +273,14 @@ export class IcloudSession {
   }
   async busy(ids: string[], from: number, to: number, zone: string) {
     return this.read("busy", async () => {
-      const { dav, calendars } = await this.snapshot();
       // Let every selected calendar settle before discarding a failed attempt.
       const data = await Promise.allSettled(
         ids.map(async (id) => {
           safeUrl(id);
-          const calendar = calendars.find((c) => c.url === id);
-          if (!calendar)
-            throw new AppError("icloud_calendar_missing", 503, true);
-          const objects = await dav.fetchCalendarObjects({
-            calendar,
+          const objects = await fetchCalendarObjects({
+            calendar: { url: id },
+            headers: getBasicAuthHeaders(this.connection),
+            fetch: appleFetch,
             timeRange: {
               start: new Date(from).toISOString(),
               end: new Date(to).toISOString(),

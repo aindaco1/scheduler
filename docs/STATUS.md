@@ -10,6 +10,27 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
+### Version 1.0.6 — October 5: direct iCloud conflict reads
+
+The owner reported continued booking failures after 1.0.5. Logs now confirm
+`icloud_unavailable` / upstream HTTP 503 on the booking path. A private,
+read-only reproduction found iCloud account-wide calendar discovery returning
+503 with `Retry-After: 3600`, while a direct authenticated REPORT against the
+saved calendar succeeded for the exact confirmation window. Conflict checks
+now use the saved calendar URLs directly; every selected calendar must still
+return a complete fresh result.
+
+- Local: `npm run check` passed every deterministic stage, including 251 Worker
+  tests in 19 files, build/type checks, browser/accessibility flows and dry
+  deployment. Live Jev remains incomplete under the local Wrangler login;
+  trusted-main CI must run that required gate before deployment.
+- CI / deployment: pending. Production still serves 1.0.5.
+- Provider: the candidate direct reader passed twice against the live selected
+  calendar for the reported confirmation window. No booking or invitation was
+  created. Production coordinator and recipient verification remain separate.
+
+See [follow-up evidence](release-evidence/icloud-direct-reads-2026-10-05.md).
+
 ### Version 1.0.5 — October 5: iCloud read recovery
 
 The October 5 investigation reproduced `icloud_incomplete` during public
