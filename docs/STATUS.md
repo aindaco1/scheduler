@@ -22,10 +22,22 @@ recipient; existing confirmed bookings are not backfilled.
   tests in 19 files, type/build checks, browser/accessibility flows, English and
   Spanish admin emails at 320/768 pixels, and dry deployment. Local live Jev
   remains incomplete because the Wrangler login lacks Workers AI permission.
-- CI: pending trusted-main full check and dependency audits.
-- Deployment: pending; production still serves 1.0.6.
-- Provider/recipient: new admin email delivery and inbox receipt are unverified.
+- CI: source `031d110ed4f3a2e8ab43faaa2d66d34015012bac` passed
+  [trusted-main checks, attempt 2](https://github.com/aindaco1/scheduler/actions/runs/37365991450/attempts/2),
+  including dependency audits and live Jev with zero blocking findings. The
+  first attempt could not acquire a GitHub-hosted runner and ran no tests.
+- Deployment: Worker `9c23862c-090c-4f3d-9bbe-be61bf3b7b6b` serves 100%
+  traffic from 21:59:33 UTC. Eleven route/private-boundary checks, nine asset
+  hashes and ten availability reads passed. Public settings, credential binding
+  names and the Durable Object namespace are preserved. No warning/error was
+  observed during the deployment verification window.
+- Provider/recipient: live calendar availability passed; new admin email
+  delivery and inbox receipt are unverified.
   No live test booking, invitation or notification was sent.
+- Cleanup: generated build/cache/test output was removed; old diagnostics and
+  three stale documentation copies were moved to a private recoverable archive.
+  Dependencies, secrets, local database state and the local preview helper are
+  retained. Only `main` remains locally/remotely; no stale branches existed.
 
 See [notification evidence](release-evidence/admin-booking-notifications-2026-10-05.md).
 
