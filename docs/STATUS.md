@@ -23,9 +23,13 @@ unconfirmed. Subsequent reads succeeded without credential replacement.
   rescheduling, concurrent reservation and private diagnostic regressions.
   Full deterministic browser/build/packaging results and the live semantic
   gate are recorded in the [incident evidence](release-evidence/icloud-recovery-2026-10-05.md).
-- CI: pending for the final release source. Local live Jev remains incomplete;
-  the current Wrangler OAuth login lacks `ai:write`.
-- Deployment: pending; production remains on the October 2 version below.
+- CI: the first recovery source passed [trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37354353116),
+  including live Jev. Local live Jev remains incomplete because the current
+  Wrangler OAuth login lacks `ai:write`.
+- Deployment: the first recovery source deployed at 18:17 UTC as
+  `bedd71a5-3ba3-4859-987c-bb8b6d3753d5`. Routes/assets and all six in-person
+  reads passed, but two video availability reads still failed. Provider recovery
+  remains under investigation; a follow-up adds safe reason/status diagnostics.
 - Provider/recipient: pre-change read-only availability recovered across all
   three in-person locations. No booking, invitation, credential replacement or
   settings change was made during this investigation.

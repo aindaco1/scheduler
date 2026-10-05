@@ -7,9 +7,33 @@ import { xml2js, type Element } from "xml-js";
 import sax from "sax";
 import { FreshCache } from "../fresh-cache";
 
+type IcloudFailureReason =
+  | "unsafe_xml"
+  | "invalid_xml"
+  | "invalid_root"
+  | "invalid_namespace"
+  | "http_error"
+  | "unexpected_status"
+  | "multistatus_error"
+  | "redirect_limit"
+  | "calendar_limit"
+  | "event_limit"
+  | "event_data_missing"
+  | "library_error";
+class IcloudReadError extends AppError {
+  constructor(
+    code: string,
+    retryable: boolean,
+    public reason: IcloudFailureReason,
+    public upstreamStatus?: number,
+  ) {
+    super(code, 503, retryable);
+  }
+}
+
 export function validateMultistatus(body: string) {
   if (/<!DOCTYPE|<!ENTITY/i.test(body))
-    throw new AppError("icloud_incomplete", 503);
+    throw new IcloudReadError("icloud_incomplete", false, "unsafe_xml");
   let document: Element;
   try {
     // xml-js swallows SAX errors; validate completeness before letting tsdav parse it.
@@ -20,15 +44,15 @@ export function validateMultistatus(body: string) {
     parser.write(body).close();
     document = xml2js(body, { compact: false }) as Element;
   } catch {
-    throw new AppError("icloud_incomplete", 503, true);
+    throw new IcloudReadError("icloud_incomplete", true, "invalid_xml");
   }
   const roots = document.elements?.filter((e) => e.type === "element") || [];
   if (roots.length !== 1 || roots[0].name?.split(":").pop() !== "multistatus")
-    throw new AppError("icloud_incomplete", 503, true);
+    throw new IcloudReadError("icloud_incomplete", true, "invalid_root");
   const root = roots[0],
     prefix = root.name!.includes(":") ? root.name!.split(":")[0] : "";
   if (root.attributes?.[prefix ? "xmlns:" + prefix : "xmlns"] !== "DAV:")
-    throw new AppError("icloud_incomplete", 503, true);
+    throw new IcloudReadError("icloud_incomplete", true, "invalid_namespace");
 }
 
 function safeUrl(value: string) {
@@ -74,8 +98,19 @@ const appleFetch: typeof fetch = async (input, init) => {
       continue;
     }
     if ([401, 403].includes(response.status))
-      throw new AppError("icloud_reconnect_required", 503);
-    if (response.status === 429) throw new AppError("icloud_rate_limited", 503);
+      throw new IcloudReadError(
+        "icloud_reconnect_required",
+        false,
+        "http_error",
+        response.status,
+      );
+    if (response.status === 429)
+      throw new IcloudReadError(
+        "icloud_rate_limited",
+        false,
+        "http_error",
+        response.status,
+      );
     if (!response.ok) {
       // Do not retry earlier than a provider's Retry-After instruction.
       const after = response.headers.get("retry-after");
@@ -85,16 +120,22 @@ const appleFetch: typeof fetch = async (input, init) => {
           : /^\d+$/.test(after)
             ? Number(after) * 1000
             : Date.parse(after) - Date.now();
-      throw new AppError(
+      throw new IcloudReadError(
         "icloud_unavailable",
-        503,
         (response.status === 408 || response.status >= 500) && delay <= 500,
+        "http_error",
+        response.status,
       );
     }
     // Empty 200/204 responses are not successful calendar snapshots, even when
     // tsdav would normalize them to an empty event list.
     if (requiresMultistatus && response.status !== 207)
-      throw new AppError("icloud_incomplete", 503, true);
+      throw new IcloudReadError(
+        "icloud_incomplete",
+        true,
+        "unexpected_status",
+        response.status,
+      );
     const body = await readBoundedText(
       new Request("https://bounded.internal/", {
         method: "POST",
@@ -106,17 +147,25 @@ const appleFetch: typeof fetch = async (input, init) => {
     // A 207 envelope can contain failed resources. Never treat an incomplete multistatus as free time.
     // Optional discovery properties commonly return 404; tsdav checks resource-level errors.
     if (/HTTP\/1\.[01] (?:401|403)/.test(body))
-      throw new AppError("icloud_reconnect_required", 503);
+      throw new IcloudReadError(
+        "icloud_reconnect_required",
+        false,
+        "multistatus_error",
+      );
     if (/HTTP\/1\.[01] 429/.test(body))
-      throw new AppError("icloud_rate_limited", 503);
+      throw new IcloudReadError(
+        "icloud_rate_limited",
+        false,
+        "multistatus_error",
+      );
     if (/HTTP\/1\.[01] 5\d\d/.test(body))
-      throw new AppError("icloud_incomplete", 503, true);
+      throw new IcloudReadError("icloud_incomplete", true, "multistatus_error");
     return new Response(body, {
       status: response.status,
       headers: response.headers,
     });
   }
-  throw new AppError("icloud_unavailable", 503);
+  throw new IcloudReadError("icloud_unavailable", false, "redirect_limit");
 };
 async function client(connection: IcloudConnection) {
   return createDAVClient({
@@ -153,12 +202,12 @@ export class IcloudSession {
         const failure =
           error instanceof AppError
             ? error
-            : new AppError(
+            : new IcloudReadError(
                 operation === "discovery"
                   ? "icloud_unavailable"
                   : "icloud_incomplete",
-                503,
                 true,
+                "library_error",
               );
         const retry =
           attempt === 0 && failure.retryable && Date.now() - started < 10_000;
@@ -167,6 +216,12 @@ export class IcloudSession {
             event: retry ? "icloud_read_retry" : "icloud_read_failed",
             operation,
             code: failure.code,
+            ...(failure instanceof IcloudReadError
+              ? {
+                  reason: failure.reason,
+                  upstreamStatus: failure.upstreamStatus,
+                }
+              : {}),
           }),
         );
         if (!retry) throw failure;
@@ -182,13 +237,17 @@ export class IcloudSession {
         const dav = await client(this.connection);
         const calendars = await dav.fetchCalendars();
         if (calendars.length > 100)
-          throw new AppError("icloud_incomplete", 503);
+          throw new IcloudReadError(
+            "icloud_incomplete",
+            false,
+            "calendar_limit",
+          );
         calendars.forEach((c) => safeUrl(c.url));
         return { dav, calendars };
       })
       .catch((error) => {
         if (error instanceof AppError) throw error;
-        throw new AppError("icloud_unavailable", 503, true);
+        throw new IcloudReadError("icloud_unavailable", true, "library_error");
       });
   }
   async calendars(): Promise<CalendarChoice[]> {
@@ -221,10 +280,18 @@ export class IcloudSession {
             urlFilter: () => true,
           });
           if (objects.length > 5000)
-            throw new AppError("icloud_incomplete", 503);
+            throw new IcloudReadError(
+              "icloud_incomplete",
+              false,
+              "event_limit",
+            );
           return objects.flatMap((o) => {
             if (typeof o.data !== "string")
-              throw new AppError("icloud_incomplete", 503, true);
+              throw new IcloudReadError(
+                "icloud_incomplete",
+                true,
+                "event_data_missing",
+              );
             return icalBusy(o.data, from, to, zone);
           });
         }),

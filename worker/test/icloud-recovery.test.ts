@@ -73,6 +73,7 @@ it("recovers a transport failure without exposing its message", async () => {
       event: "icloud_read_retry",
       operation: "busy",
       code: "icloud_incomplete",
+      reason: "library_error",
     }),
   );
 });

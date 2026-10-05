@@ -58,7 +58,22 @@ guest data, calendar data, request IDs, private URLs or provider response bodies
 
 ## CI, deployment and live verification
 
-Pending final-source CI and deployment. No live booking or invitation test is
-authorized by this maintenance check; actual recipient acceptance remains a
-separate outcome. Existing credentials, owner state and selected calendars are
-to be retained. Credential-compatible rollback: the initial Worker above.
+Source `36a01633e44bcc143c5eefa10faab242f85f6bca` passed
+[trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37354353116),
+including all 243 Worker tests, browser checks and live Jev: 40 correct controls,
+33 rendered passes, the existing exact-copy approved review and zero blocking
+findings. It deployed as `bedd71a5-3ba3-4859-987c-bb8b6d3753d5` at
+18:17:26 UTC with 100% traffic. Secret binding names and the Durable Object
+namespace were unchanged; public settings matched their pre-deployment hash.
+
+Initial deployed verification: all eleven route/security checks and nine asset
+hashes passed. Eight of ten availability reads passed, including all six
+in-person reads across two date windows. The first two video availability reads
+returned `icloud_unavailable` and `icloud_incomplete`; the latter exhausted its
+retry. This is not complete provider acceptance. A diagnostic follow-up adds
+only fixed reason labels and numeric upstream status, never response contents,
+to identify the remaining failure before calling the connection repaired.
+
+No live booking or invitation test was sent; actual recipient acceptance remains
+a separate outcome. Existing credentials, owner state and selected calendars
+are retained. Credential-compatible rollback: the initial Worker above.
