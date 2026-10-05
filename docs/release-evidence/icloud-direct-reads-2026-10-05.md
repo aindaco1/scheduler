@@ -78,3 +78,20 @@ direct REPORT fixtures.
   No production diagnostic endpoint or credentials were committed.
 - Rollback: `c463e769-62c6-4523-b5be-8d7dd4f52b07` retains compatible
   credentials/storage but restores the unnecessary discovery dependency.
+
+## Subsequent real-booking verification
+
+On October 5, the owner reported a successful guest booking but could not find
+its email or calendar entry. A read-only investigation verified a matching
+confirmed Scheduler record and confirmed event on the owner's primary Google
+calendar. The event's date/time and location matched the stored booking, and
+Resend reported the guest confirmation as delivered. The record had no error.
+The guest chose a different date from the earlier incident's diagnostic slot.
+
+This verifies actual provider creation after 1.0.6 and recipient-server
+acceptance, without claiming inbox placement, guest RSVP or local calendar-client
+sync. Source inspection confirms branded booking mail addresses the guest;
+there is no separate owner confirmation email in the current flow. No messages,
+new bookings, cancellations or provider writes were issued by this investigation.
+Guest identities, booking identifiers and event details are excluded from this
+public evidence. The temporary private diagnostic preview was stopped.

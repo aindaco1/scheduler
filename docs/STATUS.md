@@ -39,6 +39,15 @@ return a complete fresh result.
 - Recipient: no live booking/invitation was created, and inbox receipt remains
   unverified. These are live conflict/policy checks, not a completed submission.
 
+Subsequent owner-reported booking verification on October 5: a real submission
+after deployment reached `confirmed`, its matching event exists on the owner's
+primary Google calendar, and Resend reports the guest confirmation `delivered`.
+This confirms the real creation/delivery path at the provider level. Guest inbox
+placement and the owner's calendar-client sync were not inspected. The current
+email flow sends branded confirmations to the guest only; it does not send a
+separate owner notification. No booking or email was created during this
+read-only investigation.
+
 See [follow-up evidence](release-evidence/icloud-direct-reads-2026-10-05.md).
 
 ### Version 1.0.5 — October 5: iCloud read recovery
