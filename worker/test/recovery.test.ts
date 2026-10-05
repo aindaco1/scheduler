@@ -223,6 +223,9 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     expect((await jobs(stub)).some((job) => job.mailKind === "confirmed")).toBe(
       false,
     );
+    expect(
+      (await jobs(stub)).some((job) => job.mailKind === "admin_confirmed"),
+    ).toBe(false);
     await retainAndRunNow(stub, "booking");
     google.intercept({ path: patchPath, method: "PATCH" }).reply(({ body }) => {
       remote = { ...remote, ...JSON.parse(body) };
@@ -236,6 +239,9 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     expect(remote.description).toContain(joinUrl);
     expect(
       (await jobs(stub)).filter((job) => job.mailKind === "confirmed"),
+    ).toHaveLength(1);
+    expect(
+      (await jobs(stub)).filter((job) => job.mailKind === "admin_confirmed"),
     ).toHaveLength(1);
     expect(
       (await jobs(stub)).filter((job) => job.kind === "booking"),
@@ -711,52 +717,63 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     );
   });
 
-  it("retries the same Resend message body after delivery fails and the owner edits settings", async () => {
-    const { stub, created } = await confirmAndQueueMail();
-    await retainAndRunNow(stub, "confirmed");
-    const bodies: string[] = [];
-    fetchMock
-      .get("https://api.resend.com")
-      .intercept({ path: "/emails", method: "POST" })
-      .reply(({ body }) => {
-        bodies.push(body);
-        return {
-          statusCode: 500,
-          data: { message: "Fixture temporary failure" },
-        };
+  it.each(["confirmed", "admin_confirmed"])(
+    "retries the same %s Resend message after delivery fails and the owner edits settings",
+    async (kind) => {
+      const { stub, created } = await confirmAndQueueMail();
+      const deliveryKey = await retainAndRunNow(stub, kind);
+      const bodies: string[] = [];
+      const keys: string[] = [];
+      fetchMock
+        .get("https://api.resend.com")
+        .intercept({ path: "/emails", method: "POST" })
+        .reply(({ body, headers }) => {
+          bodies.push(body);
+          keys.push(headers["idempotency-key"]);
+          return {
+            statusCode: 500,
+            data: { message: "Fixture temporary failure" },
+          };
+        });
+      await runDurableObjectAlarm(stub);
+      const failed = (await jobs(stub))[0];
+      expect(failed.attempts).toBe(1);
+      expect(failed.payload).toBeTruthy();
+      expect(failed.firstAttemptAt).toBeGreaterThan(0);
+      expect(JSON.parse(bodies[0])).toMatchObject({
+        to: [
+          kind === "admin_confirmed" ? env.ADMIN_EMAIL : "guest@example.test",
+        ],
+        reply_to:
+          kind === "admin_confirmed" ? "guest@example.test" : env.ADMIN_EMAIL,
+        headers: { "Auto-Submitted": "auto-generated" },
       });
-    await runDurableObjectAlarm(stub);
-    const failed = (await jobs(stub))[0];
-    expect(failed.attempts).toBe(1);
-    expect(failed.payload).toBeTruthy();
-    expect(failed.firstAttemptAt).toBeGreaterThan(0);
-    expect(JSON.parse(bodies[0])).toMatchObject({
-      reply_to: env.ADMIN_EMAIL,
-      headers: { "Auto-Submitted": "auto-generated" },
-    });
 
-    const config = await stub.getSettings();
-    await stub.updateSettings(
-      { ...config.settings, name: "Changed owner name", cancelHours: 48 },
-      config.revision,
-    );
-    await retainAndRunNow(stub, "confirmed");
-    fetchMock
-      .get("https://api.resend.com")
-      .intercept({ path: "/emails", method: "POST" })
-      .reply(({ body }) => {
-        bodies.push(body);
-        return { statusCode: 200, data: { id: "fixture-message" } };
-      });
-    await runDurableObjectAlarm(stub);
-    expect(bodies).toHaveLength(2);
-    expect(bodies[1]).toBe(bodies[0]);
-    expect(bodies[1]).not.toContain("Changed owner name");
-    expect(await jobs(stub)).toEqual([]);
-    expect(
-      (await stub.getBooking(created.booking.id, created.token)).booking,
-    ).toMatchObject({ status: "confirmed", error: undefined });
-  });
+      const config = await stub.getSettings();
+      await stub.updateSettings(
+        { ...config.settings, name: "Changed owner name", cancelHours: 48 },
+        config.revision,
+      );
+      await retainAndRunNow(stub, kind);
+      fetchMock
+        .get("https://api.resend.com")
+        .intercept({ path: "/emails", method: "POST" })
+        .reply(({ body, headers }) => {
+          bodies.push(body);
+          keys.push(headers["idempotency-key"]);
+          return { statusCode: 200, data: { id: "fixture-message" } };
+        });
+      await runDurableObjectAlarm(stub);
+      expect(bodies).toHaveLength(2);
+      expect(bodies[1]).toBe(bodies[0]);
+      expect(keys).toEqual([deliveryKey, deliveryKey]);
+      expect(bodies[1]).not.toContain("Changed owner name");
+      expect(await jobs(stub)).toEqual([]);
+      expect(
+        (await stub.getBooking(created.booking.id, created.token)).booking,
+      ).toMatchObject({ status: "confirmed", error: undefined });
+    },
+  );
 
   it("holds permanent Resend rejections without repeating delivery attempts", async () => {
     const { stub, created } = await confirmAndQueueMail();
@@ -783,6 +800,117 @@ describe("Coordinator recovery after overlapping actions and partial provider re
     await runDurableObjectAlarm(stub);
     expect(sent).toHaveBeenCalledTimes(1);
     expect(sent).toHaveBeenCalledWith(expectedKey);
+  });
+
+  it("queues and sends one independent admin notification after confirmation, even when booking recovery repeats", async () => {
+    const { stub, created } = await confirmAndQueueMail([]);
+    const queued = await jobs(stub);
+    expect(queued.map((j) => j.mailKind).sort()).toEqual([
+      "admin_confirmed",
+      "confirmed",
+    ]);
+    await runInDurableObject(stub, async (instance) => {
+      await (
+        instance as unknown as { processBooking(job: unknown): Promise<void> }
+      ).processBooking({ bookingId: created.booking.id, revision: 1 });
+    });
+    expect((await jobs(stub)).map((j) => j.id).sort()).toEqual(
+      queued.map((j) => j.id).sort(),
+    );
+    const messages: Record<string, any>[] = [];
+    const keys: string[] = [];
+    fetchMock
+      .get("https://api.resend.com")
+      .intercept({ path: "/emails", method: "POST" })
+      .reply(({ body, headers }) => {
+        messages.push(JSON.parse(body));
+        keys.push(headers["idempotency-key"]);
+        return { statusCode: 200, data: { id: "fixture-message" } };
+      })
+      .persist();
+    await runDurableObjectAlarm(stub);
+    await runDurableObjectAlarm(stub);
+    expect(messages).toHaveLength(2);
+    expect(new Set(keys).size).toBe(2);
+    const admin = messages.find((m) => m.to[0] === env.ADMIN_EMAIL);
+    expect(admin).toMatchObject({
+      reply_to: "guest@example.test",
+      headers: { "Auto-Submitted": "auto-generated" },
+    });
+    expect(admin!.html).toContain("https://scheduler.example/admin/");
+    expect(admin!.text).toContain("Fixture discussion");
+    expect(JSON.stringify(admin)).not.toContain(created.token);
+    expect(await jobs(stub)).toEqual([]);
+  });
+
+  it.each([
+    ["confirmed", 503],
+    ["admin_confirmed", 503],
+    ["confirmed", 422],
+    ["admin_confirmed", 422],
+  ] as const)(
+    "keeps a %s delivery failure (%s) visible when the other recipient succeeds",
+    async (kind, status) => {
+      const { stub, created } = await confirmAndQueueMail([]);
+      fetchMock
+        .get("https://api.resend.com")
+        .intercept({ path: "/emails", method: "POST" })
+        .reply(({ body }) => ({
+          statusCode:
+            (JSON.parse(body).to[0] === env.ADMIN_EMAIL) ===
+            (kind === "admin_confirmed")
+              ? status
+              : 200,
+          data: { id: "fixture-message" },
+        }))
+        .persist();
+      await runDurableObjectAlarm(stub);
+      const pending = await jobs(stub);
+      expect(pending).toHaveLength(1);
+      expect(pending[0]).toMatchObject({
+        mailKind: kind,
+        terminal: status === 422,
+      });
+      expect(await storedBooking(stub, created.booking.id)).toMatchObject({
+        status: "confirmed",
+        error:
+          status === 422 ? "email_needs_attention" : "email_delivery_pending",
+      });
+    },
+  );
+
+  it("preserves a held guest delivery error through a failed then successful admin notification", async () => {
+    const { stub, created } = await confirmAndQueueMail([]);
+    let adminAttempts = 0;
+    fetchMock
+      .get("https://api.resend.com")
+      .intercept({ path: "/emails", method: "POST" })
+      .reply(({ body }) => ({
+        statusCode:
+          JSON.parse(body).to[0] !== env.ADMIN_EMAIL
+            ? 422
+            : ++adminAttempts === 1
+              ? 503
+              : 200,
+        data: { id: "fixture-message" },
+      }))
+      .persist();
+    await runDurableObjectAlarm(stub);
+    expect((await storedBooking(stub, created.booking.id)).error).toBe(
+      "email_needs_attention",
+    );
+    await runInDurableObject(stub, async (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE jobs SET due=0,lease=0 WHERE json_extract(data,'$.mailKind')='admin_confirmed'",
+      );
+      await state.storage.setAlarm(Date.now() + 500);
+    });
+    await runDurableObjectAlarm(stub);
+    expect(adminAttempts).toBe(2);
+    expect((await jobs(stub)).map((j) => j.mailKind)).toEqual(["confirmed"]);
+    expect((await storedBooking(stub, created.booking.id)).error).toBe(
+      "email_needs_attention",
+    );
   });
 
   it("honors Resend Retry-After before another attempt", async () => {

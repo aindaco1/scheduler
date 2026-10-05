@@ -19,7 +19,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 | Connect your own Zoom account or replace its OAuth app | [Zoom app setup and branding](FORKING.md#zoom-for-your-own-scheduler), [reconnection procedure](OPERATIONS.md#zoom-reconnection-and-app-replacement) |
 | Set hours, gaps, blackouts, reminders and branding | [Product decisions](decisions/phase-1.md), [operating guidance](OPERATIONS.md) |
 | Investigate provider failures and interrupted bookings | [Booking recovery](OPERATIONS.md#booking-consistency-and-recovery), [availability failures](OPERATIONS.md#intermittent-availability-failures) |
-| Review mail delivery and guest receipt | [Email operations](OPERATIONS.md#email-delivery-and-held-failures), [delivery audit](research/email-deliverability-audit.md) |
+| Review admin notifications, mail delivery and recipient receipt | [Email operations](OPERATIONS.md#email-delivery-and-held-failures), [delivery audit](research/email-deliverability-audit.md) |
 | Release or clean the local checkout | [Cleanup and releases](OPERATIONS.md#local-cleanup-and-releases) |
 
 ## Develop and verify

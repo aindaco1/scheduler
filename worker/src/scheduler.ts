@@ -40,7 +40,13 @@ import {
 import { GoogleCalendar, googleToken } from "./providers/google";
 import { IcloudSession, icloudCalendars } from "./providers/icloud";
 import { refreshZoom, ZoomMeetings } from "./providers/zoom";
-import { bookingEmail, loginEmail, sendEmail, type Email } from "./email";
+import {
+  adminBookingEmail,
+  bookingEmail,
+  loginEmail,
+  sendEmail,
+  type Email,
+} from "./email";
 import type { RuntimeEnv } from "./env";
 import { validateLogo } from "./logo";
 import { FreshCache, BUSY_CACHE_TTL_MS, busyWindow } from "./fresh-cache";
@@ -50,7 +56,8 @@ interface Job {
   kind: "booking" | "email";
   bookingId?: string;
   revision?: number;
-  mailKind?: "confirmed" | "cancelled" | "rescheduled" | "reminder";
+  mailKind?:
+    "confirmed" | "admin_confirmed" | "cancelled" | "rescheduled" | "reminder";
   payload?: string;
   attempts: number;
   due: number;
@@ -1254,6 +1261,7 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
       this.ctx.storage.transactionSync(() => {
         this.save(b);
         this.queueMail(b, "confirmed");
+        this.queueMail(b, "admin_confirmed");
         this.queueReminder(b);
       });
     } else if (b.status === "rescheduling") {
@@ -1332,13 +1340,23 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         return;
       if (!job.payload)
         job.payload = await seal(
-          bookingEmail(
-            b,
-            this.getSettings().settings,
-            this.env.PUBLIC_ORIGIN,
-            await unseal<string>(b.managementToken!, this.env.ENCRYPTION_KEY),
-            job.mailKind!,
-          ),
+          job.mailKind === "admin_confirmed"
+            ? adminBookingEmail(
+                b,
+                this.getSettings().settings,
+                this.env.PUBLIC_ORIGIN,
+                this.env.ADMIN_EMAIL,
+              )
+            : bookingEmail(
+                b,
+                this.getSettings().settings,
+                this.env.PUBLIC_ORIGIN,
+                await unseal<string>(
+                  b.managementToken!,
+                  this.env.ENCRYPTION_KEY,
+                ),
+                job.mailKind!,
+              ),
           this.env.ENCRYPTION_KEY,
         );
     }
@@ -1374,10 +1392,20 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
     if (job.bookingId) {
       const b = this.booking(job.bookingId);
       if (b.revision === job.revision && b.error?.startsWith("email_")) {
-        b.error = undefined;
+        b.error = this.outstandingEmailError(b, job.id);
         this.save(b);
       }
     }
+  }
+  private outstandingEmailError(b: Booking, completedId = "") {
+    return this.ctx.storage.sql
+      .exec<{ error: string }>(
+        "SELECT json_extract(data,'$.error') AS error FROM jobs WHERE id!=? AND json_extract(data,'$.kind')='email' AND json_extract(data,'$.bookingId')=? AND json_extract(data,'$.revision')=? AND json_extract(data,'$.error') IS NOT NULL ORDER BY coalesce(json_extract(data,'$.terminal'),0) DESC LIMIT 1",
+        completedId,
+        b.id,
+        b.revision,
+      )
+      .toArray()[0]?.error;
   }
   async alarm() {
     const now = Date.now();
@@ -1432,7 +1460,10 @@ export class Scheduler extends DurableObject<RuntimeEnv> {
         if (job.bookingId) {
           const b = this.booking(job.bookingId);
           if (b.revision === job.revision) {
-            b.error = job.error;
+            b.error =
+              job.kind === "email"
+                ? this.outstandingEmailError(b) || job.error
+                : job.error;
             this.save(b);
           }
         }

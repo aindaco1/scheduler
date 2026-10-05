@@ -50,7 +50,7 @@ Sign in with `npx wrangler login`. For a new Worker, save the secrets below in a
 | --- | --- |
 | `SESSION_SECRET` | A unique, random value of at least 32 characters for sessions/rate-limit hashes |
 | `ENCRYPTION_KEY` | A different random value of at least 32 characters for stored credentials and queued email |
-| `ADMIN_EMAIL` | Your sole dashboard sign-in address |
+| `ADMIN_EMAIL` | Your sole dashboard sign-in address and recipient for new confirmed booking notifications |
 | `RESEND_API_KEY` | Sending-only key scoped to your verified sending domain |
 | `EMAIL_FROM` | Sender such as `Scheduler <bookings@example.com>` |
 | `EMAIL_REPLY_TO` | Optional monitored reply address; defaults to `ADMIN_EMAIL` |

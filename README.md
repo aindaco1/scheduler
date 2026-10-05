@@ -2,7 +2,7 @@
 
 An open-source, self-hosted meeting scheduler for one person. Guests choose a meeting type, a place or video call, and an available time. Confirmed meetings are added to your main Google calendar automatically.
 
-**Version 1.0.6 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
+**Version 1.0.7 · [MIT license](LICENSE) · [Release notes](CHANGELOG.md)**
 
 [See the booking page](https://scheduler.dustwave.xyz/alonso).
 
@@ -12,7 +12,7 @@ An open-source, self-hosted meeting scheduler for one person. Guests choose a me
 - Supports Google Meet, Zoom and in-person locations with their own opening hours and optional arrival instructions.
 - Gives you weekly availability, recurring and temporary blackouts, inclusive date ranges, in-person-only travel blocks and optional U.S. federal holiday blackouts.
 - Lets you set booking notice, how far ahead guests can book, default video/in-person gaps, per-type gap overrides, daily limits and change deadlines.
-- Sends calendar invitations through Google and confirmations, changes and up to three reminders through Resend. Guests can cancel or reschedule; owners can include a message with a change.
+- Sends calendar invitations through Google and confirmations, changes and up to three reminders through Resend. New confirmed bookings also notify the admin by email. Guests can cancel or reschedule; owners can include a message with a change.
 - Includes a private dashboard, logo upload, optional brand name, optional Spanish, system light/dark themes, and mobile/tablet layouts. Turnstile protects booking without an email-verification step.
 - Share individual meeting types from the dashboard with Copy link. Public pages include meeting-specific social previews and structured data in their initial HTML.
 

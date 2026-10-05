@@ -15,6 +15,62 @@ export interface Email {
   text: string;
   html: string;
 }
+function emailLayout(
+  locale: string,
+  name: string,
+  title: string,
+  body: string,
+) {
+  return `<!doctype html><html lang="${locale}"><body style="margin:0;background:#f5f5f2;color:#252930;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;padding:32px;background:white;border:1px solid #d2d7df;border-radius:12px;overflow-wrap:anywhere"><p>${escape(name)}</p><h1 style="font-size:26px">${escape(title)}</h1>${body}</main></body></html>`;
+}
+
+export function adminBookingEmail(
+  booking: Booking,
+  settings: Settings,
+  origin: string,
+  adminEmail: string,
+): Email {
+  const es = booking.locale === "es";
+  const title = es ? "Nueva reserva confirmada" : "New booking confirmed";
+  const guest = es ? "Invitado" : "Guest";
+  const emailLabel = es ? "Correo electrónico" : "Email";
+  const noteLabel = es ? "Mensaje del invitado" : "Guest note";
+  const dashboardLabel = es ? "Abrir panel" : "Open dashboard";
+  const dashboard = origin + (es ? "/es" : "") + "/admin/";
+  const date = new Intl.DateTimeFormat(es ? "es" : "en", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: settings.timezone,
+  }).format(booking.start);
+  const duration = (booking.end - booking.start) / 60_000;
+  const where = booking.joinUrl || booking.location;
+  const note = booking.topic.trim();
+  return {
+    to: adminEmail,
+    reply_to: booking.email,
+    subject: title + " · " + settings.name,
+    text: [
+      title,
+      `${guest}: ${booking.name}`,
+      `${emailLabel}: ${booking.email}`,
+      booking.typeName,
+      `${date} (${settings.timezone})`,
+      `${duration} min`,
+      where,
+      note ? `${noteLabel}:\n${note}` : "",
+      `${dashboardLabel}: ${dashboard}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+    html: emailLayout(
+      booking.locale,
+      settings.name,
+      title,
+      `<p>${guest}: ${escape(booking.name)}<br>${emailLabel}: ${escape(booking.email)}</p><h2 style="font-size:19px">${escape(booking.typeName)}</h2><p>${escape(date)}<br>${escape(settings.timezone)}</p><p>${duration} min</p><p>${escape(where)}</p>${note ? `<h2 style="font-size:19px">${noteLabel}</h2><p style="overflow-wrap:anywhere">${escape(note).replace(/\r\n?|\n/g, "<br>")}</p>` : ""}<p><a href="${escape(dashboard)}" style="display:inline-block;background:#101215;color:white;padding:14px 20px;border-radius:8px">${dashboardLabel}</a></p>`,
+    ),
+  };
+}
+
 export function bookingEmail(
   booking: Booking,
   settings: Settings,
@@ -88,7 +144,12 @@ export function bookingEmail(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const html = `<!doctype html><html lang="${booking.locale}"><body style="margin:0;background:#f5f5f2;color:#252930;font-family:Arial,sans-serif"><main style="max-width:560px;margin:32px auto;padding:32px;background:white;border:1px solid #d2d7df;border-radius:12px"><p>${escape(settings.name)}</p><h1 style="font-size:26px">${escape(titles[kind])}</h1><p>${escape(context)}</p>${messageHtml}<h2 style="font-size:19px">${escape(booking.typeName)}</h2><p>${escape(date)}<br>${escape(booking.timezone)}</p><p>${(booking.end - booking.start) / 60_000} min</p><p>${escape(where)}</p>${instructionsHtml}${kind === "cancelled" ? "" : `<p><a href="${escape(manage)}" style="display:inline-block;background:#101215;color:white;padding:14px 20px;border-radius:8px">${es ? "Gestionar reunión" : "Manage booking"}</a></p>`}<p>${escape(policy)}</p></main></body></html>`;
+  const html = emailLayout(
+    booking.locale,
+    settings.name,
+    titles[kind],
+    `<p>${escape(context)}</p>${messageHtml}<h2 style="font-size:19px">${escape(booking.typeName)}</h2><p>${escape(date)}<br>${escape(booking.timezone)}</p><p>${(booking.end - booking.start) / 60_000} min</p><p>${escape(where)}</p>${instructionsHtml}${kind === "cancelled" ? "" : `<p><a href="${escape(manage)}" style="display:inline-block;background:#101215;color:white;padding:14px 20px;border-radius:8px">${es ? "Gestionar reunión" : "Manage booking"}</a></p>`}<p>${escape(policy)}</p>`,
+  );
   return {
     to: booking.email,
     subject: titles[kind] + " · " + settings.name,

@@ -10,6 +10,25 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
+### Version 1.0.7 — October 5: admin booking notifications
+
+New confirmed bookings queue an admin email alongside the guest confirmation.
+The admin receives guest/contact details, the meeting time in the owner's time
+zone, destination, optional guest note and a dashboard link. Replies address
+the guest. Independent delivery IDs and retries preserve failures for either
+recipient; existing confirmed bookings are not backfilled.
+
+- Local: `npm run check` passed every deterministic stage, including 264 Worker
+  tests in 19 files, type/build checks, browser/accessibility flows, English and
+  Spanish admin emails at 320/768 pixels, and dry deployment. Local live Jev
+  remains incomplete because the Wrangler login lacks Workers AI permission.
+- CI: pending trusted-main full check and dependency audits.
+- Deployment: pending; production still serves 1.0.6.
+- Provider/recipient: new admin email delivery and inbox receipt are unverified.
+  No live test booking, invitation or notification was sent.
+
+See [notification evidence](release-evidence/admin-booking-notifications-2026-10-05.md).
+
 ### Version 1.0.6 — October 5: direct iCloud conflict reads
 
 The owner reported continued booking failures after 1.0.5. Logs now confirm

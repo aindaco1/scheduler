@@ -13,6 +13,7 @@ import { checkSettingsEnhancements } from "./settings.mjs";
 import { checkResponsiveAdmin } from "./responsive-admin.mjs";
 import { checkResponsivePublic } from "./responsive-public.mjs";
 import { captureJevCases } from "./jev.mjs";
+import { checkAdminEmail } from "./admin-email.mjs";
 const root = resolve(".");
 const deployment = JSON.parse(await readFile("_data/deployment.json", "utf8"));
 const bookingPath = "/" + deployment.slug;
@@ -1063,6 +1064,7 @@ try {
   await checkSharing(browser, base, apiFixture, settings, bookingPath);
   await checkResponsiveAdmin(browser, base, apiFixture, settings);
   await checkResponsivePublic(browser, base, apiFixture, settings, bookingPath);
+  await checkAdminEmail(browser, settings);
   assert.deepEqual(errors, []);
   const cases = await captureJevCases(browser, base, settings, bookingPath);
   if (process.env.SCHEDULER_JEV_OUTPUT) {

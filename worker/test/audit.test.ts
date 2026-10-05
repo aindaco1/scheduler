@@ -252,82 +252,85 @@ it("does not restore a Zoom credential when refresh finishes after disconnect", 
   });
 });
 
-it("rechecks a reminder revision after decrypting its payload, before contacting Resend", async () => {
-  const stub = env.SCHEDULER.getByName(crypto.randomUUID());
-  await runInDurableObject(stub, async (instance, state) => {
-    const now = Date.now();
-    const b: Booking = {
-      id: crypto.randomUUID(),
-      requestId: crypto.randomUUID(),
-      typeId: "conversation",
-      typeName: "Fixture",
-      mode: "meet",
-      locationId: "",
-      location: "",
-      start: now + 3_600_000,
-      end: now + 5_400_000,
-      gap: 15,
-      name: "Fixture",
-      email: "guest@example.test",
-      topic: "",
-      locale: "en",
-      timezone: "UTC",
-      status: "confirmed",
-      created: now,
-      updated: now,
-      managementHash: await sha256Hex("fixture"),
-      revision: 1,
-    };
-    state.storage.sql.exec(
-      "INSERT INTO bookings VALUES(?,?,?,?,?,?)",
-      b.id,
-      b.requestId,
-      b.start,
-      b.end,
-      b.status,
-      JSON.stringify(b),
-    );
-    const job = {
-      id: "fixture-reminder",
-      kind: "email",
-      bookingId: b.id,
-      revision: 1,
-      mailKind: "reminder",
-      payload: await seal(
-        { to: b.email, subject: "Fixture", text: "Fixture", html: "Fixture" },
-        env.ENCRYPTION_KEY,
-      ),
-      firstAttemptAt: now,
-      sender: env.EMAIL_FROM,
-      attempts: 0,
-      due: now,
-      lease: 0,
-    };
-    state.storage.sql.exec(
-      "INSERT INTO jobs VALUES(?,?,?,?)",
-      job.id,
-      now,
-      0,
-      JSON.stringify(job),
-    );
-    const decrypt = crypto.subtle.decrypt.bind(crypto.subtle);
-    vi.spyOn(crypto.subtle, "decrypt").mockImplementation(async (...args) => {
-      b.status = "cancelling";
-      b.revision++;
+it.each(["reminder", "admin_confirmed"])(
+  "rechecks a %s revision after decrypting its payload, before contacting Resend",
+  async (mailKind) => {
+    const stub = env.SCHEDULER.getByName(crypto.randomUUID());
+    await runInDurableObject(stub, async (instance, state) => {
+      const now = Date.now();
+      const b: Booking = {
+        id: crypto.randomUUID(),
+        requestId: crypto.randomUUID(),
+        typeId: "conversation",
+        typeName: "Fixture",
+        mode: "meet",
+        locationId: "",
+        location: "",
+        start: now + 3_600_000,
+        end: now + 5_400_000,
+        gap: 15,
+        name: "Fixture",
+        email: "guest@example.test",
+        topic: "",
+        locale: "en",
+        timezone: "UTC",
+        status: "confirmed",
+        created: now,
+        updated: now,
+        managementHash: await sha256Hex("fixture"),
+        revision: 1,
+      };
       state.storage.sql.exec(
-        "UPDATE bookings SET status=?,data=? WHERE id=?",
+        "INSERT INTO bookings VALUES(?,?,?,?,?,?)",
+        b.id,
+        b.requestId,
+        b.start,
+        b.end,
         b.status,
         JSON.stringify(b),
-        b.id,
       );
-      return decrypt(...args);
+      const job = {
+        id: "fixture-reminder",
+        kind: "email",
+        bookingId: b.id,
+        revision: 1,
+        mailKind,
+        payload: await seal(
+          { to: b.email, subject: "Fixture", text: "Fixture", html: "Fixture" },
+          env.ENCRYPTION_KEY,
+        ),
+        firstAttemptAt: now,
+        sender: env.EMAIL_FROM,
+        attempts: 0,
+        due: now,
+        lease: 0,
+      };
+      state.storage.sql.exec(
+        "INSERT INTO jobs VALUES(?,?,?,?)",
+        job.id,
+        now,
+        0,
+        JSON.stringify(job),
+      );
+      const decrypt = crypto.subtle.decrypt.bind(crypto.subtle);
+      vi.spyOn(crypto.subtle, "decrypt").mockImplementation(async (...args) => {
+        b.status = "cancelling";
+        b.revision++;
+        state.storage.sql.exec(
+          "UPDATE bookings SET status=?,data=? WHERE id=?",
+          b.status,
+          JSON.stringify(b),
+          b.id,
+        );
+        return decrypt(...args);
+      });
+      const fetch = vi.fn(async () => Response.json({ id: "fixture-mail" }));
+      vi.stubGlobal("fetch", fetch);
+      await (
+        instance as unknown as { processEmail(job: unknown): Promise<void> }
+      ).processEmail(job);
+      expect(fetch).not.toHaveBeenCalled();
+      state.storage.sql.exec("DELETE FROM jobs");
     });
-    const fetch = vi.fn(async () => Response.json({ id: "fixture-mail" }));
-    vi.stubGlobal("fetch", fetch);
-    await (
-      instance as unknown as { processEmail(job: unknown): Promise<void> }
-    ).processEmail(job);
-    expect(fetch).not.toHaveBeenCalled();
-    state.storage.sql.exec("DELETE FROM jobs");
-  });
-});
+  },
+);

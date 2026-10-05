@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.0.7 — 2026-10-05
+
+Email the admin when a new booking is confirmed, after required calendar writes succeed.
+
+- Send the configured `ADMIN_EMAIL` the guest's name and email, meeting type, date/time in the owner's time zone, duration, location or joining URL, optional guest note and private dashboard link. Replies address the guest; the message follows the booking's English or Spanish language.
+- Queue guest and admin mail atomically with confirmation, using separate durable delivery IDs, encrypted frozen payloads and bounded retries. Recovery cannot enqueue duplicate notifications. Existing confirmed bookings are not backfilled.
+- Preserve outstanding mail failures when the other recipient's message succeeds. Add delivery, recovery, revision-race, localization and narrow-layout checks.
+
 ## 1.0.6 — 2026-10-05
 
 Fix iCloud calendar discovery failures blocking booking confirmation even when the selected calendar remains readable. Existing credentials and calendar selections are retained.
