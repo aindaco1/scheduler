@@ -55,7 +55,26 @@ direct REPORT fixtures.
   cases, and dry deployment. Live Jev exited incomplete after one request;
   the local Wrangler login lacks Workers AI write permission. No evaluation
   policy or approval was changed.
-- CI: pending.
-- Deployment: pending; current production is still 1.0.5.
-- Provider: two candidate read-only direct checks passed as above.
+- CI: source `8c460fd9bfd88826d65a99b2acd7ee0c9b174251` passed
+  [trusted-main CI](https://github.com/aindaco1/scheduler/actions/runs/37361236381)
+  on Node 24 / Ruby 3.3. All 251 Worker checks and dependency audits passed.
+  Live Jev completed with 40 correct controls, 33 rendered passes, the existing
+  approved exact-copy review and zero blocking findings.
+- Deployment: Worker `a853514c-9a80-4eeb-a1bf-1ad3d888977b`, 100% traffic
+  at 19:12:44 UTC. Public settings fingerprint, credential binding names and
+  Durable Object namespace matched the preceding deployment. All eleven
+  route/private-boundary checks and nine compiled asset hashes passed.
+- Provider: three uncached reads through the deployed coordinator checked both
+  Google and iCloud for the exact reported confirmation window. All returned
+  successfully at 19:13:06–19:13:07 UTC; elapsed times inside the diagnostic
+  preview were 742, 386 and 409 ms. Each also applied the real booking policy
+  with fresh local reservations and confirmed the requested time was permitted
+  with an unchanged settings revision. No reservation or write job was created.
+  Ten public availability reads across two windows and every active type/place
+  also returned 200. Production warning/error logs were empty from deployment
+  through the verification sweep. These checks do not reserve or hold the time.
 - Recipient: no live booking/invitation sent or inbox receipt asserted.
+- Cleanup: the private remote diagnostic preview was stopped after verification.
+  No production diagnostic endpoint or credentials were committed.
+- Rollback: `c463e769-62c6-4523-b5be-8d7dd4f52b07` retains compatible
+  credentials/storage but restores the unnecessary discovery dependency.

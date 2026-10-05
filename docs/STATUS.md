@@ -23,11 +23,21 @@ return a complete fresh result.
 - Local: `npm run check` passed every deterministic stage, including 251 Worker
   tests in 19 files, build/type checks, browser/accessibility flows and dry
   deployment. Live Jev remains incomplete under the local Wrangler login;
-  trusted-main CI must run that required gate before deployment.
-- CI / deployment: pending. Production still serves 1.0.5.
-- Provider: the candidate direct reader passed twice against the live selected
-  calendar for the reported confirmation window. No booking or invitation was
-  created. Production coordinator and recipient verification remain separate.
+  CI separately completed that required gate.
+- CI: source `8c460fd9bfd88826d65a99b2acd7ee0c9b174251` passed
+  [trusted-main checks](https://github.com/aindaco1/scheduler/actions/runs/37361236381),
+  including dependency audits and live Jev, with zero blocking findings.
+- Deployment: Worker `a853514c-9a80-4eeb-a1bf-1ad3d888977b` serves 100%
+  traffic from 19:12:44 UTC. Settings fingerprint, credential binding names and
+  Durable Object namespace are preserved. Eleven route/security checks, nine
+  asset hashes and ten availability reads passed.
+- Provider: three fresh production coordinator reads passed for the exact
+  reported confirmation window at 19:13 UTC. All three also passed the booking
+  policy check for October 6 at 13:30 Mountain, with unchanged settings revisions;
+  provider checks took 742, 386 and 409 ms. No post-deployment warning/error was
+  observed during verification.
+- Recipient: no live booking/invitation was created, and inbox receipt remains
+  unverified. These are live conflict/policy checks, not a completed submission.
 
 See [follow-up evidence](release-evidence/icloud-direct-reads-2026-10-05.md).
 
