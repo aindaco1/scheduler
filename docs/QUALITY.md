@@ -181,10 +181,23 @@ is set. CI requires the explicit token and never opens a login flow. Do not put
 tokens in command arguments, fixtures, runtime secrets or committed files.
 
 Trusted main-branch pushes, main-branch manual runs and scheduled checks run the
-full gate. Configure repository variable `JEV_CLOUDFLARE_ACCOUNT_ID` and secret
+full gate. The repository owner can also explicitly run the full gate on a
+reviewed same-repository branch before merging:
+
+```sh
+gh workflow run check.yml --ref REVIEWED_BRANCH -f live_jev=true
+```
+
+The non-main opt-in requires both the original actor and the rerunning actor to
+be the repository owner. Review the branch's workflow and executable code before
+dispatching: the selected code receives the dedicated Workers AI credential.
+An ordinary PR run, a non-main dispatch without the opt-in, or a non-owner
+dispatch remains offline. No approval or evaluation requirement is bypassed.
+
+Configure repository variable `JEV_CLOUDFLARE_ACCOUNT_ID` and secret
 `JEV_CLOUDFLARE_API_TOKEN` using a dedicated token limited to Workers AI for that
 account. Missing credentials fail the trusted check. Pull requests and non-main
-manual refs run the explicitly named offline step without Jev secrets; they do
+manual refs without the owner opt-in run the explicitly named offline step without Jev secrets; they do
 not establish semantic acceptance. Do not use `pull_request_target` to run a
 contributor's code with the token. Use a separate Workers AI token per consumer
 repository so rotation and revocation remain independent; sharing the package

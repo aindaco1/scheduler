@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      live_jev:
+        description: "Run live Jev on an owner-reviewed branch (repository owner only)"
+        type: boolean
+        default: false
   schedule:
     - cron: "17 13 * * 1"
 permissions:
@@ -15,6 +20,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # PRs never receive Jev credentials. Only the owner can opt a reviewed
+      # non-main branch into live evaluation, including when rerunning a job.
+      RUN_LIVE_JEV: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.live_jev == true && github.actor == github.repository_owner && github.triggering_actor == github.repository_owner)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,10 +41,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run audit:dependencies
       - name: Explicit offline checks (pull requests and non-main refs)
-        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        if: env.RUN_LIVE_JEV != 'true'
         run: npm run check:offline
-      - name: Complete checks including required live Jev (trusted main)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Complete checks including required live Jev (trusted main or owner-reviewed branch)
+        if: env.RUN_LIVE_JEV == 'true'
         run: npm run check
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.JEV_CLOUDFLARE_ACCOUNT_ID }}
