@@ -14,9 +14,11 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 - Local: dependency audits and every deterministic stage of `npm run check`
   passed. Live Jev is not established locally because the CI token was omitted.
-- CI: candidate validation is pending. The workflow now supports explicit
-  repository-owner live checks on reviewed branches before merging; ordinary
-  PRs remain offline. Semantic thresholds, controls and approvals are unchanged.
+- CI: PR #16 passed ordinary and owner-dispatched full live checks. PR #17
+  passed deterministic checks but live Jev again flagged the unchanged Spanish
+  rescheduling email for review. Both merges are held. The workflow supports
+  explicit repository-owner live checks on reviewed branches; ordinary PRs
+  remain offline. Semantic thresholds, controls and approvals are unchanged.
 - Investigation: the October 5 Spanish rescheduling-email finding showed
   different judge scores for identical inputs, with no demonstrated copy defect.
 - Deployment/provider/recipient: no new deployment or live booking/email test.

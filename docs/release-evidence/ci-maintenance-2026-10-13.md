@@ -50,8 +50,20 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
 
 ## Hosted verification and merges
 
-Pending candidate checks. PR #17 updates tsdav 2.3.4 to 2.3.5 and must be checked
-against the repaired base, including the iCloud/provider regression suite.
+- PR #16 `ba6860b5c26f92ecc54c51de9dbbb17988575b8d`: [ordinary PR checks](https://github.com/aindaco1/scheduler/actions/runs/38494194418)
+  and [owner-dispatched complete check](https://github.com/aindaco1/scheduler/actions/runs/38494210890)
+  passed. Live Jev completed 74 requests / 100 questions, with 16 calibration
+  and 24 validation controls correct, 33 rendered passes, the existing approved
+  English pending review, and zero blocking findings.
+- PR #17 `4fa130dc2234480b642ab27309b638feb10801f3`, including the PR #16 repair:
+  [ordinary PR checks](https://github.com/aindaco1/scheduler/actions/runs/38494437957)
+  passed. The [owner-dispatched check](https://github.com/aindaco1/scheduler/actions/runs/38494442612)
+  passed deterministic checks, then completed live Jev with all 40 controls
+  correct and one blocking review on the same Spanish rescheduling-email text.
+  Its margin was 0.03. No automatic retry or new approval was applied.
+- Both merges are held while the exact-copy owner review remains unresolved.
+  See the full candidate in the linked investigation. A passing PR check alone
+  does not establish live semantic acceptance.
 
 ## Deployment and actual providers
 

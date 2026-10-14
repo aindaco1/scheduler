@@ -50,3 +50,48 @@ The report byte hashes are:
 GitHub retains these artifacts for 14 days; the hashes and selected findings
 above remain available after expiry. New validation belongs in
 [maintenance evidence](../release-evidence/ci-maintenance-2026-10-13.md).
+
+## Fresh maintenance candidates
+
+The complete corpus hash above remained identical in both fresh runs. No
+question, candidate, threshold, model allowlist or approval was changed.
+
+| Candidate | Live run | Pass | Fail | Uncertain | Margin | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| PR #16 `ba6860b` | [38494210890](https://github.com/aindaco1/scheduler/actions/runs/38494210890) | 0.72 | 0.24 | 0.04 | 0.48 | pass |
+| PR #17 `4fa130d` | [38494442612](https://github.com/aindaco1/scheduler/actions/runs/38494442612) | 0.49 | 0.46 | 0.05 | 0.03 | review |
+
+Both completed their deterministic checks and passed every labeled control.
+The PR #17 result remains blocking. No automatic rerun or exception was applied.
+Under [the existing review policy](../QUALITY.md#judge-policy-and-review), a new
+exact-copy approval requires an explicit owner decision; otherwise this candidate
+cannot merge. The remaining semantic question is whether the text below clearly
+communicates a completed reschedule to its displayed time.
+
+### Exact candidate for owner review
+
+> Tu reunión se ha reprogramado
+>
+> Información de tu reserva con Fixture Host en scheduler.example.
+>
+> Mensaje de Fixture Host:
+> Gracias por tu flexibilidad.
+>
+> Una conversación · Fixture Host
+>
+> lunes, 14 de septiembre de 2026, 16:00 (UTC)
+>
+> 30 min
+>
+> 123 Example Street
+>
+> Instrucciones de llegada:
+> Entra por la puerta lateral.
+>
+> Gestionar reunión: [link]
+>
+> Puedes cancelar o reprogramar hasta 24 horas antes.
+
+A proposed review would bind only this candidate, its `meaning` question, the
+current policy and `jev-1.13.0`. It would never accept a `fail`, changed text,
+another finding, failed controls or incomplete evidence. It is not yet approved.
