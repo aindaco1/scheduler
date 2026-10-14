@@ -13,14 +13,19 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 ### October 13: dependency and CI maintenance (unreleased)
 
 - Local: dependency audits and every deterministic stage of `npm run check`
-  passed. Live Jev is not established locally because the CI token was omitted.
-- CI: PR #16 passed ordinary and owner-dispatched full live checks. PR #17
-  passed deterministic checks but live Jev again flagged the unchanged Spanish
-  rescheduling email for review. The owner approved that exact-copy review;
-  fresh complete validation is required before merging. The workflow supports
-  explicit repository-owner live checks on reviewed branches; ordinary PRs
-  remain offline. Semantic thresholds and controls are unchanged; the approval
-  uses the existing narrowly scoped review mechanism.
+  passed. The 61 provider regressions and all 11 Jev gate tests passed. An offline
+  replay verified the approved exact finding and five rejection boundaries.
+  Live Jev is not established locally because the CI token was omitted.
+- CI: PR #16 passed ordinary and owner-dispatched full live checks. After the
+  owner's exact-copy review, PR #17 passed [fresh ordinary checks](https://github.com/aindaco1/scheduler/actions/runs/38495332172)
+  and [complete live checks](https://github.com/aindaco1/scheduler/actions/runs/38495339509):
+  266 Worker tests, all 40 semantic controls and zero blocking findings. The
+  Spanish email passed outright in that run; the committed approval only applies
+  when this exact finding is uncertain. Thresholds and controls are unchanged.
+- Source: both PRs merged after validation, producing `06cdd7a881b71cd9b60e596b5c6b2b1921c4eae2`.
+  Its tree exactly matches the tested combined candidate. The workflow supports
+  explicit repository-owner live checks on reviewed branches; ordinary PRs remain
+  offline. The changes are unreleased.
 - Investigation: the October 5 Spanish rescheduling-email finding showed
   different judge scores for identical inputs, with no demonstrated copy defect.
 - Deployment/provider/recipient: no new deployment or live booking/email test.

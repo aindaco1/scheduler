@@ -38,7 +38,8 @@ Preserve the original failure. Do not change product copy, questions, controls,
 model allowlist, threshold or approvals merely to obtain a pass. Maintenance
 candidates receive a fresh complete check, with no automatic evaluation retries.
 Any new uncertain finding remains blocking and needs its own investigation;
-this record grants no review exception.
+the investigation alone grants no review exception. The subsequent explicit
+owner decision below is separate from the diagnosis.
 
 The original synthetic `report.json`, `corpus.json` and `review.md` were retained
 locally under ignored `work/ci-maintenance-2026-10-13/prior/{run-id}/`.
@@ -109,5 +110,8 @@ in each report; the gate lists any applied owner reviews separately.
 - Requirement SHA-256: `1713503c7add35e5cd1c4876028c5f9624f7c2381af1fceb43acc152d564fb11`.
 - Policy SHA-256: `b4086fb3e32f527303a1fd667b2eb4ff7129dd2e96d220720dac2e1141fc8093`.
 
-Fresh full candidate validation is required before merging. The earlier failure
-is retained and is not relabeled as a historical passing CI run.
+Fresh [complete candidate validation](https://github.com/aindaco1/scheduler/actions/runs/38495339509)
+passed before merging: all controls correct and zero blocking findings. The
+Spanish email passed outright at a 0.23 margin in that run, so this approval
+was not applied. The earlier failure is retained and is not relabeled as a
+historical passing CI run. See maintenance evidence for the merged commits.

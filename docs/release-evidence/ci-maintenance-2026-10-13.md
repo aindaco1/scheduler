@@ -46,8 +46,13 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
   It then exited 2 because no local CI token was provided. This is not a complete
   live pass; hosted validation uses the existing dedicated Workers AI secret.
 - The two new iCloud parsing cases passed with the full provider-regression
-  file after installing tsdav 2.3.5. Its dependency audit also found zero npm
+  file (61 tests) after installing tsdav 2.3.5. Its dependency audit also found zero npm
   vulnerabilities and no findings across 34 Ruby packages.
+- After approval, all 11 Jev gate tests passed. A separate offline replay of
+  the preserved failing report applied only the approved Spanish `meaning`
+  finding. Five perturbations still blocked: changed candidate, outright failure,
+  another uncertain question, incomplete evaluation and a control mismatch.
+  The original report remains unchanged and its historical CI run remains failed.
 
 ## Hosted verification and merges
 
@@ -64,8 +69,23 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
   Its margin was 0.03. No automatic retry or new approval was applied.
 - The owner approved the exact-copy review on October 13. The committed entry
   binds the candidate/question/policy/model and cannot accept a failure, changed
-  text, another finding, control error or incomplete run. Both merges remain
-  held for fresh complete candidate validation. Historical failures are retained.
+  text, another finding, control error or incomplete run. Historical failures
+  are retained.
+- Final PR #17 candidate `ea3a9fa939b4bcc9a42f211c56985a0f67833f26` passed
+  [ordinary PR checks](https://github.com/aindaco1/scheduler/actions/runs/38495332172)
+  and [complete owner-dispatched checks](https://github.com/aindaco1/scheduler/actions/runs/38495339509).
+  All 266 Worker tests and all deterministic stages passed. Live Jev completed
+  74 requests / 100 questions: all 40 controls correct, 33 rendered passes,
+  one existing approved English pending review and zero blocking findings.
+  The Spanish email itself passed with pass/fail/uncertain probabilities
+  0.58/0.35/0.07, margin 0.23; the new approval was not needed in this run.
+- PR #16 merged at 2026-10-14T01:25:27Z as
+  `782d67fdf6bc7e13f6f7246a61e51535b8fcdbdb`.
+  PR #17 merged at 2026-10-14T01:26:13Z as
+  `06cdd7a881b71cd9b60e596b5c6b2b1921c4eae2` (both October 13 Mountain time).
+  The current-base merge was checked before merging, and the resulting tree
+  `87915f3a24ae8a19106d2b37072ee33d989f0568` exactly matches the fully tested
+  combined candidate. No base/head drift or new source changes were accepted.
 
 ## Deployment and actual providers
 
