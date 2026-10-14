@@ -10,7 +10,11 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
-### October 13: dependency and CI maintenance (unreleased)
+### Version 1.0.8 — October 13: dependency and CI maintenance
+
+[1.0.8](https://github.com/aindaco1/scheduler/releases/tag/v1.0.8) is deployed.
+The release preserves booking settings, provider credentials and stored state;
+no migration or reconnection is needed.
 
 - Local: dependency audits and every deterministic stage of `npm run check`
   passed. The 61 provider regressions and all 11 Jev gate tests passed. An offline
@@ -25,14 +29,26 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 - Source: both PRs merged after validation, producing `06cdd7a881b71cd9b60e596b5c6b2b1921c4eae2`.
   Its tree exactly matches the tested combined candidate. The workflow supports
   explicit repository-owner live checks on reviewed branches; ordinary PRs remain
-  offline. The changes are unreleased.
+  offline. Release source `a36c6c0dd744c7e4d136f89574d166bbcf4073fe` adds
+  the 1.0.8 version and passed [complete trusted-main checks](https://github.com/aindaco1/scheduler/actions/runs/38496723597),
+  including 266 Worker tests, all 40 Jev controls and zero blocking findings.
 - Investigation: the October 5 Spanish rescheduling-email finding showed
   different judge scores for identical inputs, with no demonstrated copy defect.
-- Deployment/provider/recipient: no new deployment or live booking/email test.
-  The documented deployed version remains 1.0.7 and its acceptance limits below
-  remain in effect.
+- Deployment: Worker `89dafd4b-40c8-4113-824f-0ec6d7a25462` serves 100%
+  traffic from October 14 at 01:41:25 UTC (October 13 Mountain time). All 24
+  route/private-boundary checks, 15 asset hashes and ten read-only availability
+  checks passed. Public settings, ten secret binding names and the Durable
+  Object namespace are unchanged.
+- Live browser: English and Spanish showed 82 available times across seven
+  dates. The Spanish picker fits 320 CSS pixels without horizontal overflow.
+  No browser warning/error or production warning/error was observed during
+  verification, which ended at 01:46:21 UTC.
+- Provider/recipient: live calendar availability passed. No test booking,
+  provider write, invitation or email was sent. Admin-notification delivery and
+  recipient inbox acceptance remain unverified.
 
-See [maintenance evidence](release-evidence/ci-maintenance-2026-10-13.md) and
+See [1.0.8 deployment evidence](release-evidence/release-1.0.8-2026-10-13.md),
+[maintenance evidence](release-evidence/ci-maintenance-2026-10-13.md) and
 [Jev investigation](research/jev-rescheduled-email-2026-10-13.md).
 
 ### Version 1.0.7 — October 5: admin booking notifications

@@ -89,6 +89,8 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
 
 ## Deployment and actual providers
 
-No deployment, production calendar write, invitation or email is part of this
-maintenance. The documented deployment remains 1.0.7. Admin-notification delivery
-and inbox receipt remain unverified; synthetic checks do not close that gap.
+The pre-merge maintenance checks made no deployment, production calendar write,
+invitation or email. After the owner separately authorized production deployment,
+these changes shipped as [1.0.8](release-1.0.8-2026-10-13.md), with read-only live
+verification. Admin-notification delivery and inbox receipt remain unverified;
+synthetic checks do not close that gap.
