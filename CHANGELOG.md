@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.8 — 2026-10-13
 
 - Update development tooling (Wrangler, Sass, Acorn and Node types) and resolve
   `source-map-js` to patched 1.2.2, clearing its dependency-audit finding.
