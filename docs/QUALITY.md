@@ -197,8 +197,8 @@ dispatch remains offline. No approval or evaluation requirement is bypassed.
 Configure repository variable `JEV_CLOUDFLARE_ACCOUNT_ID` and secret
 `JEV_CLOUDFLARE_API_TOKEN` using a dedicated token limited to Workers AI for that
 account. Missing credentials fail the trusted check. Pull requests and non-main
-manual refs without the owner opt-in run the explicitly named offline step without Jev secrets; they do
-not establish semantic acceptance. Do not use `pull_request_target` to run a
+manual refs without the owner opt-in run the explicitly named offline step
+without Jev secrets; they do not establish semantic acceptance. Do not use `pull_request_target` to run a
 contributor's code with the token. Use a separate Workers AI token per consumer
 repository so rotation and revocation remain independent; sharing the package
 does not require sharing credentials. Provision tokens outside the repository.
@@ -242,8 +242,9 @@ response and `releaseAccepted: false` in shared evidence are not release approva
 Explicit owner approval can resolve a specific uncertain rendered finding.
 [Review approvals](../config/jev-reviews.json) bind the case, question, complete
 candidate text, requirement, policy and recognized model by exact values/hashes.
-The current single approval records the owner-reviewed English pending copy.
-It accepts only a `review` result, never a `fail`, control mismatch, missing
+The current approvals record the owner-reviewed English pending copy and the
+exact Spanish plain-text rescheduling email reviewed on October 13, 2026.
+Each accepts only a `review` result, never a `fail`, control mismatch, missing
 answer, incomplete run or different model. Changed text or policy invalidates
 it. The gate reports applied approvals separately; raw decisions, probabilities
 and review counts remain unchanged in the evidence. New approvals require an

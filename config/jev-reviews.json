@@ -10,5 +10,17 @@
     "approvedAt": "2026-09-23T16:09:52.648Z",
     "reason": "Owner explicitly approved this pending copy and the narrowly scoped human-review exception. The text states that the meeting is not confirmed yet; the near-tie does not demonstrate a conflicting confirmation claim.",
     "evidence": "docs/release-evidence/jev-rubric-review-2026-09-23.json"
+  },
+  {
+    "caseId": "email-rescheduled-es-text",
+    "question": "meaning",
+    "candidateSha256": "27ccd17a45af0f494fc3ecd7a61db879304c0ef8514836d7c35a7350ac06539e",
+    "requirementSha256": "1713503c7add35e5cd1c4876028c5f9624f7c2381af1fceb43acc152d564fb11",
+    "policySha256": "b4086fb3e32f527303a1fd667b2eb4ff7129dd2e96d220720dac2e1141fc8093",
+    "model": "jev-1.13.0",
+    "approvedBy": "Project owner",
+    "approvedAt": "2026-10-14T01:20:48Z",
+    "reason": "Owner explicitly approved this exact-copy review after examining the Spanish rescheduling email and the 0.03-margin finding. The opening states that the meeting has been rescheduled and the body shows its new time; the future change deadline does not make that completed change pending.",
+    "evidence": "docs/research/jev-rescheduled-email-2026-10-13.md#owner-decision"
   }
 ]

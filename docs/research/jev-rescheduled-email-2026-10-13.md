@@ -50,3 +50,64 @@ The report byte hashes are:
 GitHub retains these artifacts for 14 days; the hashes and selected findings
 above remain available after expiry. New validation belongs in
 [maintenance evidence](../release-evidence/ci-maintenance-2026-10-13.md).
+
+## Fresh maintenance candidates
+
+The complete corpus hash above remained identical in both fresh runs. No
+question, candidate, threshold, model allowlist or approval was changed.
+
+| Candidate | Live run | Pass | Fail | Uncertain | Margin | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| PR #16 `ba6860b` | [38494210890](https://github.com/aindaco1/scheduler/actions/runs/38494210890) | 0.72 | 0.24 | 0.04 | 0.48 | pass |
+| PR #17 `4fa130d` | [38494442612](https://github.com/aindaco1/scheduler/actions/runs/38494442612) | 0.49 | 0.46 | 0.05 | 0.03 | review |
+
+Both completed their deterministic checks and passed every labeled control.
+The PR #17 result blocked before the owner decision below. No automatic rerun
+or exception was applied to that run.
+Under [the existing review policy](../QUALITY.md#judge-policy-and-review), a new
+exact-copy approval requires an explicit owner decision; otherwise this candidate
+cannot merge. The remaining semantic question is whether the text below clearly
+communicates a completed reschedule to its displayed time.
+
+### Exact candidate for owner review
+
+> Tu reunión se ha reprogramado
+>
+> Información de tu reserva con Fixture Host en scheduler.example.
+>
+> Mensaje de Fixture Host:
+> Gracias por tu flexibilidad.
+>
+> Una conversación · Fixture Host
+>
+> lunes, 14 de septiembre de 2026, 16:00 (UTC)
+>
+> 30 min
+>
+> 123 Example Street
+>
+> Instrucciones de llegada:
+> Entra por la puerta lateral.
+>
+> Gestionar reunión: [link]
+>
+> Puedes cancelar o reprogramar hasta 24 horas antes.
+
+### Owner decision
+
+On October 13, 2026 (recorded at 2026-10-14T01:20:48Z), the owner answered
+**Approve this exact-copy review** after receiving the full candidate, diagnosis
+and proposed limits. This explicit decision authorizes the new entry in
+`config/jev-reviews.json` under the existing policy.
+
+The approval binds only this candidate, its `meaning` question, current policy
+and `jev-1.13.0`. It never accepts a `fail`, changed text, another finding,
+failed controls or incomplete evidence. Raw decisions and distributions remain
+in each report; the gate lists any applied owner reviews separately.
+
+- Candidate SHA-256: `27ccd17a45af0f494fc3ecd7a61db879304c0ef8514836d7c35a7350ac06539e`.
+- Requirement SHA-256: `1713503c7add35e5cd1c4876028c5f9624f7c2381af1fceb43acc152d564fb11`.
+- Policy SHA-256: `b4086fb3e32f527303a1fd667b2eb4ff7129dd2e96d220720dac2e1141fc8093`.
+
+Fresh full candidate validation is required before merging. The earlier failure
+is retained and is not relabeled as a historical passing CI run.
