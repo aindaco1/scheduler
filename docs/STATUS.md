@@ -16,9 +16,11 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
   passed. Live Jev is not established locally because the CI token was omitted.
 - CI: PR #16 passed ordinary and owner-dispatched full live checks. PR #17
   passed deterministic checks but live Jev again flagged the unchanged Spanish
-  rescheduling email for review. Both merges are held. The workflow supports
+  rescheduling email for review. The owner approved that exact-copy review;
+  fresh complete validation is required before merging. The workflow supports
   explicit repository-owner live checks on reviewed branches; ordinary PRs
-  remain offline. Semantic thresholds, controls and approvals are unchanged.
+  remain offline. Semantic thresholds and controls are unchanged; the approval
+  uses the existing narrowly scoped review mechanism.
 - Investigation: the October 5 Spanish rescheduling-email finding showed
   different judge scores for identical inputs, with no demonstrated copy defect.
 - Deployment/provider/recipient: no new deployment or live booking/email test.

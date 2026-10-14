@@ -8,7 +8,10 @@
   same-name XML properties preserve iCloud busy intervals.
 - Allow the repository owner to explicitly run the complete live Jev gate on a
   reviewed branch before merging. Ordinary PR checks remain offline; semantic
-  thresholds, model policy, controls and review approvals are unchanged.
+  thresholds, model policy and controls are unchanged.
+- Record the owner's exact-copy approval for the Spanish rescheduling email's
+  uncertain Jev finding. Changed text, failures, failed controls and incomplete
+  evidence remain blocking under the existing review policy.
 
 ## 1.0.7 — 2026-10-05
 

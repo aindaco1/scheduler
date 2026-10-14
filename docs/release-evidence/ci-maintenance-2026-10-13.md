@@ -23,7 +23,8 @@ synthetic network responses.
 The separate October 5 live Jev finding was examined against both saved reports
 and the email renderer. [The investigation](../research/jev-rescheduled-email-2026-10-13.md)
 records identical inputs with different scores, no demonstrated copy defect,
-and the unchanged blocking policy. No semantic exception was added.
+and the unchanged blocking policy. The owner later explicitly approved only
+that exact uncertain finding; the linked record preserves the decision and hashes.
 
 The Check workflow permits an explicit `live_jev=true` manual dispatch on a
 reviewed branch only when both original and rerunning actors are the repository
@@ -61,9 +62,10 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
   passed deterministic checks, then completed live Jev with all 40 controls
   correct and one blocking review on the same Spanish rescheduling-email text.
   Its margin was 0.03. No automatic retry or new approval was applied.
-- Both merges are held while the exact-copy owner review remains unresolved.
-  See the full candidate in the linked investigation. A passing PR check alone
-  does not establish live semantic acceptance.
+- The owner approved the exact-copy review on October 13. The committed entry
+  binds the candidate/question/policy/model and cannot accept a failure, changed
+  text, another finding, control error or incomplete run. Both merges remain
+  held for fresh complete candidate validation. Historical failures are retained.
 
 ## Deployment and actual providers
 

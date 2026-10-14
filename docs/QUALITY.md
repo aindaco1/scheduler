@@ -242,8 +242,9 @@ response and `releaseAccepted: false` in shared evidence are not release approva
 Explicit owner approval can resolve a specific uncertain rendered finding.
 [Review approvals](../config/jev-reviews.json) bind the case, question, complete
 candidate text, requirement, policy and recognized model by exact values/hashes.
-The current single approval records the owner-reviewed English pending copy.
-It accepts only a `review` result, never a `fail`, control mismatch, missing
+The current approvals record the owner-reviewed English pending copy and the
+exact Spanish plain-text rescheduling email reviewed on October 13, 2026.
+Each accepts only a `review` result, never a `fail`, control mismatch, missing
 answer, incomplete run or different model. Changed text or policy invalidates
 it. The gate reports applied approvals separately; raw decisions, probabilities
 and review counts remain unchanged in the evidence. New approvals require an
