@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated October 5, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated October 13, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,22 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### October 13: dependency and CI maintenance (unreleased)
+
+- Local: dependency audits and every deterministic stage of `npm run check`
+  passed. Live Jev is not established locally because the CI token was omitted.
+- CI: candidate validation is pending. The workflow now supports explicit
+  repository-owner live checks on reviewed branches before merging; ordinary
+  PRs remain offline. Semantic thresholds, controls and approvals are unchanged.
+- Investigation: the October 5 Spanish rescheduling-email finding showed
+  different judge scores for identical inputs, with no demonstrated copy defect.
+- Deployment/provider/recipient: no new deployment or live booking/email test.
+  The documented deployed version remains 1.0.7 and its acceptance limits below
+  remain in effect.
+
+See [maintenance evidence](release-evidence/ci-maintenance-2026-10-13.md) and
+[Jev investigation](research/jev-rescheduled-email-2026-10-13.md).
 
 ### Version 1.0.7 — October 5: admin booking notifications
 

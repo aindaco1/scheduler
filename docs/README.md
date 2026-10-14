@@ -40,6 +40,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 - [Release status](STATUS.md): current deployment and the limits of its verification.
 - [1.0.1 security audit](release-evidence/security-audit-1.0.1-2026-09-10.md): scope, findings, data inventory and isolated recovery rehearsal.
 - [Release evidence](release-evidence/): dated metrics and verification records, separated from research.
+- [October 13 CI maintenance](release-evidence/ci-maintenance-2026-10-13.md): dependency audit repair, pre-merge checks and merge evidence.
 - [Pre-1.0 history](history/pre-1.0.md): older implementation and acceptance records.
 
 ## Research and decisions
@@ -50,6 +51,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 - [Proton and Protoxide](research/proton-integration-notes.md): feasibility research for a direct integration.
 - [Location hours](research/location-hours.md): dated sources for the owner's initial venues.
 - [Zoom joining investigation](research/zoom-start-investigation-2026-10-02.md): unresolved host/guest admission report, preview observation and provider-setting limitations.
+- [Jev rescheduling email investigation](research/jev-rescheduled-email-2026-10-13.md): identical Spanish email inputs with differing judge scores and unchanged gate policy.
 
 ## Documentation ownership
 
