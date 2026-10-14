@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Update development tooling (Wrangler, Sass, Acorn and Node types) and resolve
+  `source-map-js` to patched 1.2.2, clearing its dependency-audit finding.
+- Allow the repository owner to explicitly run the complete live Jev gate on a
+  reviewed branch before merging. Ordinary PR checks remain offline; semantic
+  thresholds, model policy, controls and review approvals are unchanged.
+
 ## 1.0.7 — 2026-10-05
 
 Email the admin when a new booking is confirmed, after required calendar writes succeed.
