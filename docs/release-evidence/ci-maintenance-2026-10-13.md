@@ -11,6 +11,15 @@ audit before functional tests. This dependency is marked development-only and
 is required by Sass/PostCSS. Both shared-package pins, the workerd pin, supported
 Vitest version and scoped Undici override are retained.
 
+[PR #17](https://github.com/aindaco1/scheduler/pull/17) updates tsdav from 2.3.4
+to 2.3.5. Review of the [upstream parser changes](https://github.com/natelindev/tsdav/compare/v2.3.4...v2.3.5)
+identified mixed text/CDATA and namespace handling as relevant to iCloud conflict
+reads. Two new consumer regression cases pass actual DAV responses through
+`icloudBusy`, requiring the original busy interval to survive both encodings.
+Existing tests cover empty/malformed/failed responses, discovery, retries,
+authorization, scheduling and competing bookings with the real DAV library and
+synthetic network responses.
+
 The separate October 5 live Jev finding was examined against both saved reports
 and the email renderer. [The investigation](../research/jev-rescheduled-email-2026-10-13.md)
 records identical inputs with different scores, no demonstrated copy defect,
@@ -35,6 +44,9 @@ credential. Ordinary PRs and other non-main dispatches remain offline.
   type/build, browser/accessibility, quality, fork setup and dry-deployment checks.
   It then exited 2 because no local CI token was provided. This is not a complete
   live pass; hosted validation uses the existing dedicated Workers AI secret.
+- The two new iCloud parsing cases passed with the full provider-regression
+  file after installing tsdav 2.3.5. Its dependency audit also found zero npm
+  vulnerabilities and no findings across 34 Ruby packages.
 
 ## Hosted verification and merges
 

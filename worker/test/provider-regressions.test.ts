@@ -156,6 +156,39 @@ describe("iCloud response completeness", () => {
       icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
     ).rejects.toMatchObject({ code: "icloud_reconnect_required" });
   });
+
+  it.each(["mixed text and CDATA", "foreign namespace collision"])(
+    "preserves busy time through DAV parsing with %s",
+    async (variant) => {
+      const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "BEGIN:VEVENT",
+        "UID:xml-boundary-fixture",
+        "DTSTART:20260910T160000Z",
+        "DTEND:20260910T170000Z",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ];
+      const data =
+        variant === "mixed text and CDATA"
+          ? `<c:calendar-data>${lines.slice(0, 2).join("&#13;&#10;")}&#13;&#10;<![CDATA[${lines.slice(2, 6).join("\r\n")}\r\n]]>${lines.slice(6).join("&#13;&#10;")}</c:calendar-data>`
+          : `<x:calendar-data xmlns:x="urn:fixture:unrelated">not calendar data</x:calendar-data><c:calendar-data><![CDATA[${lines.join("\r\n")}]]></c:calendar-data>`;
+      mockReport(
+        multistatus(
+          response(
+            "/fixture/calendars/family/xml-boundary-event",
+            `<d:getetag>"fixture"</d:getetag>${data}`,
+          ),
+        ),
+      );
+      await expect(
+        icloudBusy(credentials, [calendarUrl], from, to, "America/Denver"),
+      ).resolves.toEqual([
+        { start: booking.start, end: Date.parse("2026-09-10T17:00:00Z") },
+      ]);
+    },
+  );
 });
 
 describe("Google conflict completeness and conference recovery", () => {

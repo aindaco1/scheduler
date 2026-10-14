@@ -4,6 +4,8 @@
 
 - Update development tooling (Wrangler, Sass, Acorn and Node types) and resolve
   `source-map-js` to patched 1.2.2, clearing its dependency-audit finding.
+- Update tsdav to 2.3.5 and verify that mixed XML text/CDATA and unrelated
+  same-name XML properties preserve iCloud busy intervals.
 - Allow the repository owner to explicitly run the complete live Jev gate on a
   reviewed branch before merging. Ordinary PR checks remain offline; semantic
   thresholds, model policy, controls and review approvals are unchanged.

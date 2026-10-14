@@ -197,8 +197,8 @@ dispatch remains offline. No approval or evaluation requirement is bypassed.
 Configure repository variable `JEV_CLOUDFLARE_ACCOUNT_ID` and secret
 `JEV_CLOUDFLARE_API_TOKEN` using a dedicated token limited to Workers AI for that
 account. Missing credentials fail the trusted check. Pull requests and non-main
-manual refs without the owner opt-in run the explicitly named offline step without Jev secrets; they do
-not establish semantic acceptance. Do not use `pull_request_target` to run a
+manual refs without the owner opt-in run the explicitly named offline step
+without Jev secrets; they do not establish semantic acceptance. Do not use `pull_request_target` to run a
 contributor's code with the token. Use a separate Workers AI token per consumer
 repository so rotation and revocation remain independent; sharing the package
 does not require sharing credentials. Provision tokens outside the repository.
