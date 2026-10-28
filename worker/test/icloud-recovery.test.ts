@@ -169,6 +169,17 @@ it.each([401, 403, 429])(
   },
 );
 
+it("fails closed on a Digest challenge without negotiating or retrying credentials", async () => {
+  mockReport("private", 401, {
+    "WWW-Authenticate": 'Digest realm="fixture", nonce="fixture", qop="auth"',
+  });
+  await expect(busy()).rejects.toMatchObject({
+    code: "icloud_reconnect_required",
+    retryable: false,
+  });
+  expect(warning).toHaveBeenCalledTimes(1);
+});
+
 it("honors a longer Retry-After without another immediate read", async () => {
   mockReport("unavailable", 503, { "Retry-After": "60" });
   await expect(busy()).rejects.toMatchObject({
