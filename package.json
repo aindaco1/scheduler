@@ -53,11 +53,11 @@
     "esbuild": "0.28.2",
     "jsonc-parser": "3.3.1",
     "prettier": "3.9.10",
-    "sass": "1.105.2",
+    "sass": "1.106.1",
     "sharp": "0.35.5",
     "typescript": "7.0.2",
     "vitest": "4.1.12",
-    "wrangler": "4.151.1"
+    "wrangler": "4.152.0"
   },
   "overrides": {
     "sharp": "$sharp",
