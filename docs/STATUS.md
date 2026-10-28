@@ -34,6 +34,12 @@ Vitest/workerd combination.
 
 See [October 28 maintenance evidence](release-evidence/ci-maintenance-2026-10-28.md).
 
+Dependabot opened a fresh batch after the original merges: PRs #25–29 update
+Sass/Wrangler, tsdav, Zod and the Ruby/artifact actions. The combined follow-up
+is under validation; the original fixes above are already merged. Its audits
+and 24 focused iCloud tests pass locally, including percent-encoded principal
+discovery. No production deployment is part of either batch.
+
 ### Version 1.0.8 — October 13: dependency and CI maintenance
 
 [1.0.8](https://github.com/aindaco1/scheduler/releases/tag/v1.0.8) is deployed.

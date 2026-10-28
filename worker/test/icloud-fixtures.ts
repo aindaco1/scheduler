@@ -16,6 +16,7 @@ export function mockIcloudDiscovery(
   status = 207,
   names = ["family"],
   headers: Record<string, string> = {},
+  principal = "/fixture/principal/",
 ) {
   const apple = fetchMock.get(appleOrigin);
   const xml = {
@@ -34,18 +35,18 @@ export function mockIcloudDiscovery(
       multistatus(
         response(
           "/",
-          "<d:current-user-principal><d:href>/fixture/principal/</d:href></d:current-user-principal>",
+          `<d:current-user-principal><d:href>${principal}</d:href></d:current-user-principal>`,
         ),
       ),
       xml,
     );
   apple
-    .intercept({ path: "/fixture/principal/", method: "PROPFIND" })
+    .intercept({ path: principal, method: "PROPFIND" })
     .reply(
       207,
       multistatus(
         response(
-          "/fixture/principal/",
+          principal.replaceAll("@", "%40"),
           "<c:calendar-home-set><d:href>/fixture/calendars/</d:href></c:calendar-home-set>",
         ),
       ),

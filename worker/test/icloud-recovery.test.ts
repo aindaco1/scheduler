@@ -59,6 +59,13 @@ it("retries discovery for the owner's connection check without reading events", 
   ).resolves.toMatchObject([{ id: calendarUrl, provider: "icloud" }]);
 });
 
+it("discovers a principal returned with equivalent percent-encoded spelling", async () => {
+  mockIcloudDiscovery(207, ["family"], {}, "/fixture/owner@example.test/");
+  await expect(
+    new IcloudSession(credentials).calendars(),
+  ).resolves.toMatchObject([{ id: calendarUrl, provider: "icloud" }]);
+});
+
 it("checks a saved calendar despite a catalog outage with a one-hour Retry-After", async () => {
   const session = new IcloudSession(credentials);
   mockIcloudDiscovery(503, ["family"], { "Retry-After": "3600" });
