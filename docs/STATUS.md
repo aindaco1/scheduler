@@ -10,7 +10,41 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ## Release verification
 
-### Unreleased — October 28: CI and dependency maintenance
+### Version 1.0.9 — October 28: dependency updates and header accessibility
+
+[1.0.9](https://github.com/aindaco1/scheduler/releases/tag/v1.0.9) is deployed at
+[scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). It includes
+all ten merged dependency PRs and the header accessible-name repair. Existing
+settings, credentials and the Durable Object namespace are unchanged.
+
+- Local: all deterministic checks passed, including 268 Worker tests, bilingual
+  browser/accessibility checks and deployment packaging. Both dependency audits
+  are clean. Local live Jev remains unverified without its credential.
+- CI: release source `4a8dc4bfe2876568ad60ebe6585be47479436439` passed
+  [complete trusted-main checks](https://github.com/aindaco1/scheduler/actions/runs/40738758968),
+  including live Jev: all 40 controls correct and zero blocking findings.
+- Deployment: Worker `b0851aa4-fd41-4fd3-aa29-8d419502ebdb` serves 100% of
+  traffic from 17:48:52 UTC. All 24 route/private-boundary checks, 15 asset
+  hashes and ten read-only availability requests passed. The calendar checks
+  cover the upcoming daylight-saving transition and all active meeting types
+  and venues.
+- Live browser: both languages passed at 320/1280 CSS pixels with system
+  light/dark appearance, accessible header naming, keyboard focus and no
+  overflow. Each brief-chat picker showed 92 times across seven available dates.
+  No browser warning/error or production warning/error was observed through
+  the 17:49:51 UTC telemetry cutoff.
+- Provider/recipient: live calendar reads only. No test booking, invitation,
+  login email or notification was sent. Actual admin-notification delivery and
+  recipient receipt remain unverified.
+- Cleanup: removed generated builds/caches/reports; archived superseded document
+  copies and temporary release evidence outside the checkout; deleted two merged
+  local branches, pruned eleven stale remote-tracking refs and one obsolete
+  worktree record. Only `main` and one worktree remain. Dependencies, local
+  preview tooling and all 22 local database files are retained unchanged.
+
+See [1.0.9 deployment and cleanup evidence](release-evidence/release-1.0.9-2026-10-28.md).
+
+### October 28 pre-release CI and dependency maintenance
 
 The merged dependency update fixes the October 26 Undici/Zod audit failures
 and the header accessible-name mismatch exposed by Axe 4.14 in PR #24. It includes
@@ -28,7 +62,8 @@ Vitest/workerd combination.
   No thresholds, controls, copy or review approvals were changed.
 - Source: PRs #18, #19, #21, #22 and #24 are merged. Merge `b358b6c` has exactly
   the tested candidate's tree. Historical failed runs remain historical evidence.
-- Deployment: no deployment; the verified production release remains 1.0.8.
+- Deployment: pre-merge checks made no deployment. These changes subsequently
+  shipped in 1.0.9, verified above.
 - Provider/recipient: synthetic tests only; no invitations, bookings or emails.
   Actual admin-notification delivery and recipient receipt remain unverified.
 
@@ -42,11 +77,12 @@ on `2fca506`: 268 Worker tests, all deterministic stages, all 40 Jev controls
 correct and zero blocking findings. Its local deterministic checks, audits and
 24 focused iCloud tests pass; local live Jev remains unverified without a token.
 All five follow-up PRs merged through `8aeb5ef`, whose tree exactly matches the
-tested candidate. No production deployment is part of either batch.
+tested candidate. Both batches subsequently shipped in 1.0.9 above.
 
 ### Version 1.0.8 — October 13: dependency and CI maintenance
 
-[1.0.8](https://github.com/aindaco1/scheduler/releases/tag/v1.0.8) is deployed.
+[1.0.8](https://github.com/aindaco1/scheduler/releases/tag/v1.0.8) was deployed
+on October 13 and superseded by 1.0.9 on October 28.
 The release preserves booking settings, provider credentials and stored state;
 no migration or reconnection is needed.
 

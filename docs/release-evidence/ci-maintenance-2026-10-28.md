@@ -125,3 +125,8 @@ second batch. This final verification update changes documentation only.
 GitHub artifact `12837396992` retains the follow-up synthetic evidence until
 November 11. Archive digest:
 `sha256:740692584b8ba37e91246cc773d17a27a8ebe9cdfde6f8cfa45e0ff38995b6f3`.
+
+After the owner authorized deployment, both batches shipped in
+[1.0.9](release-1.0.9-2026-10-28.md) from separately tested release source
+`4a8dc4bfe2876568ad60ebe6585be47479436439`. Live verification used read-only
+calendar availability and sent no test invitations or emails.

@@ -1,0 +1,396 @@
+{
+  "version": "1.0.9",
+  "source": "4a8dc4bfe2876568ad60ebe6585be47479436439",
+  "ci": {
+    "url": "https://github.com/aindaco1/scheduler/actions/runs/40738758968",
+    "conclusion": "success",
+    "workerTests": 268,
+    "jev": {
+      "complete": true,
+      "requests": 74,
+      "questions": 100,
+      "controlsCorrect": 40,
+      "renderedPasses": 33,
+      "existingApprovedReviews": 1,
+      "blockingFindings": 0
+    }
+  },
+  "deployment": {
+    "id": "4ee84fa2-718a-46fd-a0c5-a5d71bbb5212",
+    "created_on": "2026-10-28T17:48:52.989909Z",
+    "versions": [
+      {
+        "version_id": "b0851aa4-fd41-4fd3-aa29-8d419502ebdb",
+        "percentage": 100
+      }
+    ]
+  },
+  "previousVersion": "89dafd4b-40c8-4113-824f-0ec6d7a25462",
+  "bindingsUnchanged": true,
+  "secretBindingCount": 10,
+  "public": {
+    "started": "2026-10-28T17:49:05.074Z",
+    "method": "GET only",
+    "routes": [
+      {
+        "path": "/alonso",
+        "status": 200
+      },
+      {
+        "path": "/es/alonso",
+        "status": 200
+      },
+      {
+        "path": "/privacy/",
+        "status": 200
+      },
+      {
+        "path": "/es/privacy/",
+        "status": 200
+      },
+      {
+        "path": "/admin/",
+        "status": 200
+      },
+      {
+        "path": "/es/admin/",
+        "status": 200
+      },
+      {
+        "path": "/manage/",
+        "status": 200
+      },
+      {
+        "path": "/es/manage/",
+        "status": 200
+      },
+      {
+        "path": "/alonso?type=conversation",
+        "status": 200
+      },
+      {
+        "path": "/es/alonso?type=conversation",
+        "status": 200
+      },
+      {
+        "path": "/alonso?type=zoom",
+        "status": 200
+      },
+      {
+        "path": "/es/alonso?type=zoom",
+        "status": 200
+      },
+      {
+        "path": "/alonso?type=in-person",
+        "status": 200
+      },
+      {
+        "path": "/es/alonso?type=in-person",
+        "status": 200
+      },
+      {
+        "path": "/",
+        "status": 302
+      },
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/config",
+        "status": 200
+      },
+      {
+        "path": "/robots.txt",
+        "status": 200
+      },
+      {
+        "path": "/sitemap.xml",
+        "status": 200
+      },
+      {
+        "path": "/alonso?type=unavailable-release-check",
+        "status": 404
+      },
+      {
+        "path": "/api/admin/session",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/settings",
+        "status": 401
+      },
+      {
+        "path": "/api/admin/bookings",
+        "status": 401
+      },
+      {
+        "path": "/api/admin/connections",
+        "status": 401
+      }
+    ],
+    "assets": [
+      {
+        "path": "/assets/build/admin-6OWJTZXR.js",
+        "sha256": "6929ca94f964aa7f70dbc906a8132911f9f2977c86dd0bea5517b4bb9aa53ecb"
+      },
+      {
+        "path": "/assets/build/booking-77JXYXVN.js",
+        "sha256": "60b4927981623ef12c8572f96d7a76464ee34604a56c2232f4c7b0392e1e5d62"
+      },
+      {
+        "path": "/assets/build/manage-26YCURK7.js",
+        "sha256": "0101a4637c5e17e4a3cbc7d038e0d92cde9b18e6f15dc4cc00aabe8e76d9117b"
+      },
+      {
+        "path": "/assets/build/privacy-DIVN25YF.js",
+        "sha256": "ace124af47bef87aa5ee715227dea2210566b6be1853c4fb09edde663ef3b2c2"
+      },
+      {
+        "path": "/assets/build/scheduler-e6b049deb74d.css",
+        "sha256": "e6b049deb74d978472aa37b9344f4286198fa7fa62315dc37d70997a186bb609"
+      },
+      {
+        "path": "/assets/build/shared-J7IVGWSB.js",
+        "sha256": "e5d26492ab1ebce36032042e8fa38cc22a27ee43eb19f3b762af73f889160990"
+      },
+      {
+        "path": "/assets/build/shared-L62FOIZY.js",
+        "sha256": "2adc7ad4f88b7aadf10e290eae0b8548f217ff35cb96f225eb2d40606a18b2ae"
+      },
+      {
+        "path": "/assets/build/shared-MMYUMTA2.js",
+        "sha256": "8331da443a2d4ba9f9c1471ef09fed6d8e77daeda18f9e513c544596480173b6"
+      },
+      {
+        "path": "/assets/build/shared-T7T72LJ2.js",
+        "sha256": "09e8dece7c3ba4d6f77a54b2cc8a3d5352fcd7848f507a2700962c7bb96febdc"
+      },
+      {
+        "path": "/assets/chevron-down.svg",
+        "sha256": "05b89d522ad2bf0702755a63e8acd3c6b2ae018a4c90381aeb7d74d3cfa405f5"
+      },
+      {
+        "path": "/assets/fonts/LICENSE-Inter.txt",
+        "sha256": "f80027ca0ba1cb595bc5446153cb220487833bc93507b257f6d18bb53fb2ed82"
+      },
+      {
+        "path": "/assets/fonts/inter-latin-variable.woff2",
+        "sha256": "104263357e3813a29d846cc06f1aa068662880d512a8691b07d41f3ea404b322"
+      },
+      {
+        "path": "/assets/icon.svg",
+        "sha256": "f6b448c3c118b821a958883920104fb6e78b15e3358b412a4bf8127310383f76"
+      },
+      {
+        "path": "/assets/social/apple-touch-icon-v1.png",
+        "sha256": "0abc2e0a91ce91ef9aba29a866cb30f46871a27c25bd9010c5c753a84e5d1a6e"
+      },
+      {
+        "path": "/assets/social/preview-v1.png",
+        "sha256": "cbb1b4d61b0daf048b016cf9ff625d4e7b0a5a15496d16a43d443c61727a8594"
+      }
+    ],
+    "availability": [
+      {
+        "type": "conversation",
+        "location": "",
+        "from": "2026-10-29",
+        "to": "2026-11-05",
+        "elapsedHours": 169,
+        "status": 200,
+        "slots": 17,
+        "milliseconds": 326
+      },
+      {
+        "type": "zoom",
+        "location": "",
+        "from": "2026-10-29",
+        "to": "2026-11-05",
+        "elapsedHours": 169,
+        "status": 200,
+        "slots": 10,
+        "milliseconds": 398
+      },
+      {
+        "type": "in-person",
+        "location": "place-ade1e5d6",
+        "from": "2026-10-29",
+        "to": "2026-11-05",
+        "elapsedHours": 169,
+        "status": 200,
+        "slots": 9,
+        "milliseconds": 344
+      },
+      {
+        "type": "in-person",
+        "location": "place-aad76bc7",
+        "from": "2026-10-29",
+        "to": "2026-11-05",
+        "elapsedHours": 169,
+        "status": 200,
+        "slots": 3,
+        "milliseconds": 348
+      },
+      {
+        "type": "in-person",
+        "location": "place-02c658ba",
+        "from": "2026-10-29",
+        "to": "2026-11-05",
+        "elapsedHours": 169,
+        "status": 200,
+        "slots": 4,
+        "milliseconds": 358
+      },
+      {
+        "type": "conversation",
+        "location": "",
+        "from": "2026-11-05",
+        "to": "2026-11-12",
+        "elapsedHours": 168,
+        "status": 200,
+        "slots": 58,
+        "milliseconds": 368
+      },
+      {
+        "type": "zoom",
+        "location": "",
+        "from": "2026-11-05",
+        "to": "2026-11-12",
+        "elapsedHours": 168,
+        "status": 200,
+        "slots": 41,
+        "milliseconds": 462
+      },
+      {
+        "type": "in-person",
+        "location": "place-ade1e5d6",
+        "from": "2026-11-05",
+        "to": "2026-11-12",
+        "elapsedHours": 168,
+        "status": 200,
+        "slots": 35,
+        "milliseconds": 784
+      },
+      {
+        "type": "in-person",
+        "location": "place-aad76bc7",
+        "from": "2026-11-05",
+        "to": "2026-11-12",
+        "elapsedHours": 168,
+        "status": 200,
+        "slots": 26,
+        "milliseconds": 359
+      },
+      {
+        "type": "in-person",
+        "location": "place-02c658ba",
+        "from": "2026-11-05",
+        "to": "2026-11-12",
+        "elapsedHours": 168,
+        "status": 200,
+        "slots": 17,
+        "milliseconds": 502
+      }
+    ],
+    "configFingerprint": "63b89613f5b3611f4e47c89571fbe1af70d9426d333b4ad29204be1b8d886218",
+    "completed": "2026-10-28T17:49:15.956Z"
+  },
+  "browser": {
+    "started": "2026-10-28T17:49:06.591Z",
+    "cases": [
+      {
+        "language": "en",
+        "width": 1280,
+        "colorScheme": "light",
+        "dates": 7,
+        "slots": 92,
+        "dimensions": {
+          "viewport": 1280,
+          "content": 1280,
+          "dark": false
+        },
+        "accessibleName": "SCHEDULER",
+        "warningsAndErrors": 0,
+        "writeRequests": 0
+      },
+      {
+        "language": "es",
+        "width": 320,
+        "colorScheme": "dark",
+        "dates": 7,
+        "slots": 92,
+        "dimensions": {
+          "viewport": 320,
+          "content": 320,
+          "dark": true
+        },
+        "accessibleName": "SCHEDULER",
+        "warningsAndErrors": 0,
+        "writeRequests": 0
+      },
+      {
+        "language": "en",
+        "width": 320,
+        "colorScheme": "light",
+        "dates": 7,
+        "slots": 92,
+        "dimensions": {
+          "viewport": 320,
+          "content": 320,
+          "dark": false
+        },
+        "accessibleName": "SCHEDULER",
+        "warningsAndErrors": 0,
+        "writeRequests": 0
+      },
+      {
+        "language": "es",
+        "width": 1280,
+        "colorScheme": "dark",
+        "dates": 7,
+        "slots": 92,
+        "dimensions": {
+          "viewport": 1280,
+          "content": 1280,
+          "dark": true
+        },
+        "accessibleName": "SCHEDULER",
+        "warningsAndErrors": 0,
+        "writeRequests": 0
+      }
+    ],
+    "completed": "2026-10-28T17:49:41.162Z"
+  },
+  "telemetry": {
+    "from": "2026-10-28T17:48:52.989Z",
+    "to": "2026-10-28T17:49:51.648Z",
+    "groups": [
+      {
+        "field": "$metadata.level",
+        "counts": [
+          {
+            "value": "info",
+            "count": 116
+          }
+        ]
+      },
+      {
+        "field": "$workers.outcome",
+        "counts": [
+          {
+            "value": "ok",
+            "count": 116
+          }
+        ]
+      }
+    ]
+  },
+  "acceptance": {
+    "readOnlyCalendarAvailability": true,
+    "testBookings": 0,
+    "testInvitations": 0,
+    "testEmails": 0,
+    "recipientDeliveryVerified": false
+  }
+}

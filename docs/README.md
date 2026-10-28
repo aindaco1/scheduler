@@ -42,6 +42,7 @@ Use this index to find the guide that owns a task. The root [README](../README.m
 - [Release evidence](release-evidence/): dated metrics and verification records, separated from research.
 - [October 13 CI maintenance](release-evidence/ci-maintenance-2026-10-13.md): dependency audit repair, pre-merge checks and merge evidence.
 - [October 28 CI maintenance](release-evidence/ci-maintenance-2026-10-28.md): advisory fixes, header accessibility and combined dependency PR validation.
+- [1.0.9 deployment](release-evidence/release-1.0.9-2026-10-28.md): tested release source, read-only live verification and local cleanup.
 - [1.0.8 deployment](release-evidence/release-1.0.8-2026-10-13.md): tested release source, production version, public assets and read-only availability verification.
 - [Pre-1.0 history](history/pre-1.0.md): older implementation and acceptance records.
 
