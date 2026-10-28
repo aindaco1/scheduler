@@ -83,3 +83,24 @@ after PR #23; October 13 and earlier dispositions remain in their dated records.
 This maintenance does not deploy production or send any calendar invitations,
 bookings or email. The last recorded production deployment is 1.0.8.
 Actual admin-notification delivery and recipient receipt remain unverified.
+
+## Dependabot follow-up batch
+
+After the first merge, Dependabot opened PRs #25–29 with newer available
+versions: ruby/setup-ruby 1.335.0, upload-artifact 7.0.2, Sass 1.106.1,
+Wrangler 4.152.0, tsdav 2.5.0 and Zod 4.6.7. Their actual commits are combined
+in PR #26 for validation and merge together. Both security overrides and the
+supported Vitest/workerd/shared-package pins are retained.
+
+Reviewed upstream release/source changes: tsdav's filename-write and OAuth/sync
+changes are outside Scheduler's read-only Basic-auth iCloud path; equivalent
+percent-encoding in principal URLs does affect discovery. A new fixture tests
+the actual discovery path with differing equivalent URL spellings. Zod's
+4.6.7 source comparison changes version metadata. Actions remain SHA-pinned;
+the Ruby update retains the 3.3 line and the artifact update retains the existing
+evidence paths and retention policy.
+
+Local installation and audits passed again at 17:26:27 UTC with zero npm
+findings and all 34 Ruby packages clear. All 24 focused iCloud tests pass,
+including the new principal-discovery regression. Full local and hosted
+follow-up checks are in progress.
