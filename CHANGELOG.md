@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.9 — 2026-10-28
 
 - Let the header home link use its visible brand/Scheduler text or logo alt text
   as its accessible name, including after removing a logo or clearing the brand.
