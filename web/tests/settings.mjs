@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { expect } from "@playwright/test";
 
 export async function checkSettingsEnhancements(
   browser,
@@ -384,6 +385,9 @@ export async function checkSettingsEnhancements(
     await save();
     assert.equal(settings.brand.logoUrl, logoUrl);
     await reload();
+    await expect(page.locator(".wordmark")).toHaveAccessibleName(
+      "Fixture & Brand",
+    );
     assert.equal(
       await page
         .getByRole("img", { name: "Logo preview", exact: true })
@@ -408,6 +412,9 @@ export async function checkSettingsEnhancements(
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto(base + "/es/admin/");
     await page.locator("#panel-settings").waitFor({ state: "visible" });
+    await expect(page.locator(".wordmark")).toHaveAccessibleName(
+      "Fixture & Brand",
+    );
     assert.deepEqual(
       await page.locator("#panel-settings h2").allTextContents(),
       [
@@ -455,6 +462,9 @@ export async function checkSettingsEnhancements(
       await page.locator("[data-remove-reminder]").first().click();
     await save();
     assert.equal(settings.brand.logoUrl, "");
+    await expect(page.locator(".wordmark")).toHaveAccessibleName(
+      "Fixture & Brand SCHEDULER",
+    );
     assert.equal(
       await page.locator(".wordmark [data-brand-name]").textContent(),
       "Fixture & Brand",
@@ -494,6 +504,7 @@ export async function checkSettingsEnhancements(
     );
     assert.equal(await page.locator(".wordmark svg").count(), 1);
     assert.equal(await page.locator(".wordmark .header-logo").count(), 0);
+    await expect(page.locator(".wordmark")).toHaveAccessibleName("SCHEDULER");
 
     const heading = await page
       .locator(".booking-page-heading h2")
@@ -522,6 +533,9 @@ export async function checkSettingsEnhancements(
         .getByRole("heading", { name: label, exact: true })
         .waitFor();
       assert.equal(await visitor.locator(".choice-card").count(), 0);
+      await expect(visitor.locator(".wordmark")).toHaveAccessibleName(
+        "SCHEDULER",
+      );
       assert.equal(
         await visitor
           .locator('meta[property="og:site_name"]')
@@ -548,6 +562,9 @@ export async function checkSettingsEnhancements(
     await page.locator('[data-setting="brand.name"]').fill("Fixture & Brand");
     await save();
     assert.equal(settings.enabled, true);
+    await expect(page.locator(".wordmark")).toHaveAccessibleName(
+      "Fixture & Brand SCHEDULER",
+    );
     assert.equal(
       await page.locator(".wordmark [data-brand-name]").isVisible(),
       true,

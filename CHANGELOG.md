@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Let the header home link use its visible brand/Scheduler text or logo alt text
+  as its accessible name, including after removing a logo or clearing the brand.
+- Update the five pending dependency PRs together: tsdav 2.4.0, Zod 4.6.6,
+  development tooling, and SHA-pinned Node/Ruby setup actions. Preserve the
+  supported Vitest 4/workerd combination and both Dust Wave submodule pins.
+- Resolve Miniflare's Undici to patched 7.30.1 and the Cloudflare test pool's
+  nested Zod to 4.6.6, clearing the October 26 dependency-audit failures.
+
 ## 1.0.8 — 2026-10-13
 
 - Update development tooling (Wrangler, Sass, Acorn and Node types) and resolve

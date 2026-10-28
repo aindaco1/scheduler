@@ -1,6 +1,6 @@
 # Scheduler release status
 
-Updated October 13, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
+Updated October 28, 2026. This is the current release summary. The [pre-1.0 history](history/pre-1.0.md) preserves the dated implementation, CI, deployment and provider checks without presenting older snapshots as current settings.
 
 ## Scope and license
 
@@ -9,6 +9,23 @@ Version 1.0.0 is the first stable release for one owner, under the [MIT license]
 The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz/alonso). Google owns new events and attendee invitations; selected Google and direct iCloud calendars block time. Availability respects Busy/Free settings, per-location hours, defaults and overrides, blackouts and booking boundaries. English is always available and Spanish can be enabled in Settings.
 
 ## Release verification
+
+### Unreleased — October 28: CI and dependency maintenance
+
+The combined dependency candidate fixes the October 26 Undici/Zod audit failures
+and the header accessible-name mismatch exposed by Axe 4.14 in PR #24. It includes
+PRs #18, #19, #21, #22 and #24, retaining the pinned shared packages and supported
+Vitest/workerd combination.
+
+- Local: installation and dependency audits passed (zero npm findings; all 34
+  locked Ruby packages clear). Full checks are in progress.
+- CI: combined-candidate validation is pending; historical failed runs remain
+  historical evidence.
+- Deployment: no deployment; the verified production release remains 1.0.8.
+- Provider/recipient: synthetic tests only; no invitations, bookings or emails.
+  Actual admin-notification delivery and recipient receipt remain unverified.
+
+See [October 28 maintenance evidence](release-evidence/ci-maintenance-2026-10-28.md).
 
 ### Version 1.0.8 — October 13: dependency and CI maintenance
 

@@ -63,7 +63,10 @@
     "sharp": "$sharp",
     "workerd": "1.20260908.1",
     "miniflare": {
-      "undici": "7.30.0"
+      "undici": "7.30.1"
+    },
+    "@cloudflare/vitest-pool-workers": {
+      "zod": "$zod"
     }
   }
 }
