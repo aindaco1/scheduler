@@ -101,6 +101,27 @@ the Ruby update retains the 3.3 line and the artifact update retains the existin
 evidence paths and retention policy.
 
 Local installation and audits passed again at 17:26:27 UTC with zero npm
-findings and all 34 Ruby packages clear. All 24 focused iCloud tests pass,
-including the new principal-discovery regression. Full local and hosted
-follow-up checks are in progress.
+findings and all 34 Ruby packages clear. `CI=true npm run check` passed all
+deterministic stages with the updated dependencies (267 Worker tests), then
+exited 2 at the missing local Jev credential. The subsequently added
+principal-discovery regression passed with all 24 tests in its focused iCloud
+file. Hosted checks include that new test in the complete suite.
+
+The first batch's documentation commit `c524bec` also passed
+[trusted-main checks including live Jev](https://github.com/aindaco1/scheduler/actions/runs/40735393802).
+Follow-up candidate `2fca506ceebcaff02d4e4b806f50eb1a67c510bc` passed
+[ordinary PR checks](https://github.com/aindaco1/scheduler/actions/runs/40736036029)
+and [complete live checks](https://github.com/aindaco1/scheduler/actions/runs/40736060206).
+The complete suite passed 268 Worker tests and every deterministic stage.
+Live Jev completed 74 requests / 100 questions, with all 40 controls correct,
+33 rendered passes, the unchanged approved English pending-copy review and zero
+blocking findings.
+
+PR #26 merged at 17:32 UTC as `8aeb5ef5e4da35f761d4664608ac153fafc2bf16`;
+GitHub marked #25, #27, #28 and #29 merged too. The tested and merged trees are
+both `a54f2eb43b6929761fa6e134f13c38c8dbb3f312`. No open PRs remain after this
+second batch. This final verification update changes documentation only.
+
+GitHub artifact `12837396992` retains the follow-up synthetic evidence until
+November 11. Archive digest:
+`sha256:740692584b8ba37e91246cc773d17a27a8ebe9cdfde6f8cfa45e0ff38995b6f3`.

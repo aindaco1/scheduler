@@ -36,9 +36,13 @@ See [October 28 maintenance evidence](release-evidence/ci-maintenance-2026-10-28
 
 Dependabot opened a fresh batch after the original merges: PRs #25–29 update
 Sass/Wrangler, tsdav, Zod and the Ruby/artifact actions. The combined follow-up
-is under validation; the original fixes above are already merged. Its audits
-and 24 focused iCloud tests pass locally, including percent-encoded principal
-discovery. No production deployment is part of either batch.
+passed [ordinary checks](https://github.com/aindaco1/scheduler/actions/runs/40736036029)
+and [complete live checks](https://github.com/aindaco1/scheduler/actions/runs/40736060206)
+on `2fca506`: 268 Worker tests, all deterministic stages, all 40 Jev controls
+correct and zero blocking findings. Its local deterministic checks, audits and
+24 focused iCloud tests pass; local live Jev remains unverified without a token.
+All five follow-up PRs merged through `8aeb5ef`, whose tree exactly matches the
+tested candidate. No production deployment is part of either batch.
 
 ### Version 1.0.8 — October 13: dependency and CI maintenance
 
