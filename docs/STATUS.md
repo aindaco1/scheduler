@@ -12,15 +12,22 @@ The owner page is [scheduler.dustwave.xyz/alonso](https://scheduler.dustwave.xyz
 
 ### Unreleased — October 28: CI and dependency maintenance
 
-The combined dependency candidate fixes the October 26 Undici/Zod audit failures
+The merged dependency update fixes the October 26 Undici/Zod audit failures
 and the header accessible-name mismatch exposed by Axe 4.14 in PR #24. It includes
 PRs #18, #19, #21, #22 and #24, retaining the pinned shared packages and supported
 Vitest/workerd combination.
 
 - Local: installation and dependency audits passed (zero npm findings; all 34
-  locked Ruby packages clear). Full checks are in progress.
-- CI: combined-candidate validation is pending; historical failed runs remain
-  historical evidence.
+  locked Ruby packages clear). `CI=true npm run check` passed all deterministic
+  stages, including 267 Worker tests and browser/accessibility flows, then exited
+  2 because no local Jev token was supplied. This is not a local live Jev pass.
+- CI: [ordinary combined-candidate checks](https://github.com/aindaco1/scheduler/actions/runs/40734463839)
+  and [complete owner-dispatched checks](https://github.com/aindaco1/scheduler/actions/runs/40734493131)
+  passed on `25e2dd5`: all 40 Jev controls correct, 33 rendered passes, one
+  previously approved English pending-copy review and zero blocking findings.
+  No thresholds, controls, copy or review approvals were changed.
+- Source: PRs #18, #19, #21, #22 and #24 are merged. Merge `b358b6c` has exactly
+  the tested candidate's tree. Historical failed runs remain historical evidence.
 - Deployment: no deployment; the verified production release remains 1.0.8.
 - Provider/recipient: synthetic tests only; no invitations, bookings or emails.
   Actual admin-notification delivery and recipient receipt remain unverified.
