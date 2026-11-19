@@ -45,19 +45,19 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.23.0",
     "@dustwave/test-core": "file:shared/dust-wave-platform/packages/test-core",
-    "@playwright/test": "1.65.0",
+    "@playwright/test": "1.65.1",
     "@types/node": "26.6.6",
     "@types/sax": "1.2.7",
     "acorn": "8.19.0",
-    "axe-core": "4.14.0",
+    "axe-core": "4.14.1",
     "esbuild": "0.28.2",
     "jsonc-parser": "3.3.1",
-    "prettier": "3.9.10",
-    "sass": "1.108.1",
+    "prettier": "3.10.1",
+    "sass": "1.108.2",
     "sharp": "0.35.5",
     "typescript": "7.0.2",
     "vitest": "4.1.12",
-    "wrangler": "4.158.0"
+    "wrangler": "4.163.0"
   },
   "overrides": {
     "sharp": "$sharp",
